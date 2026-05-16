@@ -55,8 +55,12 @@ public static class GraphNodeRegistry
     /// <summary>Scans the Nodes/ directory for .node.json files and registers factories.</summary>
     private static void LoadFromNodeFiles()
     {
-        var nodesDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Nodes");
-        if (!Directory.Exists(nodesDir)) return;
+        // Try multiple possible paths for the Nodes directory:
+        // 1. Base directory (normal publish / debug)
+        // 2. Assembly location directory (single-file publish extracts alongside)
+        // 3. Parent of base directory (some single-file extraction layouts)
+        var nodesDir = FindNodesDirectory();
+        if (nodesDir == null) return;
 
         var nodeFiles = Directory.GetFiles(nodesDir, "*.node.json", SearchOption.AllDirectories);
         var typeMap = BuildProcessorTypeMap();
@@ -167,6 +171,29 @@ public static class GraphNodeRegistry
     }
 
     private static Func<IGraphNode> CreateFactory(Type type) => () => (IGraphNode)Activator.CreateInstance(type)!;
+
+    /// <summary>
+    /// Finds the Nodes/ directory across possible publish layouts.
+    /// Returns null if not found anywhere.
+    /// </summary>
+    private static string? FindNodesDirectory()
+    {
+        // Candidates ordered by likelihood
+        var candidates = new[]
+        {
+            Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Nodes"),
+            Path.Combine(Path.GetDirectoryName(typeof(GraphNodeRegistry).Assembly.Location) ?? ".", "Nodes"),
+            Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "Nodes"),
+        };
+
+        foreach (var candidate in candidates)
+        {
+            if (Directory.Exists(candidate))
+                return candidate;
+        }
+
+        return null;
+    }
 
     public static IReadOnlyList<NodeResource> GetCatalog() { EnsureInitialized(); return Catalog; }
     public static string GetNodesDirectory() => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Nodes");

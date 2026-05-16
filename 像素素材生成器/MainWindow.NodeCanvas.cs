@@ -230,6 +230,7 @@ namespace PixelAssetGenerator
 
         private void PasteClipboardAtMouse()
         {
+            if (_nodeClipboard == null) return;
             var created = _nodeGraphController.PasteClipboardAtMouse(
                 _nodeClipboard, NodeCanvasScale,
                 () => { try { return Mouse.GetPosition(NodeCanvasHost); } catch { return new Point(0, 0); } },

@@ -13,8 +13,10 @@ namespace PixelAssetGenerator.Core.Nodes.Sources;
 /// <summary>
 /// Runtime IGraphNode wrapper that compiles and executes C# script from a .node.json resource.
 /// Uses Roslyn for on-demand compilation with caching.
+/// Automatically provides multi-output support: nodes with a Mask output port in their JSON
+/// definition get an auto-derived grayscale mask from the primary image output.
 /// </summary>
-public sealed class ResourceNodeInstance : IGraphNode
+public sealed class ResourceNodeInstance : IGraphNode, IMultiOutputNode
 {
     private readonly NodeResource _resource;
     private readonly string _filePath;
@@ -37,6 +39,13 @@ public sealed class ResourceNodeInstance : IGraphNode
     public IReadOnlyList<GraphNodePort> InputPorts { get; private set; }
     public IReadOnlyList<GraphNodePort> OutputPorts { get; private set; }
     public IReadOnlyList<NodeParameterDefinition> Parameters { get; private set; }
+
+    /// <summary>
+    /// Cached flag: does this node have a Mask output port in its definition?
+    /// Used to decide whether ProcessMulti should return a mask buffer.
+    /// </summary>
+    private bool _hasMaskOutput;
+    private bool _hasMaskChecked;
 
     private static string CurrentCulture
         => Services.ServiceLocator.GetService<Services.Localization.ILocalizationService>().CurrentCulture;
@@ -112,6 +121,29 @@ public sealed class ResourceNodeInstance : IGraphNode
         return inputs.Length > 0 && inputs[0] != null
             ? inputs[0].Clone()
             : PixelBuffer.CreateSolid(context.TileSize, context.TileSize, 0, 0, 0, 255);
+    }
+
+    public PixelBuffer[] ProcessMulti(PixelBuffer?[] inputs, IReadOnlyDictionary<string, object> parameters, PixelGraphContext context)
+    {
+        // Get the primary output first
+        var primary = Process(inputs, parameters, context);
+
+        // Check if this node has a Mask output port in its definition
+        if (!_hasMaskChecked)
+        {
+            _hasMaskOutput = _resource.Ports?.Outputs?.Any(o =>
+                string.Equals(o.Type, "Mask", StringComparison.OrdinalIgnoreCase)) == true;
+            _hasMaskChecked = true;
+        }
+
+        if (!_hasMaskOutput)
+            return new[] { primary };
+
+        // Derive mask from the primary output using CreateMaskView which intelligently
+        // picks between alpha channel (coverage-style, e.g. ShapeNode) and luminance
+        // (pattern-style, e.g. BrickNode) — whichever best represents the shape silhouette.
+        var mask = PixelBuffer.CreateMaskView(primary);
+        return new[] { primary, mask };
     }
 
     private void EnsureCompiled()

@@ -680,7 +680,7 @@ namespace PixelAssetGenerator
                 {
                     if (connection.StartNode != null && (targetNode == null || ReferenceEquals(connection.StartNode, targetNode)))
                     {
-                        var startPoint = GetPortPosition(connection.StartNode, true, connection.StartPortIndex);
+                        var startPoint = GetCachedPortPosition(connection.StartNode, true, connection.StartPortIndex);
                         connection.StartX = startPoint.X;
                         connection.StartY = startPoint.Y;
                     }
@@ -690,17 +690,126 @@ namespace PixelAssetGenerator
 
                 if (connection.StartNode != null && (targetNode == null || ReferenceEquals(connection.StartNode, targetNode)))
                 {
-                    var startPoint = GetPortPosition(connection.StartNode, true, connection.StartPortIndex);
+                    var startPoint = GetCachedPortPosition(connection.StartNode, true, connection.StartPortIndex);
                     connection.StartX = startPoint.X;
                     connection.StartY = startPoint.Y;
                 }
 
                 if (connection.EndNode != null && (targetNode == null || ReferenceEquals(connection.EndNode, targetNode)))
                 {
-                    var endPoint = GetPortPosition(connection.EndNode, false, connection.EndPortIndex);
+                    var endPoint = GetCachedPortPosition(connection.EndNode, false, connection.EndPortIndex);
                     connection.EndX = endPoint.X;
                     connection.EndY = endPoint.Y;
                 }
+            }
+        }
+
+        /// <summary>
+        /// Returns cached actual port position if available, otherwise falls back to manual calculation.
+        /// </summary>
+        private static Point GetCachedPortPosition(NodeViewModel node, bool isOutput, int portIndex)
+        {
+            if (node.CachedPortPositions.TryGetValue((isOutput, portIndex), out var cached))
+                return cached;
+            return GetPortPosition(node, isOutput, portIndex);
+        }
+
+        /// <summary>
+        /// Stores the actual port position from a FrameworkElement into the node's cache.
+        /// Call this from port mouse handlers to ensure connection endpoints align with visual ports.
+        /// </summary>
+        private void CachePortPosition(FrameworkElement portElement, NodeViewModel node, bool isOutput, int portIndex)
+        {
+            try
+            {
+                var center = GetPortCenter(portElement);
+                node.CachedPortPositions[(isOutput, portIndex)] = center;
+            }
+            catch { }
+        }
+
+        /// <summary>
+        /// Populates cached port positions for all nodes by walking the visual tree
+        /// of NodeCanvasItems. Call after layout is complete (e.g. after Loaded event).
+        /// </summary>
+        private void CacheAllPortPositions()
+        {
+            if (NodeCanvasItems == null) return;
+            try
+            {
+                foreach (var item in NodeCanvasItems.Items)
+                {
+                    if (item is not NodeViewModel node) continue;
+                    var presenter = NodeCanvasItems.ItemContainerGenerator.ContainerFromItem(item) as FrameworkElement;
+                    if (presenter == null) continue;
+                    CachePortPositionsForNode(node, presenter);
+                }
+            }
+            catch { }
+        }
+
+        /// <summary>
+        /// Walks the visual tree of a node's ContentPresenter to find and cache port element positions.
+        /// </summary>
+        private void CachePortPositionsForNode(NodeViewModel node, FrameworkElement nodeContainer)
+        {
+            // Find the Border (node template root) inside the ContentPresenter
+            var border = FindVisualChild<System.Windows.Controls.Border>(nodeContainer);
+            if (border == null) return;
+
+            // Find all port Grids (Ellipse parent Grids) and match them by binding context
+            var portGrids = FindVisualChildren<System.Windows.Controls.Grid>(border)
+                .Where(g => g.DataContext is NodePortViewModel)
+                .ToList();
+
+            foreach (var grid in portGrids)
+            {
+                if (grid.DataContext is not NodePortViewModel port) continue;
+                var node2 = FindNodeFromPort(port);
+                if (node2 == null || node2.Id != node.Id) continue;
+                CachePortPosition(grid, node2, port.IsOutput, port.IsOutput
+                    ? node2.OutputPorts.IndexOf(port)
+                    : node2.InputPorts.IndexOf(port));
+            }
+        }
+
+        private static T? FindVisualChild<T>(DependencyObject parent) where T : DependencyObject
+        {
+            for (var i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+            {
+                var child = VisualTreeHelper.GetChild(parent, i);
+                if (child is T t) return t;
+                var found = FindVisualChild<T>(child);
+                if (found != null) return found;
+            }
+            return null;
+        }
+
+        private static List<T> FindVisualChildren<T>(DependencyObject parent) where T : DependencyObject
+        {
+            var results = new List<T>();
+            FindVisualChildrenRecursive(parent, results);
+            return results;
+        }
+
+        private static void FindVisualChildrenRecursive<T>(DependencyObject parent, List<T> results) where T : DependencyObject
+        {
+            for (var i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+            {
+                var child = VisualTreeHelper.GetChild(parent, i);
+                if (child is T t) results.Add(t);
+                FindVisualChildrenRecursive(child, results);
+            }
+        }
+
+        /// <summary>
+        /// Clears all cached port positions. Call after node drag or when layout changes.
+        /// </summary>
+        private void ClearAllPortPositionCache()
+        {
+            foreach (var node in Nodes)
+            {
+                node.CachedPortPositions.Clear();
             }
         }
 
@@ -755,7 +864,6 @@ namespace PixelAssetGenerator
 
             var seedParam = SelectedNode.Parameters.FirstOrDefault(p => p.Kind == NodeParameterKind.Seed);
             var baseSeed = seedParam?.IntValue ?? 42;
-            var previewSize = 48;
             var count = 8;
 
             for (var i = 0; i < count; i++)
@@ -955,6 +1063,7 @@ namespace PixelAssetGenerator
         /// <summary>
         /// Returns true when an output port of <paramref name="outputType"/> can feed an input port of <paramref name="inputType"/>.
         /// Image and Tile are both RGB pixel data and are considered mutually compatible.
+        /// Image/Tile outputs can also connect to Mask inputs (the mask reads the R channel).
         /// </summary>
         private static bool ArePortTypesCompatible(PortValueType outputType, PortValueType inputType)
         {
@@ -964,6 +1073,8 @@ namespace PixelAssetGenerator
             bool outputIsImage = outputType is PortValueType.Image or PortValueType.Tile;
             bool inputIsImage  = inputType  is PortValueType.Image or PortValueType.Tile;
             if (outputIsImage && inputIsImage) return true;
+            // Image/Tile can connect to Mask — mask blending reads the R channel
+            if (outputIsImage && inputType == PortValueType.Mask) return true;
             // Particle ports only connect to other particle ports
             if (outputType == PortValueType.Particle || inputType == PortValueType.Particle)
                 return false;

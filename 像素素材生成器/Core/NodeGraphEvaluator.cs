@@ -404,11 +404,23 @@ public sealed class NodeGraphEvaluator
                             PixelBuffer inputBuffer = sourceBuffer;
                             if (nodeById.TryGetValue(conn.SourceNodeId, out var srcInst)
                                 && conn.SourcePortIndex < srcInst.Node.OutputPorts.Count
-                                && srcInst.Node.OutputPorts[conn.SourcePortIndex].Type == GraphPortType.Mask
-                                && conn.TargetPortIndex < instance.Node.InputPorts.Count
-                                && instance.Node.InputPorts[conn.TargetPortIndex].Type == GraphPortType.Any)
+                                && conn.TargetPortIndex < instance.Node.InputPorts.Count)
                             {
-                                inputBuffer = PixelBuffer.CreateMaskView(sourceBuffer);
+                                var srcPortType = srcInst.Node.OutputPorts[conn.SourcePortIndex].Type;
+                                var dstPortType = instance.Node.InputPorts[conn.TargetPortIndex].Type;
+
+                                // Mask → Any: show mask as grayscale RGB
+                                if (srcPortType == GraphPortType.Mask && dstPortType == GraphPortType.Any)
+                                {
+                                    inputBuffer = PixelBuffer.CreateMaskView(sourceBuffer);
+                                }
+                                // Image/Tile → Mask: convert using alpha-luminance heuristic
+                                // for mask blending (prefers alpha channel when available,
+                                // falls back to luminance for opaque pattern buffers)
+                                else if (srcPortType == GraphPortType.Image && dstPortType == GraphPortType.Mask)
+                                {
+                                    inputBuffer = PixelBuffer.CreateMaskView(sourceBuffer);
+                                }
                             }
                             inputs[conn.TargetPortIndex] = inputBuffer;
                         }

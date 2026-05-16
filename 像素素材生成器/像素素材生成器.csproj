@@ -80,18 +80,22 @@
     </EmbeddedResource>
   </ItemGroup>
 
-  <!-- Node .json resource files: copy to output directory for runtime loading -->
+  <!-- Node .json resource files: copy to output directory for runtime loading.
+       Also copy to publish directory so PublishSingleFile extracts them. -->
   <ItemGroup>
     <Content Include="Resources\Nodes\**\*.node.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
       <Link>Nodes\%(RecursiveDir)%(Filename)%(Extension)</Link>
     </Content>
     <Content Include="Nodes\**\*.node.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
       <Link>Nodes\%(RecursiveDir)%(Filename)%(Extension)</Link>
     </Content>
     <Content Include="Resources\Nodes\_categories.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
       <Link>Nodes\_categories.json</Link>
     </Content>
   </ItemGroup>

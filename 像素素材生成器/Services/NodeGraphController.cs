@@ -561,8 +561,10 @@ public sealed class NodeGraphController
     public static bool ArePortTypesCompatible(PortValueType outputType, PortValueType inputType)
     {
         if (inputType == PortValueType.Any || outputType == inputType) return true;
-        return (outputType is PortValueType.Image or PortValueType.Tile) &&
-               (inputType  is PortValueType.Image or PortValueType.Tile);
+        // Image/Tile can connect to Mask — mask blending reads the R channel
+        if (outputType is PortValueType.Image or PortValueType.Tile)
+            return inputType is PortValueType.Image or PortValueType.Tile or PortValueType.Mask;
+        return false;
     }
 
     public static bool IsGraphPortTypeCompatible(PortValueType outputType, GraphPortType inputType)

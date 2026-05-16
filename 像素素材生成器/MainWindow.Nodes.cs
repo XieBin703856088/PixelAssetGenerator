@@ -1467,17 +1467,21 @@ namespace PixelAssetGenerator
             foreach (var c in existing)
                 NodeConnections.Remove(c);
 
-            // Create the actual connection
+            // Create the actual connection — use cached positions for accuracy
+            var startX = GetCachedPortPosition(sourceNode, true, sourcePortIndex).X;
+            var startY = GetCachedPortPosition(sourceNode, true, sourcePortIndex).Y;
+            var endX = GetCachedPortPosition(targetNode, false, targetPortIndex).X;
+            var endY = GetCachedPortPosition(targetNode, false, targetPortIndex).Y;
             var connection = new NodeConnectionViewModel
             {
                 StartNode = sourceNode,
                 StartPortIndex = sourcePortIndex,
-                StartX = GetPortPosition(sourceNode, true, sourcePortIndex).X,
-                StartY = GetPortPosition(sourceNode, true, sourcePortIndex).Y,
+                StartX = startX,
+                StartY = startY,
                 EndNode = targetNode,
                 EndPortIndex = targetPortIndex,
-                EndX = GetPortPosition(targetNode, false, targetPortIndex).X,
-                EndY = GetPortPosition(targetNode, false, targetPortIndex).Y,
+                EndX = endX,
+                EndY = endY,
                 IsPreview = false
             };
             NodeConnections.Add(connection);
@@ -1584,7 +1588,8 @@ namespace PixelAssetGenerator
 
             var desiredOutputs = new List<NodePortViewModel>
             {
-                new NodePortViewModel("Bitmap", PortValueType.Tile, true)
+                new NodePortViewModel("Bitmap", PortValueType.Tile, true),
+                new NodePortViewModel("Mask", PortValueType.Mask, true)
             };
 
             if (PortsMatch(node.InputPorts, desiredInputs) && PortsMatch(node.OutputPorts, desiredOutputs))
@@ -1873,22 +1878,36 @@ namespace PixelAssetGenerator
 
         private static Point GetPortPosition(NodeViewModel node, bool isOutput, int index)
         {
-            const double portStartY = 51d;   // border(1) + padding(6) + header(36) + firstRowCenter(8)
-            const double portRowHeight = 16d; // margin(1) + grid(14) + margin(1)
             const double nodeWidth = 180d;
             const double portSize = 14d;     // port Grid width/height
+            const double borderPlusPadding = 7d; // BorderThickness(1) + Padding(6)
+            const double headerHeight = 36d;     // Header Border(~32) + margin bottom(4)
+            const double portRowHeight = 16d;    // margin(1) + grid(14) + margin(1)
 
             // Node selection changes BorderThickness 1->2, shifting content inward by 1px
             var selOff = node.IsSelected ? 1 : 0;
 
-            // Input port Grid: Margin="-13,0,3,0" → center at node.X - 6
-            // Output port Grid: Margin="0,0,-13,0", HorizontalAlignment="Right" → center at node.X + 186
-            // When selected (BorderThickness 2): shift inward by 1px on each side
-            var baseX = isOutput
-                ? node.X + nodeWidth + 13 - portSize * 0.5 - selOff
-                : node.X - 13 + portSize * 0.5 + selOff;
-            var baseY = node.Y + portStartY + (index * portRowHeight);
-            return new Point(baseX, baseY);
+            // Content area starts at node.X + borderPlusPadding, adjusted for selection
+            var contentLeft = node.X + borderPlusPadding + (isOutput ? 0 : selOff);
+            var contentRight = node.X + nodeWidth - borderPlusPadding - (isOutput ? selOff : 0);
+            var contentWidth = contentRight - contentLeft;
+
+            if (isOutput)
+            {
+                // Output port: in the right column of the inner Grid (2 * columns)
+                // Port Grid Margin="0,0,-13,0": extends 13px beyond the column's right edge
+                // The port Grid center is near the content right edge
+                var portCenterX = contentRight + 6;
+                var portCenterY = node.Y + borderPlusPadding + headerHeight + (index * portRowHeight) + portSize * 0.5;
+                return new Point(portCenterX, portCenterY);
+            }
+            else
+            {
+                // Input port: Margin="-13,0,3,0": extends 13px left from the column's left edge
+                var portCenterX = contentLeft - 6;
+                var portCenterY = node.Y + borderPlusPadding + headerHeight + (index * portRowHeight) + portSize * 0.5;
+                return new Point(portCenterX, portCenterY);
+            }
         }
 
         private static bool IsParticleOrPhysicsNode(IGraphNode node)
@@ -1901,22 +1920,46 @@ namespace PixelAssetGenerator
         }
 
         /// <summary>
-        /// Adapts a pre-rendered PixelBuffer as a zero-input graph node so that tile nodes
-        /// (�ݵ�/ʯ��/ˮ�� etc.) can participate in the graph evaluation pipeline when
-        /// connected to filter or edge nodes such as ƫ�ư�װ.
+        /// Adapts a pre-rendered PixelBuffer as a graph node so tile nodes can participate
+        /// in the graph evaluation pipeline. Produces both the color Bitmap (port 0) and
+        /// a grayscale Mask (port 1) from the same source buffer.
         /// </summary>
-        private sealed class PixelBufferSourceNode : IGraphNode
+        private sealed class PixelBufferSourceNode : IGraphNode, IMultiOutputNode, IDisposable
         {
             private readonly PixelBuffer _buffer;
-            private static readonly IReadOnlyList<GraphNodePort> _outputPorts = new[] { new GraphNodePort("Bitmap", GraphPortType.Image) };
+            private readonly PixelBuffer _maskBuffer;
+            private static readonly IReadOnlyList<GraphNodePort> _outputPorts = new[]
+            {
+                new GraphNodePort("Bitmap", GraphPortType.Image),
+                new GraphNodePort("Mask", GraphPortType.Mask)
+            };
 
-            public PixelBufferSourceNode(PixelBuffer buffer) => _buffer = buffer;
+            public PixelBufferSourceNode(PixelBuffer buffer)
+            {
+                _buffer = buffer;
+                // Pre-compute mask from alpha/luminance once
+                _maskBuffer = PixelBuffer.CreateMaskView(buffer);
+            }
+
             public string TypeName => "__TileSource__";
             public string Category => "Source";
             public IReadOnlyList<GraphNodePort> InputPorts => Array.Empty<GraphNodePort>();
             public IReadOnlyList<GraphNodePort> OutputPorts => _outputPorts;
             public IReadOnlyList<NodeParameterDefinition> Parameters => Array.Empty<NodeParameterDefinition>();
-            public PixelBuffer Process(PixelBuffer?[] inputs, IReadOnlyDictionary<string, object> parameters, PixelGraphContext context) => _buffer;
+
+            /// <summary>Safety fallback — the evaluator always goes through ProcessMulti for IMultiOutputNode.</summary>
+            public PixelBuffer Process(PixelBuffer?[] inputs, IReadOnlyDictionary<string, object> parameters, PixelGraphContext context) => _buffer.Clone();
+
+            public PixelBuffer[] ProcessMulti(PixelBuffer?[] inputs, IReadOnlyDictionary<string, object> parameters, PixelGraphContext context)
+            {
+                return new[] { _buffer.Clone(), _maskBuffer.Clone() };
+            }
+
+            public void Dispose()
+            {
+                _buffer.Dispose();
+                _maskBuffer.Dispose();
+            }
         }
 
         /// <summary>

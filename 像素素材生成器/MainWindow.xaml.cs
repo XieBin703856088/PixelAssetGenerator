@@ -84,8 +84,6 @@ namespace PixelAssetGenerator
         private double _nodeThumbnailSize = 64;
 
         private DispatcherTimer? _thumbnailDebounceTimer;
-        private int _thumbnailGenPending;
-
         /// <summary>
         /// Debounced thumbnail regeneration using a single DispatcherTimer.
         /// When the slider is dragged rapidly, the timer is reset on each change;
@@ -363,7 +361,7 @@ namespace PixelAssetGenerator
         public ObservableCollection<NodeLibraryItem> NodeLibrary { get; } = new();
         public ObservableCollection<NodeLibraryEntry> NodeLibraryDisplay { get; } = new();
         public ObservableCollection<NodeLibraryCategory> NodeLibraryCategories { get; } = new();
-        public ICollectionView NodeLibraryView { get; private set; }
+        public ICollectionView NodeLibraryView { get; private set; } = null!;
         public ObservableCollection<TemplateFileInfo> TemplateFiles { get; } = new();
         public ObservableCollection<VariationPreviewItem> VariationPreviews { get; } = new();
 
@@ -1013,7 +1011,7 @@ namespace PixelAssetGenerator
                 var console = ServiceLocator.TryGetService<IConsoleService>();
                 if (console != null)
                 {
-                    Dispatcher.InvokeAsync(() =>
+                    _ = Dispatcher.InvokeAsync(() =>
                     {
                         var assistant = AiChat.LastAssistantMessage;
                         if (assistant != null && !string.IsNullOrWhiteSpace(assistant.Content))
@@ -1081,7 +1079,7 @@ namespace PixelAssetGenerator
             _pixelAgentService.OnConfirmRequired += async (toolName, description) =>
             {
                 var tcs = new TaskCompletionSource<bool>();
-                Dispatcher.InvokeAsync(() =>
+                _ = Dispatcher.InvokeAsync(() =>
                 {
                     var loc = Services.Localization.LocalizationService.Instance;
                     var title = loc.GetStringFast("AI_ConfirmTitle");
@@ -1095,7 +1093,7 @@ namespace PixelAssetGenerator
                 var completedTask = await Task.WhenAny(tcs.Task, timeoutTask);
                 if (completedTask == timeoutTask)
                 {
-                    Dispatcher.InvokeAsync(() =>
+                    _ = Dispatcher.InvokeAsync(() =>
                         AiChat.AddErrorMessage($"确认超时（60秒），已自动拒绝：{description}"));
                     return false;
                 }
@@ -1172,7 +1170,7 @@ namespace PixelAssetGenerator
             AiChat.AddSystemMessage("Connected to AI service. Describe the pixel assets you want, and I'll help you build a node graph.");
         }
 
-        private async void AiSendButton_Click(object sender, RoutedEventArgs e)
+        private async void AiSendButton_Click(object sender, RoutedEventArgs? e)
         {
             if (AiChat.IsProcessing)
             {
@@ -1287,7 +1285,7 @@ namespace PixelAssetGenerator
             }
             catch (OperationCanceledException)
             {
-                Dispatcher.InvokeAsync(() =>
+                _ = Dispatcher.InvokeAsync(() =>
                 {
                     AiChat.AddErrorMessage("AI response cancelled");
                     AiChat.IsProcessing = false;
@@ -1300,7 +1298,7 @@ namespace PixelAssetGenerator
             }
             catch (Exception ex)
             {
-                Dispatcher.InvokeAsync(() =>
+                _ = Dispatcher.InvokeAsync(() =>
                 {
                     AiChat.AddErrorMessage($"Error ({ex.GetType().Name}): {ex.Message}");
                     AiChat.IsProcessing = false;
@@ -1314,7 +1312,7 @@ namespace PixelAssetGenerator
             finally
             {
                 // 保底：确保无论OnDone是否已触发，按钮状态都正确恢复
-                Dispatcher.InvokeAsync(() =>
+                _ = Dispatcher.InvokeAsync(() =>
                 {
                     if (!AiChat.IsProcessing)
                     {
@@ -2401,7 +2399,11 @@ namespace PixelAssetGenerator
             // Subscribe to language changes to refresh window title and UI
             Services.Localization.LocalizationService.Instance.CultureChanged += OnCultureChanged;
 
-
+            // Cache all port positions after layout is complete
+            _ = Dispatcher.BeginInvoke(new Action(() =>
+            {
+                try { CacheAllPortPositions(); } catch { }
+            }), DispatcherPriority.Background);
 
             RequestPreviewRefresh(true);
             // Thumbnails are already generated during InitializeAsync (splash stage).

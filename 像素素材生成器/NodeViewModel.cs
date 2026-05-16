@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Windows;
 using System.Windows.Media;
 
 namespace PixelAssetGenerator
@@ -127,6 +128,10 @@ namespace PixelAssetGenerator
         public ObservableCollection<NodePortViewModel> OutputPorts { get; } = new();
 
         public ObservableCollection<NodeParameterViewModel> Parameters { get; } = new();
+
+        // Cached actual port positions for connection endpoint positioning.
+        // Key = (isOutput, portIndex). Populated by port element layout callbacks.
+        internal Dictionary<(bool IsOutput, int PortIndex), Point> CachedPortPositions { get; } = new();
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
