@@ -1,0 +1,119 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "FrameSequence",
+    "displayName": {
+      "zh-Hans": "帧序列",
+      "en": "Frame Sequence"
+    },
+    "category": "Pattern",
+    "description": {
+      "zh-Hans": "通过归一化时间参数生成动态帧序列图案。每个像素使用基于正弦的函数，结合位置相关频率和噪声偏移进行振荡，产生类似有机动画的效果。支持三种播放模式：循环、往复和单次。",
+      "en": "Generates animated frame sequence patterns driven by a normalized time parameter. Each pixel oscillates using sin-based functions with position-dependent frequencies and noise-derived offsets, creating organic animation-like effects. Supports three playback modes: loop, ping-pong, and single-shot."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "遮罩",
+          "en": "Mask"
+        },
+        "type": "Mask"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "种子",
+        "en": "Seed"
+      },
+      "kind": "Seed",
+      "default": 42,
+      "min": 0,
+      "max": 9999
+    },
+    {
+      "name": {
+        "zh-Hans": "帧数",
+        "en": "Frame Count"
+      },
+      "kind": "Integer",
+      "default": 8,
+      "min": 1,
+      "max": 64,
+      "step": 1
+    },
+    {
+      "name": {
+        "zh-Hans": "播放模式",
+        "en": "Play Mode"
+      },
+      "kind": "Choice",
+      "default": "loop",
+      "choices": [
+        {
+          "value": "loop",
+          "label": {
+            "zh-Hans": "循环",
+            "en": "loop"
+          }
+        },
+        {
+          "value": "pingPong",
+          "label": {
+            "zh-Hans": "往返",
+            "en": "pingPong"
+          }
+        },
+        {
+          "value": "singleShot",
+          "label": {
+            "zh-Hans": "单次",
+            "en": "singleShot"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "zh-Hans": "帧",
+        "en": "Frame"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    }
+  ],
+  "ai": {
+    "capabilities": ["pattern", "frame-animation", "gradient"],
+    "triggers": {
+      "zh-Hans": "帧序列, 动画帧, 帧动画, 序列帧",
+      "en": "frame sequence, animation frames, frame animation"
+    },
+    "suggestedInputs": ["ParameterAnimation"],
+    "exampleUsage": {
+      "zh-Hans": "配合参数动画节点，生成动态循环的帧序列用于像素动画。",
+      "en": "Use with ParameterAnimation node to generate looping frame sequences for pixel animation."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nreturn ProcessMultiImpl(inputs, parameters, context)[0];\n\nprivate static PixelBuffer[] ProcessMultiImpl(PixelBuffer?[] inputs, IReadOnlyDictionary<string, object> parameters, PixelGraphContext context)\n{\n    var seed = GetInt(parameters, \"seed\", context.Seed);\n    var frameCount = GetInt(parameters, \"frameCount\", 8);\n    var playMode = GetChoice(parameters, \"playMode\", \"loop\");\n    var rawFrame = GetFloat(parameters, \"frame\", 0f);\n\n    var size = context.TileSize;\n    var image = new PixelBuffer(size, size);\n    var mask = new PixelBuffer(size, size);\n\n    // Apply play mode to derive effective normalized time [0, 1)\n    var t = playMode switch\n    {\n        \"pingPong\" => 1f - MathF.Abs(rawFrame * 2f - 1f),\n        \"singleShot\" => Math.Clamp(rawFrame, 0f, 1f),\n        _ => rawFrame % 1f  // loop\n    };\n\n    // Map t to a discrete frame index\n    var frameIdx = (int)(t * frameCount);\n    if (frameIdx >= frameCount) frameIdx = frameCount - 1;\n    var framePhase = frameIdx / (float)Math.Max(1, frameCount);\n\n    var halfSize = size * 0.5f;\n    var invSize = 1f / size;\n\n    image.ParallelForEachPixel((x, y) =>\n    {\n        // Normalized coordinates centered at (0.5, 0.5)\n        var u = (x + 0.5f) * invSize;\n        var v = (y + 0.5f) * invSize;\n        var cx = u - 0.5f;\n        var cy = v - 0.5f;\n\n        var dist = MathF.Sqrt(cx * cx + cy * cy);\n        var angle = MathF.Atan2(cy, cx);\n\n        // Per-pixel frequency based on distance and angle\n        var radialFreq = 2f + MathF.Sin(dist * 6f + seed * 0.01f) * 1.5f;\n        var angularFreq = 1f + MathF.Cos(angle * 3f + seed * 0.02f) * 0.5f;\n\n        // Noise-derived per-pixel offset\n        var noiseOffset = HashToUnit((int)(x * 7 + y * 13), (int)(x * 11 + y * 5), seed);\n\n        // Primary oscillation: concentric rings that move\n        var ringPhase = dist * radialFreq * MathF.PI * 2f;\n        var spinPhase = angle * angularFreq;\n        var framePhaseOffset = framePhase * MathF.PI * 2f;\n\n        var value = MathF.Sin(ringPhase + spinPhase + framePhaseOffset + noiseOffset * MathF.PI);\n        value = value * 0.5f + 0.5f; // Normalize to [0, 1]\n\n        // Secondary layer: traveling gradient bands\n        var bandValue = MathF.Sin((u + v * 0.7f) * 4f * MathF.PI + framePhaseOffset * 0.5f + noiseOffset);\n        bandValue = bandValue * 0.5f + 0.5f;\n\n        // Blend primary and secondary layers\n        var blendWeight = 0.6f + 0.4f * MathF.Sin(dist * MathF.PI * 2f + framePhase);\n        var finalValue = Lerp(bandValue, value, blendWeight);\n        finalValue = Math.Clamp(finalValue, 0f, 1f);\n\n        // Color: hue shift based on angle and frame\n        var hueShift = angle / MathF.PI * 0.5f + 0.5f + framePhase;\n        var r = finalValue * (0.6f + 0.4f * MathF.Sin(hueShift * MathF.PI * 2f));\n        var g = finalValue * (0.6f + 0.4f * MathF.Sin((hueShift + 0.33f) * MathF.PI * 2f));\n        var b = finalValue * (0.6f + 0.4f * MathF.Sin((hueShift + 0.67f) * MathF.PI * 2f));\n\n        image.SetPixel(x, y,\n            Math.Clamp(r, 0f, 1f),\n            Math.Clamp(g, 0f, 1f),\n            Math.Clamp(b, 0f, 1f),\n            1f);\n\n        // Mask: grayscale oscillation for external modulation use\n        mask.SetPixel(x, y, finalValue, finalValue, finalValue, 1f);\n    });\n\n    return [image, mask];\n    }\n}"
+  }
+}

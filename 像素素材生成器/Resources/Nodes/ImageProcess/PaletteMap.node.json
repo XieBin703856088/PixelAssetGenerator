@@ -1,0 +1,134 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "PaletteMap",
+    "displayName": {
+      "zh-Hans": "调色板映射",
+      "en": "Palette Map"
+    },
+    "category": "ImageProcess",
+    "description": {
+      "zh-Hans": "将输入图像的每个像素映射到调色板中的最近颜色。调色板作为独立的图像输入提供（颜色扫描线）。支持可配置的颜色距离度量和可选的抖动处理。",
+      "en": "Maps each pixel of an input image to the nearest color in a palette. The palette is provided as a separate image input (scanline of colors). Supports configurable color distance metrics and optional dithering."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "调色板",
+          "en": "Palette"
+        },
+        "type": "Image"
+      }
+    ],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "输出",
+          "en": "Output"
+        },
+        "type": "Image"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "距离模式",
+        "en": "Distance Mode"
+      },
+      "kind": "Choice",
+      "default": "perceptual",
+      "choices": [
+        {
+          "value": "RGB",
+          "label": {
+            "zh-Hans": "RGB",
+            "en": "RGB"
+          }
+        },
+        {
+          "value": "perceptual",
+          "label": {
+            "zh-Hans": "感知",
+            "en": "perceptual"
+          }
+        },
+        {
+          "value": "HSV",
+          "label": {
+            "zh-Hans": "HSV",
+            "en": "HSV"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "zh-Hans": "抖动",
+        "en": "Dither"
+      },
+      "kind": "Choice",
+      "default": "none",
+      "choices": [
+        {
+          "value": "none",
+          "label": {
+            "zh-Hans": "无",
+            "en": "none"
+          }
+        },
+        {
+          "value": "bayer4x4",
+          "label": {
+            "zh-Hans": "Bayer 4x4",
+            "en": "bayer4x4"
+          }
+        },
+        {
+          "value": "floydSteinberg",
+          "label": {
+            "zh-Hans": "Floyd-Steinberg",
+            "en": "floydSteinberg"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "zh-Hans": "保留透明通道",
+        "en": "Preserve Alpha"
+      },
+      "kind": "Boolean",
+      "default": true
+    }
+  ],
+  "ai": {
+    "capabilities": ["color-adjust", "effect"],
+    "triggers": {
+      "zh-Hans": "调色板映射, 调色板替换, 颜色映射, 索引颜色",
+      "en": "palette map, palette remap, color map, indexed color"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "将图像颜色映射到指定调色板中最近的颜色。",
+      "en": "Map image colors to the nearest colors in a specified palette."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar input = inputs.Length > 0 && inputs[0] != null ? inputs[0]! :\n        new PixelBuffer(context.TileSize, context.TileSize);\n    var paletteInput = inputs.Length > 1 ? inputs[1] : null;\n    var distanceMode = GetChoice(parameters, \"distanceMode\", \"perceptual\");\n    var ditherMode = GetChoice(parameters, \"dither\", \"none\");\n    var preserveAlpha = GetBool(parameters, \"preserveAlpha\", true);\n\n    var size = context.TileSize;\n    var output = new PixelBuffer(size, size);\n\n    // Extract palette colors from the palette image input\n    var palette = ExtractPalette(paletteInput, preserveAlpha);\n    if (palette.Count == 0)\n    {\n        // No palette available — return input as-is\n        return input.Clone();\n    }\n\n    switch (ditherMode)\n    {\n        case \"none\":\n            MapNoDither(input, output, palette, distanceMode, preserveAlpha);\n            break;\n        case \"bayer4x4\":\n            MapBayerDither(input, output, palette, distanceMode, preserveAlpha);\n            break;\n        case \"floydSteinberg\":\n            MapErrorDiffusion(input, output, palette, distanceMode, preserveAlpha);\n            break;\n    }\n\n    return output;\n\nprivate static List<(float R, float G, float B, float A)> ExtractPalette(PixelBuffer? paletteInput, bool preserveAlpha)\n{\n    var palette = new List<(float R, float G, float B, float A)>();\n\n    if (paletteInput == null) return palette;\n\n    var seen = new HashSet<long>();\n    for (var y = 0; y < paletteInput.Height; y++)\n    {\n        for (var x = 0; x < paletteInput.Width; x++)\n        {\n            var (r, g, b, a) = paletteInput.GetPixel(x, y);\n\n            // Skip fully transparent pixels in alpha-aware mode\n            if (preserveAlpha && a < 0.01f) continue;\n\n            // Deduplicate using quantized hash\n            var hash = ((long)(r * 31) << 24) | ((long)(g * 31) << 16) | ((long)(b * 31) << 8) | (long)(a * 31);\n            if (seen.Add(hash))\n            {\n                palette.Add((r, g, b, preserveAlpha ? a : 1f));\n            }\n        }\n    }\n\n    return palette;\n}\n\nprivate static readonly byte[] Bayer4 = { 0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5 };\n\nprivate static void MapNoDither(PixelBuffer input, PixelBuffer output, List<(float R, float G, float B, float A)> palette, string distanceMode, bool preserveAlpha)\n{\n    var size = input.Width;\n    output.ParallelForEachPixel((x, y) =>\n    {\n        var (r, g, b, a) = input.GetPixel(x, y);\n        var nearest = FindNearest(r, g, b, preserveAlpha ? a : 1f, palette, distanceMode);\n        output.SetPixel(x, y, nearest.R, nearest.G, nearest.B, preserveAlpha ? a : 1f);\n    });\n}\n\nprivate static void MapBayerDither(PixelBuffer input, PixelBuffer output, List<(float R, float G, float B, float A)> palette, string distanceMode, bool preserveAlpha)\n{\n    var size = input.Width;\n    output.ParallelForEachPixel((x, y) =>\n    {\n        var (r, g, b, a) = input.GetPixel(x, y);\n        var mx = x % 4;\n        var my = y % 4;\n        var threshold = Bayer4[my * 4 + mx];\n\n        // Add dither offset to channels before nearest-color lookup\n        var dr = r + threshold * 0.04f;\n        var dg = g + threshold * 0.04f;\n        var db = b + threshold * 0.04f;\n\n        var nearest = FindNearest(\n            Math.Clamp(dr, 0f, 1f),\n            Math.Clamp(dg, 0f, 1f),\n            Math.Clamp(db, 0f, 1f),\n            preserveAlpha ? a : 1f,\n            palette, distanceMode);\n        output.SetPixel(x, y, nearest.R, nearest.G, nearest.B, preserveAlpha ? a : 1f);\n    });\n}\n\nprivate static void MapErrorDiffusion(PixelBuffer input, PixelBuffer output, List<(float R, float G, float B, float A)> palette, string distanceMode, bool preserveAlpha)\n{\n    var w = input.Width;\n    var h = input.Height;\n\n    // Copy input to float array for in-place error diffusion\n    var pixels = new float[w * h * 4];\n    input.AsReadOnlySpan().CopyTo(pixels);\n\n    for (var y = 0; y < h; y++)\n    {\n        for (var x = 0; x < w; x++)\n        {\n            var idx = (y * w + x) * 4;\n            var r = pixels[idx];\n            var g = pixels[idx + 1];\n            var b = pixels[idx + 2];\n            var a = pixels[idx + 3];\n\n            var nearest = FindNearest(r, g, b, preserveAlpha ? a : 1f, palette, distanceMode);\n\n            pixels[idx] = nearest.R;\n            pixels[idx + 1] = nearest.G;\n            pixels[idx + 2] = nearest.B;\n            // Alpha unchanged\n\n            var errR = r - nearest.R;\n            var errG = g - nearest.G;\n            var errB = b - nearest.B;\n\n            // Floyd-Steinberg: 7/16 right, 3/16 bottom-left, 5/16 bottom, 1/16 bottom-right\n            Diffuse(pixels, w, h, x + 1, y, errR * 7f / 16f, errG * 7f / 16f, errB * 7f / 16f);\n            Diffuse(pixels, w, h, x - 1, y + 1, errR * 3f / 16f, errG * 3f / 16f, errB * 3f / 16f);\n            Diffuse(pixels, w, h, x, y + 1, errR * 5f / 16f, errG * 5f / 16f, errB * 5f / 16f);\n            Diffuse(pixels, w, h, x + 1, y + 1, errR * 1f / 16f, errG * 1f / 16f, errB * 1f / 16f);\n        }\n    }\n\n    // Copy result to output\n    for (var y = 0; y < h; y++)\n    {\n        for (var x = 0; x < w; x++)\n        {\n            var idx = (y * w + x) * 4;\n            output.SetPixel(x, y, pixels[idx], pixels[idx + 1], pixels[idx + 2],\n                preserveAlpha ? pixels[idx + 3] : 1f);\n        }\n    }\n}\n\nprivate static void Diffuse(float[] pixels, int w, int h, int x, int y, float er, float eg, float eb)\n{\n    if (x < 0 || x >= w || y < 0 || y >= h) return;\n    var idx = (y * w + x) * 4;\n    pixels[idx] = Math.Clamp(pixels[idx] + er, 0f, 1f);\n    pixels[idx + 1] = Math.Clamp(pixels[idx + 1] + eg, 0f, 1f);\n    pixels[idx + 2] = Math.Clamp(pixels[idx + 2] + eb, 0f, 1f);\n}\n\nprivate static (float R, float G, float B, float A) FindNearest(float r, float g, float b, float a,\n    List<(float R, float G, float B, float A)> palette, string distanceMode)\n{\n    var best = palette[0];\n    var bestDist = float.MaxValue;\n\n    foreach (var color in palette)\n    {\n        var dist = distanceMode switch\n        {\n            \"RGB\" => ColorDistanceRgb(r, g, b, color.R, color.G, color.B),\n            \"HSV\" => ColorDistanceHsvWeighted(r, g, b, color.R, color.G, color.B),\n            _ => ColorDistancePerceptual(r, g, b, color.R, color.G, color.B)\n        };\n\n        if (dist < bestDist)\n        {\n            bestDist = dist;\n            best = color;\n        }\n    }\n\n    return best;\n}\n\nprivate static float ColorDistanceRgb(float r1, float g1, float b1, float r2, float g2, float b2)\n{\n    var dr = r1 - r2;\n    var dg = g1 - g2;\n    var db = b1 - b2;\n    return dr * dr + dg * dg + db * db;\n}\n\nprivate static float ColorDistancePerceptual(float r1, float g1, float b1, float r2, float g2, float b2)\n{\n    // Weighted RGB: human vision is more sensitive to green\n    var dr = r1 - r2;\n    var dg = g1 - g2;\n    var db = b1 - b2;\n    return 0.299f * dr * dr + 0.587f * dg * dg + 0.114f * db * db;\n}\n\nprivate static float ColorDistanceHsvWeighted(float r1, float g1, float b1, float r2, float g2, float b2)\n{\n    // Convert both to HSV and compute weighted distance\n    var (h1, s1, v1) = RgbToHsv(r1, g1, b1);\n    var (h2, s2, v2) = RgbToHsv(r2, g2, b2);\n\n    var dh = Math.Min(Math.Abs(h1 - h2), 1f - Math.Abs(h1 - h2));\n    var ds = s1 - s2;\n    var dv = v1 - v2;\n\n    // Hue weighted more strongly — it's the most perceptually salient dimension\n    return dh * dh * 3f + ds * ds * 1.5f + dv * dv;\n}\n\nprivate static (float H, float S, float V) RgbToHsv(float r, float g, float b)\n{\n    var max = Math.Max(r, Math.Max(g, b));\n    var min = Math.Min(r, Math.Min(g, b));\n    var delta = max - min;\n\n    float h = 0;\n    if (delta > 0.0001f)\n    {\n        if (max == r)\n            h = ((g - b) / delta) % 6f;\n        else if (max == g)\n            h = (b - r) / delta + 2f;\n        else\n            h = (r - g) / delta + 4f;\n\n        h /= 6f;\n        if (h < 0) h += 1f;\n    }\n\n    var s = max > 0.0001f ? delta / max : 0f;\n    return (h, s, max);\n    }\n}"
+  }
+}

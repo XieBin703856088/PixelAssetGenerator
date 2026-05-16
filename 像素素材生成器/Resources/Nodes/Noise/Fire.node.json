@@ -1,0 +1,126 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "Fire",
+    "displayName": {
+      "zh-Hans": "火焰",
+      "en": "Fire"
+    },
+    "category": "Noise",
+    "description": {
+      "zh-Hans": "生成程序化像素艺术火焰/火苗精灵，具有可配置的核心、内焰和外辉光层，以及可选的烟雾缕效果。",
+      "en": "Generates procedural pixel art fire/flame sprites with configurable core, inner flame, and outer glow layers plus optional smoke wisps."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "遮罩",
+          "en": "Mask"
+        },
+        "type": "Mask"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "种子",
+        "en": "Seed"
+      },
+      "kind": "Seed",
+      "default": 42,
+      "min": 0,
+      "max": 9999
+    },
+    {
+      "name": {
+        "zh-Hans": "火焰类型",
+        "en": "Fire Type"
+      },
+      "kind": "Choice",
+      "default": "campfire",
+      "choices": [
+        {
+          "value": "campfire",
+          "label": {
+            "zh-Hans": "篝火",
+            "en": "campfire"
+          }
+        },
+        {
+          "value": "torch",
+          "label": {
+            "zh-Hans": "火炬",
+            "en": "torch"
+          }
+        },
+        {
+          "value": "magicFire",
+          "label": {
+            "zh-Hans": "魔法火焰",
+            "en": "magicFire"
+          }
+        },
+        {
+          "value": "wildfire",
+          "label": {
+            "zh-Hans": "野火",
+            "en": "wildfire"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "zh-Hans": "大小",
+        "en": "Size"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.1,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "强度",
+        "en": "Intensity"
+      },
+      "kind": "Number",
+      "default": 0.6,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    }
+  ],
+  "ai": {
+    "capabilities": ["generate-noise", "procedural-texture", "organic", "atmospheric-effect", "sprite"],
+    "triggers": {
+      "zh-Hans": "火焰, 火苗, 篝火, 火炬, 野火, 燃烧",
+      "en": "fire, flame, campfire, torch, wildfire, burning"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "生成一个像素艺术火焰精灵，带核心、内焰和外辉光，可用于角色或环境的火焰效果。",
+      "en": "Generates a pixel-art fire sprite with core, inner flame, and glow layers for character or environmental fire effects."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar seed = GetInt(parameters, \"seed\", context.Seed);\nvar fireType = GetChoice(parameters, \"fireType\", \"campfire\");\nvar size = GetFloat(parameters, \"size\", 0.5f);\nvar intensity = GetFloat(parameters, \"intensity\", 0.6f);\n\nvar tileSize = context.TileSize;\nvar buffer = new PixelBuffer(tileSize, tileSize);\n\nvar halfSize = tileSize * 0.5f;\nvar scale = halfSize * size;\n\n// Flame shape parameters\nvar (coreRadius, innerRadius, outerRadius, heightRatio, waviness) = fireType switch\n{\n    \"torch\" => (0.08f, 0.15f, 0.25f, 1.8f, 2.5f),\n    \"magicFire\" => (0.12f, 0.2f, 0.3f, 1.2f, 1.5f),\n    \"wildfire\" => (0.1f, 0.2f, 0.35f, 1.0f, 3.0f),\n    _ => (0.1f, 0.18f, 0.28f, 1.5f, 2.0f) // campfire\n};\n\nintensity = Math.Clamp(intensity, 0.1f, 1f);\n\nbuffer.ParallelForEachPixel((x, y) =>\n{\n    var px = (x + 0.5f - halfSize) / scale;\n    var py = (y + 0.5f - halfSize) / scale;\n\n    // Flame stretches upward (negative Y in our coord system)\n    // Wavy distortion\n    var waveX = MathF.Sin(py * waviness + seed) * 0.1f * intensity;\n    var dpx = px - waveX;\n\n    // Distance from center axis, stretched vertically\n    var flameDist = MathF.Sqrt(dpx * dpx + (py * 0.6f) * (py * 0.6f));\n\n    // Base shape: teardrop\n    var yNorm = -py / heightRatio; // 0 at bottom, 1 at top\n    var tapering = 1f - yNorm * 0.7f;\n    if (yNorm < 0f)\n    {\n        // Below flame base — solid circle\n        yNorm = 0f;\n        tapering = 1f;\n    }\n\n    var rBase = outerRadius * tapering;\n\n    // Layered flame: core (white) < inner (yellow/orange) < outer (red)\n    var coreR = coreRadius * tapering;\n    var innerR = innerRadius * tapering;\n\n    var d = flameDist / rBase;\n\n    if (d > 1f)\n    {\n        // Outer glow falloff\n        var glow = Math.Clamp((1.5f - d) / 0.5f, 0f, 1f) * intensity * 0.35f;\n        if (glow > 0.01f)\n        {\n            buffer.SetPixel(x, y, 1f * glow, 0.3f * glow, 0.05f * glow, glow * 0.5f);\n        }\n        else\n        {\n            buffer.SetPixel(x, y, 0, 0, 0, 0);\n        }\n        return;\n    }\n\n    var alpha = 1f - SmoothStep(0f, 1f, d);\n\n    // Core (white-hot center)\n    var coreD = flameDist / Math.Max(0.001f, coreR);\n    if (coreD < 1f)\n    {\n        var ca = 1f - SmoothStep(0f, 1f, coreD);\n        buffer.SetPixel(x, y, 1f, 0.95f, 0.8f, ca * intensity);\n        return;\n    }\n\n    // Inner flame (yellow/orange)\n    var innerD = flameDist / Math.Max(0.001f, innerR);\n    if (innerD < 1f)\n    {\n        var ia = 1f - SmoothStep(0f, 1f, innerD);\n        buffer.SetPixel(x, y, 1f, 0.8f + ia * 0.2f, 0.2f, ia * intensity);\n        return;\n    }\n\n    // Outer flame (red/orange)\n    var flicker = MathF.Sin(py * waviness * 0.5f + seed * 1.5f) * 0.1f + 0.9f;\n    var oa = alpha * intensity * flicker;\n    buffer.SetPixel(x, y, 0.95f, 0.4f * oa + 0.1f, 0.05f, oa);\n});\n\nreturn buffer;\n}"
+  }
+}

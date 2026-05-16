@@ -1,0 +1,106 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "OffsetWrap",
+    "displayName": {
+      "zh-Hans": "偏移环绕",
+      "en": "Offset Wrap"
+    },
+    "category": "ImageProcess",
+    "description": {
+      "zh-Hans": "将图像偏移图块大小的一部分并环绕边缘。主要用途：将接缝瑕疵暴露在中心以便手动或自动修复。这是「偏移+混合」无缝修复技术的前半部分。",
+      "en": "Offsets the image by a fraction of the tile size and wraps around edges. Primary use: expose seam artifacts at the center for manual or automated repair. This is the first half of the \"offset + blend\" seamless repair technique."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      }
+    ],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "X偏移",
+        "en": "Offset X"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "Y偏移",
+        "en": "Offset Y"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "旋转",
+        "en": "Rotation"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 360.0,
+      "step": 1.0
+    },
+    {
+      "name": {
+        "zh-Hans": "水平镜像",
+        "en": "Mirror H"
+      },
+      "kind": "Boolean",
+      "default": false
+    },
+    {
+      "name": {
+        "zh-Hans": "垂直镜像",
+        "en": "Mirror V"
+      },
+      "kind": "Boolean",
+      "default": false
+    }
+  ],
+  "ai": {
+    "capabilities": ["distort", "effect"],
+    "triggers": {
+      "zh-Hans": "偏移环绕, 平铺偏移, 循环偏移, 镜像偏移",
+      "en": "offset wrap, tile offset, cyclic offset, mirror offset"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "偏移并环绕平铺纹理，使其无缝拼接。",
+      "en": "Offset and wrap a tiled texture for seamless tiling."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar input = inputs.Length > 0 ? inputs[0] : null;\n        if (input is null)\n            return PixelBuffer.CreateSolid(context.TileSize, context.TileSize, 0, 0, 0);\n\n        var offsetX = GetFloat(parameters, \"offsetX\", 0.5f);\n        var offsetY = GetFloat(parameters, \"offsetY\", 0.5f);\n        var rotation = GetFloat(parameters, \"rotation\", 0f) * MathF.PI / 180f;\n        var mirrorH = GetBool(parameters, \"mirrorH\");\n        var mirrorV = GetBool(parameters, \"mirrorV\");\n\n        var w = input.Width;\n        var h = input.Height;\n        var dx = (int)MathF.Round(offsetX * w);\n        var dy = (int)MathF.Round(offsetY * h);\n        var cosR = MathF.Cos(rotation);\n        var sinR = MathF.Sin(rotation);\n\n        var result = new PixelBuffer(w, h);\n\n        result.ParallelForEachPixel((x, y) =>\n        {\n            var sx = x;\n            var sy = y;\n\n            // Mirror\n            if (mirrorH) sx = w - 1 - sx;\n            if (mirrorV) sy = h - 1 - sy;\n\n            // Rotation around center\n            if (MathF.Abs(rotation) > 0.001f)\n            {\n                var cx = sx - w * 0.5f;\n                var cy = sy - h * 0.5f;\n                sx = (int)MathF.Round(cx * cosR + cy * sinR + w * 0.5f);\n                sy = (int)MathF.Round(-cx * sinR + cy * cosR + h * 0.5f);\n            }\n\n            var (r, g, b, a) = input.GetPixelWrapped(sx + dx, sy + dy);\n            result.SetPixel(x, y, r, g, b, a);\n        });\n\n        return result;\n}"
+  }
+}

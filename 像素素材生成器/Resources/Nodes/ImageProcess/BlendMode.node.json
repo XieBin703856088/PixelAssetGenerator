@@ -1,0 +1,233 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "BlendMode",
+    "displayName": {
+      "zh-Hans": "混合模式",
+      "en": "Blend Mode"
+    },
+    "category": "ImageProcess",
+    "description": {
+      "zh-Hans": "使用标准混合模式（正常、正片叠底、滤色、叠加）混合两个输入图像。支持透明度和遮罩驱动混合。",
+      "en": "Blends two input images using standard blend modes (Normal, Multiply, Screen, Overlay). Supports opacity and mask-driven blending."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [
+      {
+        "name": {
+          "zh-Hans": "基底",
+          "en": "Base"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "顶层",
+          "en": "Top"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "遮罩",
+          "en": "Mask"
+        },
+        "type": "Mask"
+      }
+    ],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "混合模式",
+        "en": "Blend Mode"
+      },
+      "kind": "Choice",
+      "default": "normal",
+      "choices": [
+        {
+          "value": "normal",
+          "label": {
+            "zh-Hans": "正常",
+            "en": "normal"
+          }
+        },
+        {
+          "value": "multiply",
+          "label": {
+            "zh-Hans": "乘",
+            "en": "multiply"
+          }
+        },
+        {
+          "value": "screen",
+          "label": {
+            "zh-Hans": "滤色",
+            "en": "screen"
+          }
+        },
+        {
+          "value": "overlay",
+          "label": {
+            "zh-Hans": "叠加",
+            "en": "overlay"
+          }
+        },
+        {
+          "value": "softLight",
+          "label": {
+            "zh-Hans": "柔光",
+            "en": "softLight"
+          }
+        },
+        {
+          "value": "hardLight",
+          "label": {
+            "zh-Hans": "强光",
+            "en": "hardLight"
+          }
+        },
+        {
+          "value": "difference",
+          "label": {
+            "zh-Hans": "差值",
+            "en": "difference"
+          }
+        },
+        {
+          "value": "exclusion",
+          "label": {
+            "zh-Hans": "排除",
+            "en": "exclusion"
+          }
+        },
+        {
+          "value": "linearDodge",
+          "label": {
+            "zh-Hans": "线性减淡",
+            "en": "linearDodge"
+          }
+        },
+        {
+          "value": "linearBurn",
+          "label": {
+            "zh-Hans": "线性加深",
+            "en": "linearBurn"
+          }
+        },
+        {
+          "value": "colorDodge",
+          "label": {
+            "zh-Hans": "颜色减淡",
+            "en": "colorDodge"
+          }
+        },
+        {
+          "value": "colorBurn",
+          "label": {
+            "zh-Hans": "颜色加深",
+            "en": "colorBurn"
+          }
+        },
+        {
+          "value": "lighter",
+          "label": {
+            "zh-Hans": "变亮",
+            "en": "lighter"
+          }
+        },
+        {
+          "value": "darker",
+          "label": {
+            "zh-Hans": "变暗",
+            "en": "darker"
+          }
+        },
+        {
+          "value": "hue",
+          "label": {
+            "zh-Hans": "色调",
+            "en": "hue"
+          }
+        },
+        {
+          "value": "saturation",
+          "label": {
+            "zh-Hans": "饱和度",
+            "en": "saturation"
+          }
+        },
+        {
+          "value": "color",
+          "label": {
+            "zh-Hans": "颜色",
+            "en": "color"
+          }
+        },
+        {
+          "value": "luminosity",
+          "label": {
+            "zh-Hans": "明度",
+            "en": "luminosity"
+          }
+        },
+        {
+          "value": "dissolve",
+          "label": {
+            "zh-Hans": "溶解",
+            "en": "dissolve"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "zh-Hans": "不透明度",
+        "en": "Opacity"
+      },
+      "kind": "Number",
+      "default": 1.0,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "裁剪至基础层",
+        "en": "Clip To Base"
+      },
+      "kind": "Boolean",
+      "default": false
+    }
+  ],
+  "ai": {
+    "capabilities": ["blend"],
+    "triggers": {
+      "zh-Hans": "混合模式, 图层混合, 合成, 正片叠底, 滤色, 叠加",
+      "en": "blend mode, layer blend, composite, multiply, screen, overlay"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "使用正片叠底模式混合纹理图层和基底图像。",
+      "en": "Blend a texture layer with a base image using multiply mode."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar bottom = inputs.Length > 0 ? inputs[0] : null;\n        var top = inputs.Length > 1 ? inputs[1] : null;\n        var mask = inputs.Length > 2 ? inputs[2] : null;\n        var size = context.TileSize;\n\n        if (bottom is null && top is null)\n            return PixelBuffer.CreateSolid(size, size, 0, 0, 0);\n        if (bottom is null)\n            return top!.Clone();\n        if (top is null)\n            return bottom.Clone();\n\n        var mode = GetChoice(parameters, \"blendMode\", \"normal\");\n        var opacity = GetFloat(parameters, \"opacity\", 1f);\n        var clipToBase = GetBool(parameters, \"clipToBase\");\n\n        var result = new PixelBuffer(size, size);\n\n        result.ParallelForEachPixel((x, y) =>\n        {\n            var (br, bg, bb, ba) = bottom.GetPixelWrapped(x, y);\n            var (tr, tg, tb, ta) = top.GetPixelWrapped(x, y);\n\n            float blendR, blendG, blendB;\n            switch (mode)\n            {\n                case \"multiply\":\n                    blendR = br * tr;\n                    blendG = bg * tg;\n                    blendB = bb * tb;\n                    break;\n                case \"screen\":\n                    blendR = 1f - (1f - br) * (1f - tr);\n                    blendG = 1f - (1f - bg) * (1f - tg);\n                    blendB = 1f - (1f - bb) * (1f - tb);\n                    break;\n                case \"overlay\":\n                    blendR = br < 0.5f ? 2f * br * tr : 1f - 2f * (1f - br) * (1f - tr);\n                    blendG = bg < 0.5f ? 2f * bg * tg : 1f - 2f * (1f - bg) * (1f - tg);\n                    blendB = bb < 0.5f ? 2f * bb * tb : 1f - 2f * (1f - bb) * (1f - tb);\n                    break;\n                case \"softLight\":\n                    blendR = SoftLight(br, tr);\n                    blendG = SoftLight(bg, tg);\n                    blendB = SoftLight(bb, tb);\n                    break;\n                case \"hardLight\":\n                    blendR = tr < 0.5f ? 2f * br * tr : 1f - 2f * (1f - br) * (1f - tr);\n                    blendG = tg < 0.5f ? 2f * bg * tg : 1f - 2f * (1f - bg) * (1f - tg);\n                    blendB = tb < 0.5f ? 2f * bb * tb : 1f - 2f * (1f - bb) * (1f - tb);\n                    break;\n                case \"difference\":\n                    blendR = MathF.Abs(br - tr);\n                    blendG = MathF.Abs(bg - tg);\n                    blendB = MathF.Abs(bb - tb);\n                    break;\n                case \"exclusion\":\n                    blendR = br + tr - 2f * br * tr;\n                    blendG = bg + tg - 2f * bg * tg;\n                    blendB = bb + tb - 2f * bb * tb;\n                    break;\n                case \"linearDodge\":\n                    blendR = Math.Clamp(br + tr, 0f, 1f);\n                    blendG = Math.Clamp(bg + tg, 0f, 1f);\n                    blendB = Math.Clamp(bb + tb, 0f, 1f);\n                    break;\n                case \"linearBurn\":\n                    blendR = Math.Clamp(br + tr - 1f, 0f, 1f);\n                    blendG = Math.Clamp(bg + tg - 1f, 0f, 1f);\n                    blendB = Math.Clamp(bb + tb - 1f, 0f, 1f);\n                    break;\n                case \"colorDodge\":\n                    blendR = tr < 1f ? Math.Clamp(br / (1f - tr + 0.001f), 0f, 1f) : 1f;\n                    blendG = tg < 1f ? Math.Clamp(bg / (1f - tg + 0.001f), 0f, 1f) : 1f;\n                    blendB = tb < 1f ? Math.Clamp(bb / (1f - tb + 0.001f), 0f, 1f) : 1f;\n                    break;\n                case \"colorBurn\":\n                    blendR = tr > 0f ? Math.Clamp(1f - (1f - br) / (tr + 0.001f), 0f, 1f) : 0f;\n                    blendG = tg > 0f ? Math.Clamp(1f - (1f - bg) / (tg + 0.001f), 0f, 1f) : 0f;\n                    blendB = tb > 0f ? Math.Clamp(1f - (1f - bb) / (tb + 0.001f), 0f, 1f) : 0f;\n                    break;\n                case \"lighter\":\n                    blendR = MathF.Max(br, tr);\n                    blendG = MathF.Max(bg, tg);\n                    blendB = MathF.Max(bb, tb);\n                    break;\n                case \"darker\":\n                    blendR = MathF.Min(br, tr);\n                    blendG = MathF.Min(bg, tg);\n                    blendB = MathF.Min(bb, tb);\n                    break;\n                case \"hue\":\n                    {\n                        var (bh, bs, bl) = RgbToHsl(br, bg, bb);\n                        var (th, _, _) = RgbToHsl(tr, tg, tb);\n                        (blendR, blendG, blendB) = HslToRgb(th, bs, bl);\n                    }\n                    break;\n                case \"saturation\":\n                    {\n                        var (bh, bs, bl) = RgbToHsl(br, bg, bb);\n                        var (_, ts, _) = RgbToHsl(tr, tg, tb);\n                        (blendR, blendG, blendB) = HslToRgb(bh, ts, bl);\n                    }\n                    break;\n                case \"color\":\n                    {\n                        var (_, _, bl) = RgbToHsl(br, bg, bb);\n                        var (th, ts, _) = RgbToHsl(tr, tg, tb);\n                        (blendR, blendG, blendB) = HslToRgb(th, ts, bl);\n                    }\n                    break;\n                case \"luminosity\":\n                    {\n                        var (bh, bs, _) = RgbToHsl(br, bg, bb);\n                        var (_, _, tl) = RgbToHsl(tr, tg, tb);\n                        (blendR, blendG, blendB) = HslToRgb(bh, bs, tl);\n                    }\n                    break;\n                case \"dissolve\":\n                    blendR = tr;\n                    blendG = tg;\n                    blendB = tb;\n                    break;\n                default: // normal\n                    blendR = tr;\n                    blendG = tg;\n                    blendB = tb;\n                    break;\n            }\n\n            // Apply mask\n            var maskValue = mask is not null ? mask.GetValueWrapped(x, y) : 1f;\n            var effectiveOpacity = Math.Clamp(opacity * ta * maskValue, 0f, 1f);\n\n            // Clip to base: only blend where bottom has alpha\n            if (clipToBase)\n                effectiveOpacity *= ba;\n\n            // Dissolve: dither the opacity per pixel\n            if (mode == \"dissolve\")\n                effectiveOpacity = HashToUnit(x, y, 0) < effectiveOpacity ? 1f : 0f;\n\n            var outR = Lerp(br, blendR, effectiveOpacity);\n            var outG = Lerp(bg, blendG, effectiveOpacity);\n            var outB = Lerp(bb, blendB, effectiveOpacity);\n            var outA = clipToBase ? ba : ba + effectiveOpacity * (1f - ba);\n\n            result.SetPixel(x, y,\n                Math.Clamp(outR, 0f, 1f),\n                Math.Clamp(outG, 0f, 1f),\n                Math.Clamp(outB, 0f, 1f),\n                Math.Clamp(outA, 0f, 1f));\n        });\n\n        return result;\n\n\n    private static (float h, float s, float l) RgbToHsl(float r, float g, float b)\n    {\n        var max = MathF.Max(r, MathF.Max(g, b));\n        var min = MathF.Min(r, MathF.Min(g, b));\n        var delta = max - min;\n\n        var h = 0f;\n        var s = 0f;\n        var l = (max + min) * 0.5f;\n\n        if (delta > 0.001f)\n        {\n            s = l <= 0.5f ? delta / (max + min) : delta / (2f - max - min);\n            if (MathF.Abs(max - r) < 0.001f)\n                h = ((g - b) / delta + (g < b ? 6f : 0f)) * (1f / 6f);\n            else if (MathF.Abs(max - g) < 0.001f)\n                h = ((b - r) / delta + 2f) * (1f / 6f);\n            else\n                h = ((r - g) / delta + 4f) * (1f / 6f);\n        }\n\n        return (h, s, l);\n    }\n\n    private static (float r, float g, float b) HslToRgb(float h, float s, float l)\n    {\n        if (s < 0.001f)\n            return (l, l, l);\n\n        var hue2Rgb = (float p, float q, float t) =>\n        {\n            if (t < 0f) t += 1f;\n            if (t > 1f) t -= 1f;\n            if (t < 1f / 6f) return p + (q - p) * 6f * t;\n            if (t < 0.5f) return q;\n            if (t < 2f / 3f) return p + (q - p) * (2f / 3f - t) * 6f;\n            return p;\n        };\n\n        var q = l < 0.5f ? l * (1f + s) : l + s - l * s;\n        var p = 2f * l - q;\n\n        return (\n            hue2Rgb(p, q, h + 1f / 3f),\n            hue2Rgb(p, q, h),\n            hue2Rgb(p, q, h - 1f / 3f));\n    }\n\n    private static float SoftLight(float b, float t)\n    {\n        if (t <= 0.5f)\n            return b - (1f - 2f * t) * b * (1f - b);\n        else\n            return b + (2f * t - 1f) * (D(b) - b);\n    }\n\n    private static float D(float x)\n    {\n        return x <= 0.25f\n            ? ((16f * x - 12f) * x + 4f) * x\n            : MathF.Sqrt(x);\n    }\n}"
+  }
+}

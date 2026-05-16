@@ -1,0 +1,118 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "EnergyField",
+    "displayName": {
+      "zh-Hans": "能量场",
+      "en": "Energy Field"
+    },
+    "category": "Noise",
+    "description": {
+      "zh-Hans": "生成六边形网格能量场，线条交叉点带辉光效果并支持基于脉冲的亮度调制。实现IMultiOutputNode以提供独立的图像和遮罩输出端口。",
+      "en": "Generates a hexagonal-grid energy field with glow at line intersections and pulse-based brightness modulation. Implements IMultiOutputNode for separate image and mask ports."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "遮罩",
+          "en": "Mask"
+        },
+        "type": "Mask"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "种子",
+        "en": "Seed"
+      },
+      "kind": "Seed",
+      "default": 42,
+      "min": 0,
+      "max": 9999
+    },
+    {
+      "name": {
+        "zh-Hans": "密度",
+        "en": "Density"
+      },
+      "kind": "Number",
+      "default": 6.0,
+      "min": 2.0,
+      "max": 16.0,
+      "step": 1.0
+    },
+    {
+      "name": {
+        "zh-Hans": "强度",
+        "en": "Intensity"
+      },
+      "kind": "Number",
+      "default": 0.6,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "颜色",
+        "en": "Color"
+      },
+      "kind": "Color",
+      "default": "#28C8C8FF"
+    },
+    {
+      "name": {
+        "zh-Hans": "线宽",
+        "en": "Line Width"
+      },
+      "kind": "Number",
+      "default": 0.05,
+      "min": 0.02,
+      "max": 0.2,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "脉冲",
+        "en": "Pulse"
+      },
+      "kind": "Number",
+      "default": 0.3,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    }
+  ],
+  "ai": {
+    "capabilities": ["generate-noise", "procedural-texture", "atmospheric-effect", "sci-fi", "tileable"],
+    "triggers": {
+      "zh-Hans": "能量场, 力场, 六边形, 防护罩, 科幻",
+      "en": "energy field, force field, hexagonal grid, shield, sci-fi"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "生成六边形网格能量场效果，带辉光脉冲，可用于科幻场景的防护罩或能量屏障。",
+      "en": "Generates a hexagonal grid energy field with glow pulses for sci-fi force fields or energy barriers."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar seed = GetInt(parameters, \"seed\", context.Seed);\nvar density = GetFloat(parameters, \"density\", 6.0f);\nvar intensity = GetFloat(parameters, \"intensity\", 0.6f);\nvar color = GetColor(parameters, \"color\", System.Windows.Media.Color.FromRgb(40, 200, 200));\nvar lineWidth = GetFloat(parameters, \"lineWidth\", 0.05f);\nvar pulse = GetFloat(parameters, \"pulse\", 0.3f);\nvar size = context.TileSize;\nvar result = new PixelBuffer(size, size);\nvar cR=color.R/255f; var cG=color.G/255f; var cB=color.B/255f;\nresult.ParallelForEachPixel((x, y) =>\n{\n    var u = x / (float)size;\n    var v = y / (float)size;\n    var period = Math.Max(1, size);\n    // Distorted voronoi for energy tendrils\n    var (pu, pv) = PerturbUv(u * density, v * density, pulse, period, seed);\n    TileableVoronoi(pu * size / density, pv * size / density, Math.Max(1, (int)(size / density)), Math.Max(1, (int)density), seed, out var near, out var second, out _, out _);\n    var edge = second - near;\n    var glow = Math.Clamp(1f - edge / lineWidth, 0f, 1f);\n    glow = glow * glow * intensity;\n    result.SetPixel(x, y, cR * glow, cG * glow, cB * glow, 1f);\n});\nreturn result;\n}"
+  }
+}

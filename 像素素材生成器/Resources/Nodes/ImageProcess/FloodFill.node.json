@@ -1,0 +1,83 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "FloodFill",
+    "displayName": {
+      "zh-Hans": "填充",
+      "en": "Flood Fill"
+    },
+    "category": "ImageProcess",
+    "description": {
+      "zh-Hans": "从种子位置开始，对连通区域进行泛洪填充。",
+      "en": "Flood-fills a connected region starting from a seed position."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [
+      {
+        "name": {
+          "zh-Hans": "输入",
+          "en": "Input"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "种子位置",
+          "en": "SeedPosition"
+        },
+        "type": "Float"
+      }
+    ],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "输出",
+          "en": "Output"
+        },
+        "type": "Image"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "填充颜色",
+        "en": "Fill Color"
+      },
+      "kind": "Color",
+      "default": "#5A9FD4FF"
+    },
+    {
+      "name": {
+        "zh-Hans": "容差",
+        "en": "Tolerance"
+      },
+      "kind": "Number",
+      "default": 0.1,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    }
+  ],
+  "ai": {
+    "capabilities": ["filter", "effect"],
+    "triggers": {
+      "zh-Hans": "填充, 泛洪填充, 油漆桶, 区域填充",
+      "en": "flood fill, paint bucket, area fill, region fill"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "使用容差填充对像素艺术中的封闭区域进行颜色替换。",
+      "en": "Replace colors in a closed region of pixel art with tolerance-based flood fill."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "// Require input\n    if (inputs.Length == 0 || inputs[0] == null)\n    {\n        return PixelBufferPool.Borrow(context.TileSize, context.TileSize);\n    }\n\n    var input = inputs[0]!;\n    var size = context.TileSize;\n    var fillColor = GetColor(parameters, \"fillColor\", Colors.Red);\n    var tolerance = Math.Clamp(GetFloat(parameters, \"tolerance\", 0.1f), 0f, 1f);\n\n    var fR = fillColor.R / 255f;\n    var fG = fillColor.G / 255f;\n    var fB = fillColor.B / 255f;\n\n    // Determine seed position\n    int seedX, seedY;\n\n    if (inputs.Length > 1 && inputs[1] != null)\n    {\n        // For a single Float input, read the luminance-ish value (R channel) and map to position\n        // We'll read the center pixel of the optional buffer and use its R and G channels as normalized coords.\n        var (sr, sg, _, _) = inputs[1]!.GetPixel(0, 0);\n        seedX = Math.Clamp((int)(sr * (size - 1)), 0, size - 1);\n        seedY = Math.Clamp((int)(sg * (size - 1)), 0, size - 1);\n    }\n    else\n    {\n        // Default to center\n        seedX = size / 2;\n        seedY = size / 2;\n    }\n\n    var buffer = PixelBufferPool.Borrow(size, size);\n\n    // Copy input to buffer\n    buffer.ParallelForEachPixel((x, y) =>\n    {\n        var (r, g, b, a) = input.GetPixel(x, y);\n        buffer.SetPixel(x, y, r, g, b, a);\n    });\n\n    // Get the reference color at the seed point\n    var (refR, refG, refB, refA) = buffer.GetPixel(seedX, seedY);\n\n    // If seed color already matches (within tolerance), no fill needed\n    if (ColorMatch(refR, refG, refB, fR, fG, fB, tolerance))\n    {\n        return buffer;\n    }\n\n    // Scanline flood fill (iterative, stack-based)\n    var visited = new bool[size, size];\n    var stack = new Stack<(int x, int y)>();\n    stack.Push((seedX, seedY));\n\n    while (stack.Count > 0)\n    {\n        var (cx, cy) = stack.Pop();\n        if (cx < 0 || cx >= size || cy < 0 || cy >= size) continue;\n        if (visited[cy, cx]) continue;\n\n        var (cr, cg, cb, ca) = buffer.GetPixel(cx, cy);\n\n        // Check if this pixel matches the reference color\n        if (!ColorMatch(cr, cg, cb, refR, refG, refB, tolerance))\n            continue;\n\n        visited[cy, cx] = true;\n        buffer.SetPixel(cx, cy, fR, fG, fB, 1f);\n\n        stack.Push((cx - 1, cy));\n        stack.Push((cx + 1, cy));\n        stack.Push((cx, cy - 1));\n        stack.Push((cx, cy + 1));\n    }\n\n    return buffer;\n\n/// <summary>\n/// Checks if two colors match within the given tolerance (Euclidean distance in RGB space).\n/// </summary>\nprivate static bool ColorMatch(float r1, float g1, float b1, float r2, float g2, float b2, float tolerance)\n{\n    var dr = r1 - r2;\n    var dg = g1 - g2;\n    var db = b1 - b2;\n    var dist = MathF.Sqrt(dr * dr + dg * dg + db * db);\n    // Maximum possible distance in RGB cube is sqrt(3) ~ 1.732\n    return dist <= tolerance * 1.732f;\n    }"
+  }
+}

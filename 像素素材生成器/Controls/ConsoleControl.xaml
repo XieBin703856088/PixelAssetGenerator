@@ -1,0 +1,145 @@
+<UserControl x:Class="PixelAssetGenerator.Controls.ConsoleControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:loc="clr-namespace:PixelAssetGenerator.Services.Localization"
+             xmlns:models="clr-namespace:PixelAssetGenerator.Models"
+             mc:Ignorable="d"
+             d:DesignHeight="200" d:DesignWidth="800">
+    <UserControl.Resources>
+        <!-- 筛选开关按钮样式 -->
+        <Style x:Key="FilterToggleStyle" TargetType="ToggleButton">
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Padding" Value="8,2" />
+            <Setter Property="Margin" Value="2,0" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="BorderBrush" Value="{DynamicResource ControlBorder}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Border x:Name="Bg"
+                                Background="{DynamicResource ControlBackground}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="3"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
+                                              RecognizesAccessKey="True" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bg" Property="Opacity" Value="0.8" />
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="False">
+                                <Setter TargetName="Bg" Property="Opacity" Value="0.35" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- 工具栏：筛选按钮 -->
+        <Border Grid.Row="0"
+                Background="Transparent"
+                Padding="0,0,0,4">
+            <StackPanel Orientation="Horizontal">
+                <ToggleButton x:Name="FilterErrorsBtn" IsChecked="True"
+                              Style="{StaticResource FilterToggleStyle}"
+                              Foreground="#FF6464"
+                              Checked="FilterToggle_Checked" Unchecked="FilterToggle_Checked"
+                              Content="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[Console_FilterError]}" />
+                <ToggleButton x:Name="FilterWarningsBtn" IsChecked="True"
+                              Style="{StaticResource FilterToggleStyle}"
+                              Foreground="#FFC850"
+                              Checked="FilterToggle_Checked" Unchecked="FilterToggle_Checked"
+                              Content="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[Console_FilterWarning]}" />
+                <ToggleButton x:Name="FilterInfosBtn" IsChecked="True"
+                              Style="{StaticResource FilterToggleStyle}"
+                              Foreground="#DCDCDC"
+                              Checked="FilterToggle_Checked" Unchecked="FilterToggle_Checked"
+                              Content="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[Console_FilterInfo]}" />
+                <ToggleButton x:Name="FilterDebugsBtn" IsChecked="True"
+                              Style="{StaticResource FilterToggleStyle}"
+                              Foreground="#8C8C8C"
+                              Checked="FilterToggle_Checked" Unchecked="FilterToggle_Checked"
+                              Content="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[Console_FilterDebug]}" />
+                <Separator Width="1" Background="{DynamicResource ControlBorder}" Margin="8,2" />
+                <TextBlock x:Name="EntryCountText" Text="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[Console_Count]}"
+                           Foreground="{DynamicResource MutedText}"
+                           FontSize="11" VerticalAlignment="Center" Margin="4,0" />
+                <Border CornerRadius="3"
+                        Background="{DynamicResource ControlBackground}"
+                        BorderBrush="{DynamicResource ControlBorder}"
+                        BorderThickness="1"
+                        Margin="4,0">
+                    <Button x:Name="CopyBtn"
+                            Content="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[Console_Copy]}"
+                            FontSize="11"
+                            Padding="6,2"
+                            Cursor="Hand"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            Click="CopyBtn_Click" />
+                </Border>
+                <Border CornerRadius="3"
+                        Background="{DynamicResource ControlBackground}"
+                        BorderBrush="{DynamicResource ControlBorder}"
+                        BorderThickness="1"
+                        Margin="4,0">
+                    <Button x:Name="ClearBtn"
+                            Content="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[Console_Clear]}"
+                            FontSize="11"
+                            Padding="6,2"
+                            Cursor="Hand"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            Click="ClearBtn_Click" />
+                </Border>
+            </StackPanel>
+        </Border>
+
+        <!-- 消息列表 -->
+        <ListBox Grid.Row="1"
+                 x:Name="MessageList"
+                 Background="{DynamicResource WindowBackground}"
+                 BorderThickness="1"
+                 BorderBrush="{DynamicResource ControlBorder}"
+                 ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                 VirtualizingStackPanel.IsVirtualizing="True"
+                 VirtualizingStackPanel.VirtualizationMode="Recycling"
+                 ItemsSource="{Binding}"
+                 SelectionMode="Extended">
+            <ListBox.ItemTemplate>
+                <DataTemplate DataType="models:ConsoleEntry">
+                    <TextBlock Text="{Binding FormattedText}"
+                               Foreground="{Binding TextBrush}"
+                               FontFamily="Consolas, 'Microsoft YaHei Mono', 'Noto Sans CJK SC', 'Source Han Sans SC', 'Droid Sans Fallback', 'SimHei', 'NSimSum', monospace"
+                               FontSize="12"
+                               TextWrapping="NoWrap"
+                               Padding="4,1" />
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+            <ListBox.ContextMenu>
+                <ContextMenu>
+                    <MenuItem Header="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[Console_CopySelected]}" Click="CopySelected_Click" InputGestureText="Ctrl+C" />
+                    <MenuItem Header="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[Console_CopyAll]}" Click="CopyAll_Click" InputGestureText="Ctrl+Shift+C" />
+                    <Separator />
+                    <MenuItem Header="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[Console_SelectAll]}" Click="SelectAll_Click" InputGestureText="Ctrl+A" />
+                    <MenuItem Header="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[Console_Clear]}" Click="ClearBtn_Click" />
+                </ContextMenu>
+            </ListBox.ContextMenu>
+        </ListBox>
+    </Grid>
+</UserControl>

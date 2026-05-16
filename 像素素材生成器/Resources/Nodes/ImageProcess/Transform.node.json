@@ -1,0 +1,191 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "Transform",
+    "displayName": {
+      "zh-Hans": "变换",
+      "en": "Transform"
+    },
+    "category": "ImageProcess",
+    "description": {
+      "zh-Hans": "对输入图像应用平移、旋转和缩放变换，支持无缝的图块感知环绕。现支持独立X/Y缩放，可制作拉伸/挤压效果。",
+      "en": "Applies translation, rotation, and scaling transforms to an input image with seamless tile-aware wrapping. Now supports independent X/Y scaling for stretch/squeeze effects."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "2.0"
+  },
+  "ports": {
+    "inputs": [
+      {
+        "name": {
+          "zh-Hans": "源图像",
+          "en": "SourceImage"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "位移贴图",
+          "en": "DisplacementMap"
+        },
+        "type": "Image"
+      }
+    ],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "输出",
+          "en": "Output"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "遮罩",
+          "en": "Mask"
+        },
+        "type": "Mask"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "X偏移",
+        "en": "Offset X"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": -1.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "Y偏移",
+        "en": "Offset Y"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": -1.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "旋转角度",
+        "en": "Rotation Angle"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": -180.0,
+      "max": 180.0,
+      "step": 1.0
+    },
+    {
+      "name": {
+        "zh-Hans": "缩放X",
+        "en": "Scale X"
+      },
+      "kind": "Number",
+      "default": 1.0,
+      "min": 0.1,
+      "max": 4.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "缩放Y",
+        "en": "Scale Y"
+      },
+      "kind": "Number",
+      "default": 1.0,
+      "min": 0.1,
+      "max": 4.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "缩放中心X",
+        "en": "Scale Center X"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "缩放中心Y",
+        "en": "Scale Center Y"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "位移强度",
+        "en": "Displacement Strength"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 0.5,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "重采样方式",
+        "en": "Resample Mode"
+      },
+      "kind": "Choice",
+      "default": "nearest",
+      "choices": [
+        {
+          "value": "nearest",
+          "label": {
+            "zh-Hans": "最近邻",
+            "en": "nearest"
+          }
+        },
+        {
+          "value": "bilinear",
+          "label": {
+            "zh-Hans": "双线性",
+            "en": "bilinear"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "zh-Hans": "无缝",
+        "en": "Seamless"
+      },
+      "kind": "Boolean",
+      "default": true
+    }
+  ],
+  "ai": {
+    "capabilities": ["transform"],
+    "triggers": {
+      "zh-Hans": "变换, 缩放, 旋转, 位移, 镜像, 几何变换",
+      "en": "transform, scale, rotate, translate, mirror, geometric transform"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "将缩放X设为2.0,缩放Y设为1.0可制作横向拉伸纹理。使用双线性插值获得平滑缩放，最近邻保持像素风锐利边缘。",
+      "en": "Set Scale X=2.0, Scale Y=1.0 for horizontal stretch. Use bilinear for smooth scaling, nearest for pixel-art sharp edges."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar src = inputs.Length > 0 ? inputs[0] : null;\nvar dispMap = inputs.Length > 1 ? inputs[1] : null;\nif (src == null)\n    return new PixelBuffer(context.TileSize, context.TileSize);\n\nvar offsetX = GetFloat(parameters, \"offsetX\", 0f);\nvar offsetY = GetFloat(parameters, \"offsetY\", 0f);\nvar angle = GetFloat(parameters, \"rotationAngle\", 0f);\nvar scaleX = GetFloat(parameters, \"scaleX\", 1f);\nvar scaleY = GetFloat(parameters, \"scaleY\", 1f);\nvar centerX = GetFloat(parameters, \"scaleCenterX\", 0.5f);\nvar centerY = GetFloat(parameters, \"scaleCenterY\", 0.5f);\nvar dispStrength = GetFloat(parameters, \"displacementStrength\", 0f);\nvar resample = GetChoice(parameters, \"resampleMode\", \"nearest\");\nvar seamless = GetBool(parameters, \"seamless\", true);\n\nvar size = context.TileSize;\nvar result = new PixelBuffer(size, size);\nvar angleRad = angle * MathF.PI / 180f;\nvar cosA = MathF.Cos(angleRad);\nvar sinA = MathF.Sin(angleRad);\nvar cx = centerX * size;\nvar cy = centerY * size;\n\nresult.ParallelForEachPixel((x, y) =>\n{\n    // Apply displacement from displacement map\n    float dx = 0, dy = 0;\n    if (dispMap != null && dispStrength > 0)\n    {\n        var (dr, dg, _, _) = dispMap.GetPixel(x, y);\n        dx = (dr - 0.5f) * dispStrength * size;\n        dy = (dg - 0.5f) * dispStrength * size;\n    }\n\n    // Apply offset\n    var u = x + offsetX * size + dx;\n    var v = y + offsetY * size + dy;\n\n    // Apply rotation and independent X/Y scaling around center\n    var rx = u - cx;\n    var ry = v - cy;\n    // Divide by scale factors separately (undo the scaling)\n    var sx = cosA * rx / MathF.Max(0.01f, scaleX) - sinA * ry / MathF.Max(0.01f, scaleY) + cx;\n    var sy = sinA * rx / MathF.Max(0.01f, scaleX) + cosA * ry / MathF.Max(0.01f, scaleY) + cy;\n\n    // Sample source at (sx, sy)\n    float pr, pg, pb, pa;\n\n    if (resample == \"bilinear\")\n    {\n        BilinearSample(src, sx, sy, seamless, size, out pr, out pg, out pb, out pa);\n    }\n    else\n    {\n        int si, sj;\n        if (seamless)\n        {\n            si = ((int)MathF.Round(sx) % size + size) % size;\n            sj = ((int)MathF.Round(sy) % size + size) % size;\n        }\n        else\n        {\n            si = (int)MathF.Round(sx);\n            sj = (int)MathF.Round(sy);\n        }\n\n        if (si >= 0 && si < size && sj >= 0 && sj < size)\n        {\n            (pr, pg, pb, pa) = src.GetPixel(si, sj);\n        }\n        else\n        {\n            pr = 0; pg = 0; pb = 0; pa = 0;\n        }\n    }\n\n    result.SetPixel(x, y, pr, pg, pb, pa);\n});\n\nreturn result;\n\n\n/// <summary>\n/// Samples source at floating-point (sx, sy) with bilinear interpolation.\n/// Supports seamless wrapping and edge clamping.\n/// </summary>\nprivate static void BilinearSample(PixelBuffer src, float sx, float sy, bool seamless, int size,\n    out float r, out float g, out float b, out float a)\n{\n    // Integer pixel coordinates (floor for bilinear quad)\n    var ix = (int)MathF.Floor(sx);\n    var iy = (int)MathF.Floor(sy);\n    var fx = sx - ix;\n    var fy = sy - iy;\n\n    // Four corner coordinates\n    int x0, y0, x1, y1;\n    if (seamless)\n    {\n        x0 = ((ix % size) + size) % size;\n        y0 = ((iy % size) + size) % size;\n        x1 = ((ix + 1 % size) + size) % size;\n        y1 = ((iy + 1 % size) + size) % size;\n    }\n    else\n    {\n        x0 = Math.Clamp(ix, 0, size - 1);\n        y0 = Math.Clamp(iy, 0, size - 1);\n        x1 = Math.Clamp(ix + 1, 0, size - 1);\n        y1 = Math.Clamp(iy + 1, 0, size - 1);\n    }\n\n    var (r00, g00, b00, a00) = src.GetPixel(x0, y0);\n    var (r10, g10, b10, a10) = src.GetPixel(x1, y0);\n    var (r01, g01, b01, a01) = src.GetPixel(x0, y1);\n    var (r11, g11, b11, a11) = src.GetPixel(x1, y1);\n\n    // Bilinear interpolation\n    var w00 = (1f - fx) * (1f - fy);\n    var w10 = fx * (1f - fy);\n    var w01 = (1f - fx) * fy;\n    var w11 = fx * fy;\n\n    r = r00 * w00 + r10 * w10 + r01 * w01 + r11 * w11;\n    g = g00 * w00 + g10 * w10 + g01 * w01 + g11 * w11;\n    b = b00 * w00 + b10 * w10 + b01 * w01 + b11 * w11;\n    a = a00 * w00 + a10 * w10 + a01 * w01 + a11 * w11;\n}\n}"
+  }
+}

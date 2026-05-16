@@ -1,0 +1,237 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "Noise",
+    "displayName": {
+      "zh-Hans": "噪波",
+      "en": "Noise"
+    },
+    "category": "Noise",
+    "description": {
+      "zh-Hans": "生成可平铺的分形噪波。输出灰度图像（R=G=B=噪波值，A=1）。内部使用周期噪波保证无缝平铺。",
+      "en": "Generates tileable fractal noise. Outputs a grayscale image (R=G=B=noise, A=1). Internally uses periodic noise to guarantee seamless tiling."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "遮罩",
+          "en": "Mask"
+        },
+        "type": "Mask"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "种子",
+        "en": "Seed"
+      },
+      "kind": "Seed",
+      "default": 42,
+      "min": 0,
+      "max": 9999
+    },
+    {
+      "name": {
+        "zh-Hans": "缩放",
+        "en": "Scale"
+      },
+      "kind": "Number",
+      "default": 5.0,
+      "min": 0.1,
+      "max": 50.0,
+      "step": 0.1
+    },
+    {
+      "name": {
+        "zh-Hans": "八度",
+        "en": "Octaves"
+      },
+      "kind": "Integer",
+      "default": 3,
+      "min": 1,
+      "max": 8,
+      "step": 1
+    },
+    {
+      "name": {
+        "zh-Hans": "持续度",
+        "en": "Persistence"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "空隙度",
+        "en": "Lacunarity"
+      },
+      "kind": "Number",
+      "default": 2.0,
+      "min": 1.0,
+      "max": 4.0,
+      "step": 0.1
+    },
+    {
+      "name": {
+        "zh-Hans": "类型",
+        "en": "Type"
+      },
+      "kind": "Choice",
+      "default": "Value",
+      "choices": [
+        {
+          "value": "Value",
+          "label": {
+            "zh-Hans": "值噪波",
+            "en": "Value"
+          }
+        },
+        {
+          "value": "Gradient",
+          "label": {
+            "zh-Hans": "梯度噪波",
+            "en": "Gradient"
+          }
+        },
+        {
+          "value": "Voronoi",
+          "label": {
+            "zh-Hans": "沃罗诺伊",
+            "en": "Voronoi"
+          }
+        },
+        {
+          "value": "Ridge",
+          "label": {
+            "zh-Hans": "脊状",
+            "en": "Ridge"
+          }
+        },
+        {
+          "value": "Turbulence",
+          "label": {
+            "zh-Hans": "湍流",
+            "en": "Turbulence"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "zh-Hans": "亮度",
+        "en": "Brightness"
+      },
+      "kind": "Number",
+      "default": 0.1,
+      "min": -1.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "对比度",
+        "en": "Contrast"
+      },
+      "kind": "Number",
+      "default": 0.15,
+      "min": -1.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "X偏移",
+        "en": "Offset X"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": -1.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "Y偏移",
+        "en": "Offset Y"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": -1.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "低阈值",
+        "en": "Low Threshold"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "高阈值",
+        "en": "High Threshold"
+      },
+      "kind": "Number",
+      "default": 1.0,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "反相",
+        "en": "Invert"
+      },
+      "kind": "Boolean",
+      "default": false
+    },
+    {
+      "name": {
+        "zh-Hans": "彩色输出",
+        "en": "Color Output"
+      },
+      "kind": "Boolean",
+      "default": false
+    }
+  ],
+  "ai": {
+    "capabilities": ["generate-noise", "procedural-texture", "fundamental", "tileable"],
+    "triggers": {
+      "zh-Hans": "噪波, 噪声, 分形, 随机纹理, 值噪波, 梯度噪波, 沃罗诺伊, 脊状, 湍流",
+      "en": "noise, fractal, random texture, value noise, gradient, voronoi, ridge, turbulence"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "生成可平铺的分形噪波，可作为其他纹理节点的基础输入。",
+      "en": "Generates tileable fractal noise that can be used as base input for other texture nodes."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar seed = GetInt(parameters, \"seed\", context.Seed);\n        var scale = GetFloat(parameters, \"scale\", 5f);\n        var octaves = GetInt(parameters, \"octaves\", 3);\n        var persistence = GetFloat(parameters, \"persistence\", 0.5f);\n        var lacunarity = GetFloat(parameters, \"lacunarity\", 2f);\n        var noiseType = GetChoice(parameters, \"type\", \"Value\");\n        var brightness = GetFloat(parameters, \"brightness\", 0f);\n        var contrast = GetFloat(parameters, \"contrast\", 0f);\n        var offsetX = GetFloat(parameters, \"offsetX\", 0f);\n        var offsetY = GetFloat(parameters, \"offsetY\", 0f);\n        var threshLow = GetFloat(parameters, \"lowThreshold\", 0f);\n        var threshHigh = GetFloat(parameters, \"highThreshold\", 1f);\n        var invert = GetBool(parameters, \"invert\");\n        var colorOutput = GetBool(parameters, \"colorOutput\");\n\n        var size = context.TileSize;\n        var buffer = new PixelBuffer(size, size);\n        buffer.ParallelForEachPixel((x, y) =>\n        {\n            var nx = (x / (float)size + offsetX) * scale;\n            var ny = (y / (float)size + offsetY) * scale;\n            var period = Math.Max(1, (int)MathF.Round(scale));\n\n            float v;\n            switch (noiseType)\n            {\n                case \"Gradient\":\n                    v = 0f;\n                    float amp = 1f, freq = 1f, maxAmp = 0f;\n                    for (var o = 0; o < octaves; o++)\n                    {\n                        var op = Math.Max(1, (int)MathF.Round(period * freq));\n                        v += TileableGradientNoise(nx * freq, ny * freq, op, seed + o * 1013) * amp;\n                        maxAmp += amp;\n                        amp *= persistence;\n                        freq *= lacunarity;\n                    }\n                    v = maxAmp > 0 ? v / maxAmp : 0.5f;\n                    break;\n\n                case \"Voronoi\":\n                    var cellSize = Math.Max(1, size / Math.Max(1, (int)scale));\n                    var cellCount = Math.Max(1, size / cellSize);\n                    // Apply offset in pixel space so Voronoi position is consistent with other noise types.\n                    var vx = x + offsetX * size;\n                    var vy = y + offsetY * size;\n                    TileableVoronoi(vx, vy, cellSize, cellCount, seed, out var nearest, out _, out _, out _);\n                    v = nearest;\n                    break;\n\n                case \"Ridge\":\n                    v = TileableFractalNoise(nx, ny, period, octaves, persistence, lacunarity, seed);\n                    v = 1f - MathF.Abs(v * 2f - 1f);\n                    break;\n\n                case \"Turbulence\":\n                    v = TileableFractalNoise(nx, ny, period, octaves, persistence, lacunarity, seed);\n                    v = MathF.Abs(v * 2f - 1f);\n                    break;\n\n                default: // \"Value\"\n                    v = TileableFractalNoise(nx, ny, period, octaves, persistence, lacunarity, seed);\n                    break;\n            }\n\n            v = Math.Clamp(v, 0f, 1f);\n\n            if (colorOutput)\n            {\n                var vr = TileableFractalNoise(nx, ny, period, octaves, persistence, lacunarity, seed);\n                var vg = TileableFractalNoise(nx, ny, period, octaves, persistence, lacunarity, seed + 317);\n                var vb = TileableFractalNoise(nx, ny, period, octaves, persistence, lacunarity, seed + 631);\n                buffer.SetPixel(x, y, vr, vg, vb, 1f);\n            }\n            else\n            {\n                buffer.SetPixel(x, y, v, v, v, 1f);\n            }\n        });\n\n        // Apply post-processing via GPU or CPU fallback.\n        if (!GpuProcessor.TryPostProcess(buffer, brightness, contrast, threshLow, threshHigh, invert, colorOutput))\n        {\n            ApplyPostProcessInPlace(buffer, brightness, contrast, threshLow, threshHigh, invert, colorOutput);\n        }\n\n        return buffer;\n\n    /// <summary>\n    /// CPU fallback for post-processing. Operates on the buffer in-place.\n    /// Mirror of GPU PostProcessInPlace logic.\n    /// </summary>\n    private static void ApplyPostProcessInPlace(PixelBuffer buffer, float brightness, float contrast,\n        float threshLow, float threshHigh, bool invert, bool colorOutput)\n    {\n        buffer.ParallelForEachPixel((x, y) =>\n        {\n            var (r, g, b, a) = buffer.GetPixel(x, y);\n\n            if (colorOutput)\n            {\n                if (threshHigh > threshLow)\n                {\n                    r = Math.Clamp((r - threshLow) / (threshHigh - threshLow), 0f, 1f);\n                    g = Math.Clamp((g - threshLow) / (threshHigh - threshLow), 0f, 1f);\n                    b = Math.Clamp((b - threshLow) / (threshHigh - threshLow), 0f, 1f);\n                }\n\n                if (MathF.Abs(contrast) > 0.001f)\n                {\n                    var factor = 1f + contrast;\n                    r = (r - 0.5f) * factor + 0.5f;\n                    g = (g - 0.5f) * factor + 0.5f;\n                    b = (b - 0.5f) * factor + 0.5f;\n                }\n\n                r = Math.Clamp(r + brightness, 0f, 1f);\n                g = Math.Clamp(g + brightness, 0f, 1f);\n                b = Math.Clamp(b + brightness, 0f, 1f);\n\n                if (invert) { r = 1f - r; g = 1f - g; b = 1f - b; }\n\n                buffer.SetPixel(x, y, r, g, b, a);\n            }\n            else\n            {\n                // All channels are identical for grayscale mode; sample r as the value.\n                var v = r;\n                if (threshHigh > threshLow)\n                    v = Math.Clamp((v - threshLow) / (threshHigh - threshLow), 0f, 1f);\n\n                if (MathF.Abs(contrast) > 0.001f)\n                {\n                    var factor = 1f + contrast;\n                    v = (v - 0.5f) * factor + 0.5f;\n                }\n\n                v = Math.Clamp(v + brightness, 0f, 1f);\n                if (invert) v = 1f - v;\n\n                buffer.SetPixel(x, y, v, v, v, a);\n            }\n        });\n    }\n}"
+  }
+}

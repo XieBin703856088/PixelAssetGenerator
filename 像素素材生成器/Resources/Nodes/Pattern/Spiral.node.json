@@ -1,0 +1,142 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "Spiral",
+    "displayName": {
+      "zh-Hans": "螺旋",
+      "en": "Spiral"
+    },
+    "category": "Pattern",
+    "description": {
+      "zh-Hans": "生成螺旋图案——阿基米德螺旋和对数螺旋。支持多臂螺旋、厚度和可选的噪声扭曲。",
+      "en": "Generates spiral patterns — Archimedean and logarithmic. Supports multi-arm spirals, thickness, and optional noise distortion."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "遮罩",
+          "en": "Mask"
+        },
+        "type": "Mask"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "种子",
+        "en": "Seed"
+      },
+      "kind": "Seed",
+      "default": 42,
+      "min": 0,
+      "max": 9999
+    },
+    {
+      "name": {
+        "zh-Hans": "螺旋类型",
+        "en": "Spiral Type"
+      },
+      "kind": "Choice",
+      "default": "archimedean",
+      "choices": [
+        {
+          "value": "archimedean",
+          "label": {
+            "zh-Hans": "阿基米德",
+            "en": "archimedean"
+          }
+        },
+        {
+          "value": "logarithmic",
+          "label": {
+            "zh-Hans": "对数",
+            "en": "logarithmic"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "zh-Hans": "臂数",
+        "en": "Arms"
+      },
+      "kind": "Number",
+      "default": 2.0,
+      "min": 1.0,
+      "max": 12.0,
+      "step": 1.0
+    },
+    {
+      "name": {
+        "zh-Hans": "圈数",
+        "en": "Turns"
+      },
+      "kind": "Number",
+      "default": 3.0,
+      "min": 1.0,
+      "max": 10.0,
+      "step": 0.5
+    },
+    {
+      "name": {
+        "zh-Hans": "线宽",
+        "en": "Line Width"
+      },
+      "kind": "Number",
+      "default": 0.08,
+      "min": 0.01,
+      "max": 0.3,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "畸变",
+        "en": "Distortion"
+      },
+      "kind": "Number",
+      "default": 0.1,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "反相",
+        "en": "Invert"
+      },
+      "kind": "Boolean",
+      "default": false
+    }
+  ],
+  "ai": {
+    "capabilities": ["pattern", "geometric", "gradient"],
+    "triggers": {
+      "zh-Hans": "螺旋, 阿基米德螺旋, 对数螺旋, 旋涡",
+      "en": "spiral, archimedean spiral, logarithmic spiral, swirl"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "生成一个多臂阿基米德螺旋图案，用于像素艺术中的旋涡或装饰效果。",
+      "en": "Generate a multi-arm Archimedean spiral pattern for swirl or decorative effects in pixel art."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar seed = GetInt(parameters, \"seed\", context.Seed);\nvar spiralType = GetChoice(parameters, \"spiralType\", \"archimedean\");\nvar arms = GetFloat(parameters, \"arms\", 1);\nvar turns = GetFloat(parameters, \"turns\", 3);\nvar lineWidth = GetFloat(parameters, \"lineWidth\", 0.08f);\nvar distortion = GetFloat(parameters, \"distortion\", 0f);\nvar invert = GetBool(parameters, \"invert\", false);\n\nvar size = context.TileSize;\nvar buffer = new PixelBuffer(size, size);\nvar mask = new PixelBuffer(size, size);\n\nbuffer.ParallelForEachPixel((x, y) =>\n{\n    var u = (x + 0.5f) / size * 2f - 1f;\n    var v = (y + 0.5f) / size * 2f - 1f;\n\n    var r = MathF.Sqrt(u * u + v * v);\n    var theta = MathF.Atan2(v, u);\n\n    // Noise distortion\n    if (distortion > 0f)\n    {\n        var d = TileableFractalNoise(u * 2f + 5f, v * 2f + 5f, 8, 2, 0.5f, 2f, seed) * distortion * 0.5f;\n        r += d * 0.3f;\n    }\n\n    var spiralVal = 0f;\n    switch (spiralType)\n    {\n        case \"logarithmic\":\n            // log spiral: r = a * e^(b*theta)\n            theta += arms * MathF.Log(r + 0.001f) * turns;\n            break;\n        default: // archimedean\n            // Archimedean: r = a + b*theta\n            theta = (r * turns * MathF.PI * 2f - theta * arms) * arms;\n            break;\n    }\n\n    var dTheta = MathF.Abs(MathF.IEEERemainder(theta, MathF.PI * 2f / arms));\n    var dist = MathF.Min(dTheta, MathF.PI * 2f / arms - dTheta) / (MathF.PI * 2f / arms);\n    spiralVal = 1f - SmoothStep(0f, lineWidth, dist);\n\n    // Fade at edges\n    var fade = 1f - SmoothStep(0.7f, 1f, r);\n    spiralVal *= fade;\n\n    if (invert) spiralVal = 1f - spiralVal;\n\n    buffer.SetPixel(x, y, spiralVal, spiralVal, spiralVal, 1f);\n    mask.SetPixel(x, y, spiralVal, spiralVal, spiralVal, 1f);\n});\n\nreturn buffer;\n}"
+  }
+}

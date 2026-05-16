@@ -1,0 +1,104 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "TileStone",
+    "displayName": {
+      "zh-Hans": "石材",
+      "en": "Stone"
+    },
+    "category": "Generate",
+    "description": {
+      "zh-Hans": "石材图块",
+      "en": "Stone tile"
+    },
+    "tags": [
+      "tile",
+      "stone"
+    ],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "种子",
+        "en": "Seed"
+      },
+      "kind": "Integer",
+      "default": 42,
+      "min": 0,
+      "max": 9999
+    },
+    {
+      "name": {
+        "zh-Hans": "横向砖块数",
+        "en": "Horizontal Tile Count"
+      },
+      "kind": "Integer",
+      "default": 3,
+      "min": 1,
+      "max": 12
+    },
+    {
+      "name": {
+        "zh-Hans": "纵向砖块数",
+        "en": "Vertical Tile Count"
+      },
+      "kind": "Integer",
+      "default": 3,
+      "min": 1,
+      "max": 12
+    },
+    {
+      "name": {
+        "zh-Hans": "裂纹密度",
+        "en": "Crack Density"
+      },
+      "kind": "Number",
+      "default": 0.3,
+      "min": 0,
+      "max": 1,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "苔藓密度",
+        "en": "Moss Density"
+      },
+      "kind": "Number",
+      "default": 0.3,
+      "min": 0,
+      "max": 1,
+      "step": 0.01
+    }
+  ],
+  "ai": {
+    "capabilities": ["generate-tile", "procedural-texture", "tileable", "structural"],
+    "triggers": {
+      "zh-Hans": "石材, 石头, 砖块, 石板路, 地砖",
+      "en": "stone, brick, cobblestone, paver, flagstone"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "生成一块可平铺的像素艺术石材图块，支持裂纹和苔藓细节。",
+      "en": "Generates a tileable pixel-art stone tile with crack and moss details."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "static float DistanceToSeg(float px, float py, float ax, float ay, float bx, float by)\n{\n    var sx = bx - ax;\n    var sy = by - ay;\n    var lenSq = sx * sx + sy * sy;\n    if (lenSq < 0.000001f)\n    {\n        var dx = px - ax;\n        var dy = py - ay;\n        return MathF.Sqrt(dx * dx + dy * dy);\n    }\n    var t = Math.Clamp(((px - ax) * sx + (py - ay) * sy) / lenSq, 0f, 1f);\n    var nx = ax + sx * t;\n    var ny = ay + sy * t;\n    var dx2 = px - nx;\n    var dy2 = py - ny;\n    return MathF.Sqrt(dx2 * dx2 + dy2 * dy2);\n}\n\nstatic float SegMask(float px, float py, float ax, float ay, float bx, float by, float w)\n{\n    var d = DistanceToSeg(px, py, ax, ay, bx, by);\n    return 1f - SmoothStep(w, w + 0.02f, d);\n}\n\nstatic float FractureMask(float lx, float ly, int bw, int bh, int bx, int by, int sd, float dens, float wScale)\n{\n    var crackPresence = 0.08f + dens * 0.82f;\n    if (HashToUnit(bx, by, sd + 205) > crackPresence) return 0f;\n\n    var aspect = bw / (float)Math.Max(1, bh);\n    var routeSelector = HashToUnit(bx, by, sd + 211);\n    var startOff = 0.18f + HashToUnit(bx, by, sd + 223) * 0.2f;\n    var endOff = 0.62f + HashToUnit(bx, by, sd + 227) * 0.2f;\n\n    float saX, saY, eaX, eaY;\n\n    if (aspect > 1.25f)\n    {\n        if (routeSelector < 0.62f) { saX = 0.22f + startOff * 0.45f; saY = 0f; eaX = 0.54f + endOff * 0.25f; eaY = 1f; }\n        else { saX = 0f; saY = startOff; eaX = 1f; eaY = 0.58f + endOff * 0.18f; }\n    }\n    else if (aspect < 0.8f)\n    {\n        if (routeSelector < 0.62f) { saX = 0f; saY = 0.22f + startOff * 0.45f; eaX = 1f; eaY = 0.54f + endOff * 0.25f; }\n        else { saX = startOff; saY = 0f; eaX = 0.58f + endOff * 0.18f; eaY = 1f; }\n    }\n    else if (routeSelector < 0.28f) { saX = 0f; saY = startOff; eaX = 1f; eaY = 0.58f + endOff * 0.18f; }\n    else if (routeSelector < 0.56f) { saX = 0.22f + startOff * 0.45f; saY = 0f; eaX = 0.54f + endOff * 0.25f; eaY = 1f; }\n    else if (routeSelector < 0.78f) { saX = 0f; saY = 0.62f + startOff * 0.18f; eaX = 1f; eaY = 0.18f + endOff * 0.2f; }\n    else { saX = 0.62f + startOff * 0.18f; saY = 0f; eaX = 0.18f + endOff * 0.2f; eaY = 1f; }\n\n    var dX = eaX - saX;\n    var dY = eaY - saY;\n    var dirLen = MathF.Sqrt(dX * dX + dY * dY);\n    if (dirLen < 0.0001f) return 0f;\n    dX /= dirLen; dY /= dirLen;\n    var nX = -dY; var nY = dX;\n\n    var bendStr = 0.08f + dens * 0.12f;\n    var b1t = 0.24f + HashToUnit(bx, by, sd + 229) * 0.18f;\n    var b2t = 0.6f + HashToUnit(bx, by, sd + 233) * 0.16f;\n    var b1o = (HashToUnit(bx, by, sd + 239) - 0.5f) * bendStr;\n    var b2o = (HashToUnit(bx, by, sd + 241) - 0.5f) * bendStr * 1.2f;\n    if (MathF.Abs(b1o - b2o) < 0.03f) b2o = -b2o * 0.85f;\n\n    var b1x = Math.Clamp(Lerp(saX, eaX, b1t) + nX * b1o, 0.04f, 0.96f);\n    var b1y = Math.Clamp(Lerp(saY, eaY, b1t) + nY * b1o, 0.04f, 0.96f);\n    var b2x = Math.Clamp(Lerp(saX, eaX, b2t) + nX * b2o, 0.04f, 0.96f);\n    var b2y = Math.Clamp(Lerp(saY, eaY, b2t) + nY * b2o, 0.04f, 0.96f);\n\n    var w = (0.018f + dens * 0.022f) * wScale;\n    var s1 = SegMask(lx, ly, saX, saY, b1x, b1y, w);\n    var s2 = SegMask(lx, ly, b1x, b1y, b2x, b2y, w * 0.92f);\n    var s3 = SegMask(lx, ly, b2x, b2y, eaX, eaY, w * 0.86f);\n    var primary = Math.Max(s1, Math.Max(s2, s3));\n\n    var branchChance = dens * 0.52f;\n    if (HashToUnit(bx, by, sd + 257) > branchChance) return primary;\n\n    var branchIsB1 = HashToUnit(bx, by, sd + 263) > 0.5f;\n    var brAX = branchIsB1 ? b1x : b2x;\n    var brAY = branchIsB1 ? b1y : b2y;\n    var brFwd = 0.04f + dens * 0.08f + HashToUnit(bx, by, sd + 269) * 0.04f;\n    var brSide = (0.08f + dens * 0.12f) * (HashToUnit(bx, by, sd + 271) > 0.5f ? 1f : -1f);\n    var brEndX = Math.Clamp(brAX + dX * brFwd + nX * brSide, 0.04f, 0.96f);\n    var brEndY = Math.Clamp(brAY + dY * brFwd + nY * brSide, 0.04f, 0.96f);\n    var branch = SegMask(lx, ly, brAX, brAY, brEndX, brEndY, w * 0.82f);\n\n    return Math.Max(primary, branch * 0.9f);\n}\n\nvar size = context.TileSize;\nvar seed = GetInt(parameters, \"seed\", 42);\nvar hTileCount = Math.Max(1, GetInt(parameters, \"horizontalTileCount\", 3));\nvar vTileCount = Math.Max(1, GetInt(parameters, \"verticalTileCount\", 3));\nvar crackDensity = GetFloat(parameters, \"crackDensity\", 0.3f);\nvar mossDensity = GetFloat(parameters, \"mossDensity\", 0.3f);\n\n// Stone palette (0..1 floats)\nvar borderR = 52f / 255f; var borderG = 52f / 255f; var borderB = 56f / 255f;\nvar shadowR = 82f / 255f; var shadowG = 82f / 255f; var shadowB = 88f / 255f;\nvar midR = 118f / 255f; var midG = 118f / 255f; var midB = 124f / 255f;\nvar lightR = 148f / 255f; var lightG = 148f / 255f; var lightB = 154f / 255f;\nvar hlR = 168f / 255f; var hlG = 168f / 255f; var hlB = 174f / 255f;\nvar mossDR = 54f / 255f; var mossDG = 78f / 255f; var mossDB = 48f / 255f;\nvar mossMR = 72f / 255f; var mossMG = 104f / 255f; var mossMB = 64f / 255f;\nvar mossLR = 96f / 255f; var mossLG = 132f / 255f; var mossLB = 80f / 255f;\n\nvar result = new PixelBuffer(size, size);\nresult.ParallelForEachPixel((x, y) =>\n{\n    var wx = Mod(x, size);\n    var wy = Mod(y, size);\n\n    var by = wy * vTileCount / size;\n    var rowStart = by * size / vTileCount;\n    var rowEnd = (by + 1) * size / vTileCount;\n    var blockH = Math.Max(1, rowEnd - rowStart);\n    var ly = wy - rowStart;\n\n    var avgBlockW = Math.Max(1, size / hTileCount);\n    var rowOff = (by % 2 == 1) ? Math.Max(1, avgBlockW / 2) : 0;\n    var adjX = Mod(wx + rowOff, size);\n    var bx = adjX * hTileCount / size;\n    var colStart = bx * size / hTileCount;\n    var colEnd = (bx + 1) * size / hTileCount;\n    var blockW = Math.Max(1, colEnd - colStart);\n    var lx = adjX - colStart;\n\n    float r, g, b;\n\n    if (lx == 0 || ly == 0)\n    {\n        r = borderR; g = borderG; b = borderB;\n    }\n    else\n    {\n        var innerW = Math.Max(1, blockW - 1);\n        var innerH = Math.Max(1, blockH - 1);\n        var locX = Math.Clamp((lx - 0.5f) / innerW, 0f, 1f);\n        var locY = Math.Clamp((ly - 0.5f) / innerH, 0f, 1f);\n        var blockHash = HashToUnit(bx, by, seed + 10);\n\n        var cDx = locX - 0.5f;\n        var cDy = locY - 0.5f;\n        var centerDist = MathF.Sqrt(cDx * cDx + cDy * cDy);\n        var centerLift = 1f - SmoothStep(0.12f, 0.72f, centerDist);\n        var lightBias = (1f - locX) * 0.38f + (1f - locY) * 0.62f;\n        var surfNoise = TileableFractalNoise(wx * (0.45f + blockHash * 0.2f), wy * (0.45f + (1f - blockHash) * 0.2f), size, 3, 0.55f, 2f, seed + 70 + bx * 17 + by * 31);\n\n        var tone = 0.18f + blockHash * 0.22f + centerLift * 0.26f + lightBias * 0.24f + (surfNoise - 0.5f) * 0.24f;\n\n        if (tone > 0.82f) { r = hlR; g = hlG; b = hlB; }\n        else if (tone > 0.63f) { r = lightR; g = lightG; b = lightB; }\n        else if (tone > 0.36f) { r = midR; g = midG; b = midB; }\n        else { r = shadowR; g = shadowG; b = shadowB; }\n\n        if (lx == 1 || ly == 1)\n        {\n            r = (r + lightR) * 0.5f; g = (g + lightG) * 0.5f; b = (b + lightB) * 0.5f;\n        }\n\n        if (lx >= blockW - 1 || ly >= blockH - 1)\n        {\n            r = (r + shadowR) * 0.5f; g = (g + shadowG) * 0.5f; b = (b + shadowB) * 0.5f;\n        }\n\n        // Cracks\n        if (crackDensity > 0f)\n        {\n            var fBand = FractureMask(locX, locY, blockW, blockH, bx, by, seed, crackDensity, 2.1f);\n            var fCore = FractureMask(locX, locY, blockW, blockH, bx, by, seed, crackDensity, 1f);\n\n            if (fBand > 0f)\n            {\n                r = Lerp(r, shadowR, fBand * 0.45f);\n                g = Lerp(g, shadowG, fBand * 0.45f);\n                b = Lerp(b, shadowB, fBand * 0.45f);\n            }\n\n            if (fCore > 0f)\n            {\n                r = Lerp(r, borderR, fCore);\n                g = Lerp(g, borderG, fCore);\n                b = Lerp(b, borderB, fCore);\n            }\n        }\n\n        // Moss\n        if (mossDensity > 0f)\n        {\n            var edgeDist = MathF.Min(MathF.Min(locX, 1f - locX), MathF.Min(locY, 1f - locY));\n            var edgePocket = 1f - SmoothStep(0.08f, 0.3f, edgeDist);\n            var shadowPocket = SmoothStep(0.48f, 0.92f, locY * 0.7f + locX * 0.3f);\n            var moisture = TileableFractalNoise(wx * 0.75f, wy * 0.75f, size, 3, 0.58f, 2f, seed + 301);\n            var patchN = TileableFractalNoise(wx * 1.35f, wy * 1.35f, size, 2, 0.5f, 2f, seed + 337);\n            var mossN = moisture * 0.68f + patchN * 0.32f;\n            var mossAff = Math.Clamp(crackDensity * 0.8f + edgePocket * 0.7f + shadowPocket * 0.35f, 0f, 1f);\n            var thresh = 0.9f - mossDensity * 0.34f - mossAff * 0.24f;\n\n            if (mossAff > 0.16f && mossN > thresh)\n            {\n                var mossTone = mossN + crackDensity * 0.25f;\n                float msR, msG, msB;\n                if (mossTone > 0.78f) { msR = mossLR; msG = mossLG; msB = mossLB; }\n                else if (mossTone > 0.52f) { msR = mossMR; msG = mossMG; msB = mossMB; }\n                else { msR = mossDR; msG = mossDG; msB = mossDB; }\n                var blend = Math.Clamp(0.42f + mossAff * 0.35f, 0f, 0.88f);\n                r = Lerp(r, msR, blend);\n                g = Lerp(g, msG, blend);\n                b = Lerp(b, msB, blend);\n            }\n        }\n    }\n\n    result.SetPixel(x, y, Math.Clamp(r, 0f, 1f), Math.Clamp(g, 0f, 1f), Math.Clamp(b, 0f, 1f), 1f);\n});\n\nreturn result;"
+  }
+}

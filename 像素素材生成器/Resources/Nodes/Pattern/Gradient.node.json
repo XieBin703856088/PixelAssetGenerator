@@ -1,0 +1,217 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "Gradient",
+    "displayName": {
+      "zh-Hans": "渐变",
+      "en": "Gradient"
+    },
+    "category": "Pattern",
+    "description": {
+      "zh-Hans": "生成可平铺的渐变图案（线性、径向、角度）。",
+      "en": "Generates tileable gradient patterns (linear, radial, angular)."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "遮罩",
+          "en": "Mask"
+        },
+        "type": "Mask"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "方向",
+        "en": "Direction"
+      },
+      "kind": "Choice",
+      "default": "diagonal",
+      "choices": [
+        {
+          "value": "linearHorizontal",
+          "label": {
+            "zh-Hans": "水平",
+            "en": "Horizontal"
+          }
+        },
+        {
+          "value": "linearVertical",
+          "label": {
+            "zh-Hans": "垂直",
+            "en": "Vertical"
+          }
+        },
+        {
+          "value": "diagonal",
+          "label": {
+            "zh-Hans": "对角线",
+            "en": "Diagonal"
+          }
+        },
+        {
+          "value": "radial",
+          "label": {
+            "zh-Hans": "径向",
+            "en": "Radial"
+          }
+        },
+        {
+          "value": "angular",
+          "label": {
+            "zh-Hans": "角度",
+            "en": "Angular"
+          }
+        },
+        {
+          "value": "diamond",
+          "label": {
+            "zh-Hans": "菱形",
+            "en": "Diamond"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "zh-Hans": "起始色",
+        "en": "Start Color"
+      },
+      "kind": "Color",
+      "default": "#000000FF"
+    },
+    {
+      "name": {
+        "zh-Hans": "结束色",
+        "en": "End Color"
+      },
+      "kind": "Color",
+      "default": "#FFFFFFFF"
+    },
+    {
+      "name": {
+        "zh-Hans": "重复次数",
+        "en": "Repeat Count"
+      },
+      "kind": "Integer",
+      "default": 1,
+      "min": 1,
+      "max": 16,
+      "step": 1
+    },
+    {
+      "name": {
+        "zh-Hans": "偏移",
+        "en": "Offset"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": -1.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "中间点",
+        "en": "Midpoint"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "旋转角度",
+        "en": "Rotation Angle"
+      },
+      "kind": "Number",
+      "default": 45.0,
+      "min": 0.0,
+      "max": 360.0,
+      "step": 1.0
+    },
+    {
+      "name": {
+        "zh-Hans": "中心 X",
+        "en": "Center X"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "中心 Y",
+        "en": "Center Y"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "角度偏移",
+        "en": "Angle Offset"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 360.0,
+      "step": 1.0
+    },
+    {
+      "name": {
+        "zh-Hans": "平铺",
+        "en": "Tiling"
+      },
+      "kind": "Boolean",
+      "default": true
+    },
+    {
+      "name": {
+        "zh-Hans": "反相",
+        "en": "Invert"
+      },
+      "kind": "Boolean",
+      "default": false
+    }
+  ],
+  "ai": {
+    "capabilities": ["pattern", "gradient", "tiling"],
+    "triggers": {
+      "zh-Hans": "渐变, 渐变色, 线性渐变, 径向渐变, 角度渐变",
+      "en": "gradient, linear gradient, radial gradient, angular gradient"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "生成可平铺的线性渐变，用作像素艺术场景的天空背景。",
+      "en": "Generate a tileable linear gradient for use as a sky background in pixel art scenes."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar direction = GetChoice(parameters, \"direction\", \"linearHorizontal\");\n        // Normalize incoming choice string to avoid hidden whitespace/unicode differences\n        direction = (direction ?? string.Empty).Trim();\n        var startColor = GetColor(parameters, \"startColor\", Color.FromRgb(0, 0, 0));\n        var r0 = startColor.R / 255f;\n        var g0 = startColor.G / 255f;\n        var b0 = startColor.B / 255f;\n        var endColor = GetColor(parameters, \"endColor\", Color.FromRgb(255, 255, 255));\n        var r1 = endColor.R / 255f;\n        var g1 = endColor.G / 255f;\n        var b1 = endColor.B / 255f;\n        var repeat = Math.Max(1, GetInt(parameters, \"repeatCount\", 1));\n        var offset = GetFloat(parameters, \"offset\", 0f);\n        var midpoint = GetFloat(parameters, \"midpoint\", 0.5f);\n        var rotation = GetFloat(parameters, \"rotationAngle\", 0f) * MathF.PI / 180f;\n        var centerX = GetFloat(parameters, \"centerX\", 0.5f);\n        var centerY = GetFloat(parameters, \"centerY\", 0.5f);\n        var angleOffset = GetFloat(parameters, \"angleOffset\", 0f) * MathF.PI / 180f;\n        var tiling = GetBool(parameters, \"tiling\", true);\n        var invert = GetBool(parameters, \"invert\");\n\n        var size = context.TileSize;\n        var buffer = new PixelBuffer(size, size);\n\n        // GPU accelerated path removed for gradient generation to ensure CPU/GPU\n        // output parity. GPU path produced color-channel ordering/packing\n        // differences causing incorrect preview colors (e.g. strong yellow tint).\n        // Always use the CPU implementation here to guarantee consistent results.\n        var cosR = MathF.Cos(rotation);\n        var sinR = MathF.Sin(rotation);\n\n        buffer.ParallelForEachPixel((x, y) =>\n        {\n            var nx = x / (float)(size - 1);\n            var ny = y / (float)(size - 1);\n\n            // Apply rotation around center for linear modes\n            if (MathF.Abs(rotation) > 0.001f && direction is \"linearHorizontal\" or \"linearVertical\" or \"diagonal\")\n            {\n                var cx = nx - 0.5f;\n                var cy = ny - 0.5f;\n                nx = cx * cosR - cy * sinR + 0.5f;\n                ny = cx * sinR + cy * cosR + 0.5f;\n            }\n\n\n            float t;\n            switch (direction)\n            {\n                case \"linearHorizontal\":\n                    t = nx;\n                    break;\n                case \"linearVertical\":\n                    t = ny;\n                    break;\n                case \"diagonal\":\n                    t = (nx + ny) * 0.5f;\n                    break;\n                case \"radial\":\n                    var rcx = (nx - centerX) * 2f;\n                    var rcy = (ny - centerY) * 2f;\n                    t = MathF.Sqrt(rcx * rcx + rcy * rcy);\n                    t = Math.Clamp(t, 0f, 1f);\n                    break;\n                case \"angular\":\n                    var ax = nx - centerX;\n                    var ay = ny - centerY;\n                    // Apply an angle offset so designers can rotate the angle gradient easily\n                    t = (MathF.Atan2(ay, ax) + angleOffset) / MathF.Tau;\n                    t = (t + 1f) % 1f;\n                    break;\n                case \"diamond\":\n                    t = (MathF.Abs(nx - centerX) + MathF.Abs(ny - centerY)) * 2f;\n                    t = Math.Clamp(t, 0f, 1f);\n                    break;\n                default: // linearHorizontal\n                    t = nx;\n                    break;\n            }\n\n            // Apply offset\n            t = (t + offset) % 1f;\n            if (t < 0f) t += 1f;\n\n            // Apply repeat\n            t = (t * repeat) % 1f;\n\n            if (tiling)\n            {\n                // Triangle wave for seamless tiling: 0→1→0\n                t = 1f - MathF.Abs(t * 2f - 1f);\n            }\n\n            // Apply midpoint bias\n            if (MathF.Abs(midpoint - 0.5f) > 0.001f)\n            {\n                var bias = MathF.Log(0.5f) / MathF.Log(Math.Clamp(midpoint, 0.01f, 0.99f));\n                t = MathF.Pow(t, bias);\n            }\n\n            if (invert) t = 1f - t;\n\n            var r = Lerp(r0, r1, t);\n            var g = Lerp(g0, g1, t);\n            var b = Lerp(b0, b1, t);\n            buffer.SetPixel(x, y, r, g, b, 1f);\n        });\n\n        return buffer;\n}"
+  }
+}

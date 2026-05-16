@@ -1,0 +1,151 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "Fog",
+    "displayName": {
+      "zh-Hans": "雾气",
+      "en": "Fog"
+    },
+    "category": "Noise",
+    "description": {
+      "zh-Hans": "使用时间动画分层噪波和基于高度的垂直分布生成滚动地面雾气。产生连续的雾场，带有缕状细节，而非离散粒子。",
+      "en": "Generates rolling ground fog using time-animated layered noise with height-based vertical distribution. Produces continuous mist fields with wispy detail, not discrete particles."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "遮罩",
+          "en": "Mask"
+        },
+        "type": "Mask"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "种子",
+        "en": "Seed"
+      },
+      "kind": "Seed",
+      "default": 42,
+      "min": 0,
+      "max": 9999
+    },
+    {
+      "name": {
+        "zh-Hans": "时间",
+        "en": "Time"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "密度",
+        "en": "Density"
+      },
+      "kind": "Number",
+      "default": 0.4,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "高度",
+        "en": "Height"
+      },
+      "kind": "Number",
+      "default": 0.3,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "流速",
+        "en": "Flow Speed"
+      },
+      "kind": "Number",
+      "default": 0.3,
+      "min": 0.0,
+      "max": 2.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "风向",
+        "en": "Wind Direction"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": -1.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "对比度",
+        "en": "Contrast"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "像素大小",
+        "en": "Pixel Size"
+      },
+      "kind": "Integer",
+      "default": 1,
+      "min": 1,
+      "max": 4,
+      "step": 1
+    },
+    {
+      "name": {
+        "zh-Hans": "颜色",
+        "en": "Color"
+      },
+      "kind": "Color",
+      "default": "#DCDCE6FF"
+    }
+  ],
+  "ai": {
+    "capabilities": ["generate-noise", "procedural-texture", "atmospheric-effect", "organic", "tileable"],
+    "triggers": {
+      "zh-Hans": "雾气, 雾, 薄雾, 烟霭, 氛围",
+      "en": "fog, mist, haze, atmospheric, rolling fog"
+    },
+    "suggestedInputs": ["Noise"],
+    "exampleUsage": {
+      "zh-Hans": "生成滚动雾气效果，带时间动画和高度衰减，可用于游戏场景的氛围雾效。",
+      "en": "Generates rolling ground fog with time animation and height falloff for game scene atmosphere."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar seed = GetInt(parameters, \"seed\", context.Seed);\nvar time = GetFloat(parameters, \"time\", 0f);\nvar density = GetFloat(parameters, \"density\", 0.4f);\nvar height = GetFloat(parameters, \"height\", 0.3f);\nvar flowSpeed = GetFloat(parameters, \"flowSpeed\", 0.3f);\nvar windDir = GetFloat(parameters, \"windDirection\", 0f);\nvar contrast = GetFloat(parameters, \"contrast\", 0.5f);\nvar pixelSize = Math.Max(1, GetInt(parameters, \"pixelSize\", 1));\nvar color = GetColor(parameters, \"color\", System.Windows.Media.Color.FromRgb(200, 210, 220));\n\nvar cR = color.R/255f; var cG = color.G/255f; var cB = color.B/255f;\nvar size = context.TileSize;\nvar result = new PixelBuffer(size, size);\n\n// Time-driven horizontal scroll for flowing fog\nvar timeOffsetX = time * flowSpeed * 3f;\nvar timeOffsetY = time * flowSpeed * 1.2f;\nvar windOffX = windDir * 0.5f;\n\nvar scale = 2.0f;\nvar period = Math.Max(1, (int)(size * scale));\n\nresult.ParallelForEachPixel((x, y) =>\n{\n    var u = x / (float)size * scale + timeOffsetX + windOffX;\n    var v = y / (float)size * scale + timeOffsetY;\n\n    // Layered noise for organic mist\n    var n1 = TileableFractalNoise(u, v, period, 4, 0.55f, 2f, seed);\n    var n2 = TileableFractalNoise(u * 2.3f + 10f, v * 2.3f + 10f, period, 3, 0.5f, 2.2f, seed + 500);\n    var n = (n1 * 0.6f + n2 * 0.4f);\n\n    // Apply contrast\n    n = MathF.Pow(n, 1f + (1f - contrast) * 2f);\n\n    // Height gradient: fog denser at bottom\n    var yFrac = y / (float)size;\n    var heightMask = Math.Clamp((height * 2f - yFrac) / Math.Max(0.01f, height * 2f), 0f, 1f);\n    heightMask = heightMask * heightMask * (2f - heightMask);\n\n    // Wispy detail: add some vertical variation\n    var wisp = MathF.Sin(u * 5f + v * 3f) * 0.5f + 0.5f;\n    var wispMask = 0.7f + wisp * 0.3f;\n\n    var alpha = Math.Clamp(n * density * heightMask * wispMask, 0f, 1f);\n    result.SetPixel(x, y, cR, cG, cB, alpha);\n});\nreturn result;\n}"
+  }
+}

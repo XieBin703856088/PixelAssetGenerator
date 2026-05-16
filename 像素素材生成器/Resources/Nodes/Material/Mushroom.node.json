@@ -1,0 +1,158 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "Mushroom",
+    "displayName": {
+      "zh-Hans": "蘑菇",
+      "en": "Mushroom"
+    },
+    "category": "Material",
+    "description": {
+      "zh-Hans": "生成风格化像素艺术蘑菇，可配置伞帽类型、茎部参数和配色方案，适用于奇幻/地牢场景。",
+      "en": "Generates stylized pixel art mushrooms with configurable cap type, stalk parameters, and color schemes suitable for fantasy/dungeon scenes."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "遮罩",
+          "en": "Mask"
+        },
+        "type": "Mask"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "种子",
+        "en": "Seed"
+      },
+      "kind": "Seed",
+      "default": 42,
+      "min": 0,
+      "max": 9999
+    },
+    {
+      "name": {
+        "zh-Hans": "伞帽类型",
+        "en": "Cap Type"
+      },
+      "kind": "Choice",
+      "default": "dome",
+      "choices": [
+        {
+          "value": "dome",
+          "label": {
+            "zh-Hans": "圆顶",
+            "en": "dome"
+          }
+        },
+        {
+          "value": "flat",
+          "label": {
+            "zh-Hans": "扁平",
+            "en": "flat"
+          }
+        },
+        {
+          "value": "conical",
+          "label": {
+            "zh-Hans": "圆锥",
+            "en": "conical"
+          }
+        },
+        {
+          "value": "trumpet",
+          "label": {
+            "zh-Hans": "喇叭",
+            "en": "trumpet"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "zh-Hans": "大小",
+        "en": "Size"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.1,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "伞帽比例",
+        "en": "Cap Ratio"
+      },
+      "kind": "Number",
+      "default": 0.6,
+      "min": 0.3,
+      "max": 0.9,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "伞帽颜色",
+        "en": "Cap Color"
+      },
+      "kind": "Color",
+      "default": "#C83C3CFF"
+    },
+    {
+      "name": {
+        "zh-Hans": "伞帽高光",
+        "en": "Cap Highlight"
+      },
+      "kind": "Color",
+      "default": "#F07864FF"
+    },
+    {
+      "name": {
+        "zh-Hans": "茎颜色",
+        "en": "Stem Color"
+      },
+      "kind": "Color",
+      "default": "#DCC8B4FF"
+    },
+    {
+      "name": {
+        "zh-Hans": "斑点",
+        "en": "Spots"
+      },
+      "kind": "Boolean",
+      "default": true
+    }
+  ],
+  "ai": {
+    "capabilities": ["material", "procedural-texture", "nature", "organic", "fantasy"],
+    "triggers": {
+      "zh-Hans": "蘑菇, 菌类, 真菌, 地牢, 奇幻植物",
+      "en": "mushroom, fungus, fungi, dungeon flora, fantasy plant"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "生成风格化蘑菇图案，用于奇幻场景、地牢装饰或自然生态。",
+      "en": "Generate stylized mushroom clusters for fantasy scenes, dungeon decoration, or natural biomes."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar seed = GetInt(parameters, \"seed\", context.Seed);\nvar capType = GetChoice(parameters, \"capType\", \"dome\");\nvar size = GetFloat(parameters, \"size\", 0.5f);\nvar capRatio = GetFloat(parameters, \"capRatio\", 0.6f);\nvar capColor = GetColor(parameters, \"capColor\", Color.FromRgb(200, 60, 60));\nvar capHL = GetColor(parameters, \"capHighlight\", Color.FromRgb(240, 120, 100));\nvar stemColor = GetColor(parameters, \"stemColor\", Color.FromRgb(220, 200, 180));\nvar spots = GetBool(parameters, \"spots\", true);\n\nvar tileSize = context.TileSize;\nvar buffer = new PixelBuffer(tileSize, tileSize);\n\nvar cR = capColor.R / 255f; var cG = capColor.G / 255f; var cB = capColor.B / 255f;\nvar hR = capHL.R / 255f; var hG = capHL.G / 255f; var hB = capHL.B / 255f;\nvar sR = stemColor.R / 255f; var sG = stemColor.G / 255f; var sB = stemColor.B / 255f;\n\nvar halfSize = tileSize * 0.5f;\nvar totalHeight = halfSize * size;\nvar capHeight = totalHeight * capRatio;\nvar stemHeight = totalHeight - capHeight;\nvar stemWidth = totalHeight * 0.2f;\n\nbuffer.ParallelForEachPixel((x, y) =>\n{\n    var px = x + 0.5f - halfSize;\n    var py = y + 0.5f - halfSize;\n\n    // Coordinate system: mushroom centered, stem at bottom\n    var capCenterY = -stemHeight;\n    var stemBottom = capCenterY + stemHeight;\n    var stemTop = capCenterY;\n\n    // Is this pixel in the stem region?\n    var inStem = false;\n    var inCap = false;\n    var stemAlpha = 0f;\n    var capAlpha = 0f;\n\n    // Stem: vertical rectangle with rounded bottom\n    if (py >= stemTop && py <= stemBottom)\n    {\n        var stemLocalX = MathF.Abs(px);\n        var stemEdge = stemWidth * (1f - (py - stemTop) / stemHeight * 0.3f);\n        if (stemLocalX < stemEdge)\n        {\n            stemAlpha = 1f;\n            inStem = true;\n        }\n        else\n        {\n            var edgeDist = (stemLocalX - stemEdge) / (stemWidth * 0.2f);\n            stemAlpha = Math.Clamp(1f - edgeDist, 0f, 1f);\n            if (stemAlpha > 0.01f) inStem = true;\n        }\n    }\n\n    // Cap: shaped based on type\n    if (py <= capCenterY)\n    {\n        var capLocalY = (capCenterY - py) / capHeight; // 0 at bottom, 1 at top\n        if (capLocalY >= 0f && capLocalY <= 1.2f)\n        {\n            var capWidth = totalHeight * 0.7f * (1f - capLocalY * 0.7f);\n\n            // Cap shape profile\n            var profile = capType switch\n            {\n                \"conical\" => capLocalY,\n                \"trumpet\" => MathF.Sqrt(capLocalY) * 0.5f + 0.5f,\n                \"flat\" => 0.2f + capLocalY * 0.1f,\n                _ => 1f - (1f - capLocalY) * (1f - capLocalY) // dome: rounded\n            };\n            capWidth *= profile * 1.5f;\n\n            var capLocalX = MathF.Abs(px);\n            if (capLocalX < capWidth)\n            {\n                capAlpha = 1f;\n                inCap = true;\n            }\n            else\n            {\n                var edgeDist = (capLocalX - capWidth) / (totalHeight * 0.1f);\n                capAlpha = Math.Clamp(1f - edgeDist, 0f, 1f);\n                if (capAlpha > 0.01f) inCap = true;\n            }\n        }\n    }\n\n    if (!inStem && !inCap)\n    {\n        buffer.SetPixel(x, y, 0, 0, 0, 0);\n        return;\n    }\n\n    // Color mixing for stem\n    if (inStem && (!inCap || capAlpha < stemAlpha))\n    {\n        var shadow = 1f - (py - stemTop) / stemHeight * 0.3f;\n        var colorVar = HashToUnit((int)(px * 10), (int)(py * 10), seed + 50) * 0.05f;\n        buffer.SetPixel(x, y,\n            Math.Clamp(sR * shadow + colorVar, 0f, 1f),\n            Math.Clamp(sG * shadow + colorVar, 0f, 1f),\n            Math.Clamp(sB * shadow + colorVar, 0f, 1f),\n            stemAlpha);\n        return;\n    }\n\n    // Cap coloring\n    if (inCap)\n    {\n        var capLocalY = (capCenterY - py) / capHeight;\n        // Lighting: top-left highlights\n        var light = (1f - px / (totalHeight * 0.5f)) * 0.3f + (1f - capLocalY) * 0.3f;\n        light = Math.Clamp(light + 0.3f, 0f, 1f);\n\n        float fr, fg, fb;\n        if (light < 0.5f)\n        {\n            var lt = light * 2f;\n            fr = Lerp(cR * 0.6f, cR, lt);\n            fg = Lerp(cG * 0.6f, cG, lt);\n            fb = Lerp(cB * 0.6f, cB, lt);\n        }\n        else\n        {\n            var lt = (light - 0.5f) * 2f;\n            fr = Lerp(cR, hR, lt);\n            fg = Lerp(cG, hG, lt);\n            fb = Lerp(cB, hB, lt);\n        }\n\n        // Spots on cap\n        if (spots)\n        {\n            var spotSeed = seed + 100;\n            var spotX = (int)((px + halfSize) / tileSize * 8 + 0.5f);\n            var spotY = (int)((py + halfSize) / tileSize * 8 + 0.5f);\n            var hasSpot = HashToUnit(spotX, spotY, spotSeed) > 0.7f;\n            if (hasSpot && capLocalY > 0.2f && MathF.Abs(px) > stemWidth * 0.5f)\n            {\n                // White/cream spot\n                fr = Lerp(fr, 1f, 0.7f);\n                fg = Lerp(fg, 0.95f, 0.7f);\n                fb = Lerp(fb, 0.85f, 0.7f);\n            }\n        }\n\n        buffer.SetPixel(x, y,\n            Math.Clamp(fr, 0f, 1f),\n            Math.Clamp(fg, 0f, 1f),\n            Math.Clamp(fb, 0f, 1f), capAlpha);\n        return;\n    }\n\n    buffer.SetPixel(x, y, 0, 0, 0, 0);\n});\n\nreturn buffer;\n}"
+  }
+}

@@ -1,0 +1,206 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "GradientMap",
+    "displayName": {
+      "zh-Hans": "渐变映射",
+      "en": "Gradient Map"
+    },
+    "category": "ImageProcess",
+    "description": {
+      "zh-Hans": "通过多段颜色渐变重新映射亮度（或选定通道），对输入图像应用渐变映射。类似于着色节点，但作用于整个图像，拥有更多渐变色标和混合模式。",
+      "en": "Applies a gradient map to an input image by remapping luminance (or a selected channel) through a multi-stop color gradient. Similar to ColorizeNode but operates on the full image with more gradient stops and blending modes."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [
+      {
+        "name": {
+          "zh-Hans": "输入",
+          "en": "Input"
+        },
+        "type": "Image"
+      }
+    ],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "输出",
+          "en": "Output"
+        },
+        "type": "Image"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "通道",
+        "en": "Channel"
+      },
+      "kind": "Choice",
+      "default": "luminance",
+      "choices": [
+        {
+          "value": "luminance",
+          "label": {
+            "zh-Hans": "亮度",
+            "en": "luminance"
+          }
+        },
+        {
+          "value": "red",
+          "label": {
+            "zh-Hans": "红色",
+            "en": "red"
+          }
+        },
+        {
+          "value": "green",
+          "label": {
+            "zh-Hans": "绿色",
+            "en": "green"
+          }
+        },
+        {
+          "value": "blue",
+          "label": {
+            "zh-Hans": "蓝色",
+            "en": "blue"
+          }
+        },
+        {
+          "value": "alpha",
+          "label": {
+            "zh-Hans": "透明通道",
+            "en": "alpha"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "zh-Hans": "偏移",
+        "en": "Offset"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": -0.5,
+      "max": 0.5,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "对比度",
+        "en": "Contrast"
+      },
+      "kind": "Number",
+      "default": 1.0,
+      "min": 0.1,
+      "max": 3.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "阴影颜色",
+        "en": "Shadow Color"
+      },
+      "kind": "Color",
+      "default": "#140A32FF"
+    },
+    {
+      "name": {
+        "zh-Hans": "中间颜色1",
+        "en": "Mid Color1"
+      },
+      "kind": "Color",
+      "default": "#3C508CFF"
+    },
+    {
+      "name": {
+        "zh-Hans": "中间颜色2",
+        "en": "Mid Color2"
+      },
+      "kind": "Color",
+      "default": "#A08C50FF"
+    },
+    {
+      "name": {
+        "zh-Hans": "高光颜色",
+        "en": "Highlight Color"
+      },
+      "kind": "Color",
+      "default": "#F0DCB4FF"
+    },
+    {
+      "name": {
+        "zh-Hans": "混合模式",
+        "en": "Blend Mode"
+      },
+      "kind": "Choice",
+      "default": "replace",
+      "choices": [
+        {
+          "value": "replace",
+          "label": {
+            "zh-Hans": "替换",
+            "en": "replace"
+          }
+        },
+        {
+          "value": "overlay",
+          "label": {
+            "zh-Hans": "叠加",
+            "en": "overlay"
+          }
+        },
+        {
+          "value": "softLight",
+          "label": {
+            "zh-Hans": "柔光",
+            "en": "softLight"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "zh-Hans": "不透明度",
+        "en": "Opacity"
+      },
+      "kind": "Number",
+      "default": 1.0,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "反相",
+        "en": "Invert"
+      },
+      "kind": "Boolean",
+      "default": false
+    }
+  ],
+  "ai": {
+    "capabilities": ["color-adjust"],
+    "triggers": {
+      "zh-Hans": "渐变映射, 渐变贴图, 色调映射, 颜色渐变映射",
+      "en": "gradient map, gradient mapping, tone mapping, color gradient"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "使用自定义渐变映射将灰度图像转换为彩色风格。",
+      "en": "Apply a custom gradient map to transform a grayscale image into a colored style."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar input = inputs.Length > 0 && inputs[0] != null ? inputs[0]! :\n        new PixelBuffer(context.TileSize, context.TileSize);\n\n    var channel = GetChoice(parameters, \"channel\", \"luminance\");\n    var offset = GetFloat(parameters, \"offset\", 0f);\n    var contrast = GetFloat(parameters, \"contrast\", 1f);\n    var blendMode = GetChoice(parameters, \"blendMode\", \"replace\");\n    var opacity = GetFloat(parameters, \"opacity\", 1f);\n    var invert = GetBool(parameters, \"invert\", false);\n\n    var c0 = GetColor(parameters, \"shadowColor\", System.Windows.Media.Color.FromRgb(20, 10, 50));\n    var c1 = GetColor(parameters, \"midColor1\", System.Windows.Media.Color.FromRgb(60, 80, 140));\n    var c2 = GetColor(parameters, \"midColor2\", System.Windows.Media.Color.FromRgb(160, 140, 80));\n    var c3 = GetColor(parameters, \"highlightColor\", System.Windows.Media.Color.FromRgb(240, 220, 180));\n\n    var stops = new[]\n    {\n        (0f, c0.R / 255f, c0.G / 255f, c0.B / 255f),\n        (0.35f, c1.R / 255f, c1.G / 255f, c1.B / 255f),\n        (0.65f, c2.R / 255f, c2.G / 255f, c2.B / 255f),\n        (1f, c3.R / 255f, c3.G / 255f, c3.B / 255f)\n    };\n\n    var size = context.TileSize;\n    var output = new PixelBuffer(size, size);\n\n    output.ParallelForEachPixel((x, y) =>\n    {\n        var (r, g, b, a) = input.GetPixel(x, y);\n\n        var val = channel switch\n        {\n            \"red\" => r,\n            \"green\" => g,\n            \"blue\" => b,\n            \"alpha\" => a,\n            _ => r * 0.299f + g * 0.587f + b * 0.114f\n        };\n\n        if (invert) val = 1f - val;\n\n        // Apply offset and contrast\n        val = (val - 0.5f + offset) * contrast + 0.5f;\n        val = Math.Clamp(val, 0f, 1f);\n\n        // Sample gradient\n        float mapR, mapG, mapB;\n        if (val <= stops[0].Item1)\n        {\n            mapR = stops[0].Item2; mapG = stops[0].Item3; mapB = stops[0].Item4;\n        }\n        else if (val >= stops[3].Item1)\n        {\n            mapR = stops[3].Item2; mapG = stops[3].Item3; mapB = stops[3].Item4;\n        }\n        else\n        {\n            var idx = 0;\n            for (var i = 0; i < 3; i++)\n            {\n                if (val >= stops[i].Item1 && val <= stops[i + 1].Item1)\n                { idx = i; break; }\n            }\n\n            var t = (val - stops[idx].Item1) / (stops[idx + 1].Item1 - stops[idx].Item1);\n            t = Math.Clamp(t, 0f, 1f);\n\n            mapR = Lerp(stops[idx].Item2, stops[idx + 1].Item2, t);\n            mapG = Lerp(stops[idx].Item3, stops[idx + 1].Item3, t);\n            mapB = Lerp(stops[idx].Item4, stops[idx + 1].Item4, t);\n        }\n\n        // Blend with original\n        var op = opacity;\n        (mapR, mapG, mapB) = blendMode switch\n        {\n            \"overlay\" => (\n                Lerp(r, OverlayBlend(r, mapR), op),\n                Lerp(g, OverlayBlend(g, mapG), op),\n                Lerp(b, OverlayBlend(b, mapB), op)\n            ),\n            \"softLight\" => (\n                Lerp(r, SoftLightBlend(r, mapR), op),\n                Lerp(g, SoftLightBlend(g, mapG), op),\n                Lerp(b, SoftLightBlend(b, mapB), op)\n            ),\n            _ => (mapR, mapG, mapB) // replace\n        };\n\n        output.SetPixel(x, y, Math.Clamp(mapR, 0f, 1f), Math.Clamp(mapG, 0f, 1f), Math.Clamp(mapB, 0f, 1f), a);\n    });\n\n    return output;\n\nprivate static float OverlayBlend(float base_, float blend)\n{\n    return base_ < 0.5f\n        ? 2f * base_ * blend\n        : 1f - 2f * (1f - base_) * (1f - blend);\n}\n\nprivate static float SoftLightBlend(float base_, float blend)\n{\n    return blend < 0.5f\n        ? 2f * base_ * blend + base_ * base_ * (1f - 2f * blend)\n        : 2f * base_ * (1f - blend) + MathF.Sqrt(base_) * (2f * blend - 1f);\n    }\n}"
+  }
+}

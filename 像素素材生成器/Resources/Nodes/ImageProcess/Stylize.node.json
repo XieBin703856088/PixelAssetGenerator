@@ -1,0 +1,150 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "Stylize",
+    "displayName": {
+      "zh-Hans": "风格化",
+      "en": "Stylize"
+    },
+    "category": "ImageProcess",
+    "description": {
+      "zh-Hans": "应用风格化/艺术效果：卡通、油画、浮雕、像素描边和色调分离。",
+      "en": "Applies stylistic / artistic effects: cartoon, oil painting, emboss, pixel art outline, and posterization."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      }
+    ],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "结果",
+          "en": "Result"
+        },
+        "type": "Image"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "风格",
+        "en": "Style"
+      },
+      "kind": "Choice",
+      "default": "cartoon",
+      "choices": [
+        {
+          "value": "cartoon",
+          "label": {
+            "zh-Hans": "卡通",
+            "en": "cartoon"
+          }
+        },
+        {
+          "value": "oilPaint",
+          "label": {
+            "zh-Hans": "油画",
+            "en": "oilPaint"
+          }
+        },
+        {
+          "value": "emboss",
+          "label": {
+            "zh-Hans": "浮雕",
+            "en": "emboss"
+          }
+        },
+        {
+          "value": "pixelOutline",
+          "label": {
+            "zh-Hans": "像素描边",
+            "en": "pixelOutline"
+          }
+        },
+        {
+          "value": "posterize",
+          "label": {
+            "zh-Hans": "色调分离",
+            "en": "posterize"
+          }
+        },
+        {
+          "value": "watercolor",
+          "label": {
+            "zh-Hans": "水彩",
+            "en": "watercolor"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "zh-Hans": "强度",
+        "en": "Strength"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "细节",
+        "en": "Detail"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "平滑度",
+        "en": "Smoothness"
+      },
+      "kind": "Number",
+      "default": 0.3,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "保留透明通道",
+        "en": "Preserve Alpha"
+      },
+      "kind": "Boolean",
+      "default": true
+    }
+  ],
+  "ai": {
+    "capabilities": ["stylize"],
+    "triggers": {
+      "zh-Hans": "风格化, 卡通效果, 油画, 水彩, 浮雕, 色调分离",
+      "en": "stylize, cartoon effect, oil paint, watercolor, emboss, posterize"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "对图像应用卡通效果以创建非真实感渲染风格。",
+      "en": "Apply a cartoon effect to an image for a non-photorealistic rendering style."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar src = inputs.Length > 0 ? inputs[0] : null;\n    if (src == null)\n        return new PixelBuffer(context.TileSize, context.TileSize);\n\n    var style = GetChoice(parameters, \"style\", \"cartoon\");\n    var strength = GetFloat(parameters, \"strength\", 0.5f);\n    var detail = GetFloat(parameters, \"detail\", 0.5f);\n    var smoothness = GetFloat(parameters, \"smoothness\", 0.3f);\n    var preserveAlpha = GetBool(parameters, \"preserveAlpha\", true);\n\n    var size = context.TileSize;\n    var result = new PixelBuffer(size, size);\n\n    switch (style)\n    {\n        case \"oilPaint\":\n            OilPaint(src, result, strength, size);\n            break;\n        case \"emboss\":\n            Emboss(src, result, strength, size);\n            break;\n        case \"pixelOutline\":\n            PixelOutline(src, result, strength, size);\n            break;\n        case \"posterize\":\n            Posterize(src, result, strength, detail, size);\n            break;\n        case \"watercolor\":\n            Watercolor(src, result, strength, smoothness, size);\n            break;\n        default: // cartoon\n            Cartoon(src, result, strength, smoothness, size);\n            break;\n    }\n\n    // Handle alpha\n    if (!preserveAlpha)\n    {\n        result.ParallelForEachPixel((x, y) =>\n        {\n            var (r, g, b, _) = result.GetPixel(x, y);\n            result.SetPixel(x, y, r, g, b, 1f);\n        });\n    }\n\n    return result;\n\nprivate static void Cartoon(PixelBuffer src, PixelBuffer dst, float strength, float smoothness, int size)\n{\n    // Quantize colors + edge detection\n    dst.ParallelForEachPixel((x, y) =>\n    {\n        var (r, g, b, a) = src.GetPixel(x, y);\n\n        // Color quantization\n        var levels = Math.Max(2, (int)(4 + strength * 8));\n        var step = 1f / levels;\n        r = MathF.Round(r / step) * step;\n        g = MathF.Round(g / step) * step;\n        b = MathF.Round(b / step) * step;\n\n        // Simple edge detection (Sobel)\n        float gxR = 0, gyR = 0;\n        for (var dy = -1; dy <= 1; dy++)\n        {\n            for (var dx = -1; dx <= 1; dx++)\n            {\n                var (pr, pg, pb, _) = src.GetPixelWrapped(x + dx, y + dy);\n                var lum = 0.299f * pr + 0.587f * pg + 0.114f * pb;\n                var sx = (dx == 0 ? 0f : dx > 0 ? 1f : -1f) * (dy == 0 ? 2f : 1f);\n                var sy = (dy == 0 ? 0f : dy > 0 ? 1f : -1f) * (dx == 0 ? 2f : 1f);\n                gxR += lum * sx;\n                gyR += lum * sy;\n            }\n        }\n        var edge = MathF.Sqrt(gxR * gxR + gyR * gyR);\n        var edgeFactor = Math.Clamp(edge * strength * 2f, 0f, 1f);\n        var ink = 1f - edgeFactor;\n\n        dst.SetPixel(x, y,\n            Math.Clamp(r * ink, 0f, 1f),\n            Math.Clamp(g * ink, 0f, 1f),\n            Math.Clamp(b * ink, 0f, 1f), a);\n    });\n}\n\nprivate static void OilPaint(PixelBuffer src, PixelBuffer dst, float strength, int size)\n{\n    var radius = Math.Max(2, (int)(strength * 6) + 1);\n    var levels = 8;\n\n    dst.ParallelForEachPixel((x, y) =>\n    {\n        var histR = new int[levels];\n        var histG = new int[levels];\n        var histB = new int[levels];\n        var total = 0;\n\n        for (var dy = -radius; dy <= radius; dy++)\n        {\n            for (var dx = -radius; dx <= radius; dx++)\n            {\n                var (pr, pg, pb, _) = src.GetPixelWrapped(x + dx, y + dy);\n                var binR = (int)Math.Clamp(pr * levels, 0, levels - 1);\n                var binG = (int)Math.Clamp(pg * levels, 0, levels - 1);\n                var binB = (int)Math.Clamp(pb * levels, 0, levels - 1);\n                histR[binR]++;\n                histG[binG]++;\n                histB[binB]++;\n                total++;\n            }\n        }\n\n        // Find dominant bins\n        var maxR = 0; var maxG = 0; var maxB = 0;\n        var idxR = 0; var idxG = 0; var idxB = 0;\n        for (var i = 0; i < levels; i++)\n        {\n            if (histR[i] > maxR) { maxR = histR[i]; idxR = i; }\n            if (histG[i] > maxG) { maxG = histG[i]; idxG = i; }\n            if (histB[i] > maxB) { maxB = histB[i]; idxB = i; }\n        }\n\n        // Average pixels in dominant bins\n        var sumR = 0f; var sumG = 0f; var sumB = 0f;\n        var cntR = 0; var cntG = 0; var cntB = 0;\n        for (var dy = -radius; dy <= radius; dy++)\n        {\n            for (var dx = -radius; dx <= radius; dx++)\n            {\n                var (pr, pg, pb, _) = src.GetPixelWrapped(x + dx, y + dy);\n                if ((int)(pr * levels) == idxR) { sumR += pr; cntR++; }\n                if ((int)(pg * levels) == idxG) { sumG += pg; cntG++; }\n                if ((int)(pb * levels) == idxB) { sumB += pb; cntB++; }\n            }\n        }\n\n        dst.SetPixel(x, y,\n            cntR > 0 ? sumR / cntR : 0f,\n            cntG > 0 ? sumG / cntG : 0f,\n            cntB > 0 ? sumB / cntB : 0f, 1f);\n    });\n}\n\nprivate static void Emboss(PixelBuffer src, PixelBuffer dst, float strength, int size)\n{\n    dst.ParallelForEachPixel((x, y) =>\n    {\n        var (r, g, b, a) = src.GetPixel(x, y);\n\n        float gxR = 0, gyR = 0;\n        for (var dy = -1; dy <= 1; dy++)\n        {\n            for (var dx = -1; dx <= 1; dx++)\n            {\n                var (pr, _, _, _) = src.GetPixelWrapped(x + dx, y + dy);\n                var sx = (dx == 0 ? 0f : dx > 0 ? 1f : -1f) * (dy == 0 ? 2f : 1f);\n                var sy = (dy == 0 ? 0f : dy > 0 ? 1f : -1f) * (dx == 0 ? 2f : 1f);\n                gxR += pr * sx;\n                gyR += pr * sy;\n            }\n        }\n\n        var emboss = (gxR + gyR) * strength * 0.5f + 0.5f;\n        dst.SetPixel(x, y,\n            Math.Clamp(emboss, 0f, 1f),\n            Math.Clamp(emboss, 0f, 1f),\n            Math.Clamp(emboss, 0f, 1f), a);\n    });\n}\n\nprivate static void PixelOutline(PixelBuffer src, PixelBuffer dst, float strength, int size)\n{\n    dst.ParallelForEachPixel((x, y) =>\n    {\n        var (r, g, b, a) = src.GetPixel(x, y);\n\n        // Compare with neighbors; if different enough, draw outline\n        var (lr, lg, lb, _) = src.GetPixelWrapped(x - 1, y);\n        var (ur, ug, ub, _) = src.GetPixelWrapped(x, y - 1);\n\n        var diffH = MathF.Abs(r - lr) + MathF.Abs(g - lg) + MathF.Abs(b - lb);\n        var diffV = MathF.Abs(r - ur) + MathF.Abs(g - ug) + MathF.Abs(b - ub);\n        var diff = MathF.Max(diffH, diffV) * strength * 2f;\n\n        if (diff > 0.3f)\n        {\n            // Outline pixel\n            dst.SetPixel(x, y, 0f, 0f, 0f, a);\n        }\n        else\n        {\n            dst.SetPixel(x, y,\n                Math.Clamp(r + diff * 0.5f, 0f, 1f),\n                Math.Clamp(g + diff * 0.5f, 0f, 1f),\n                Math.Clamp(b + diff * 0.5f, 0f, 1f), a);\n        }\n    });\n}\n\nprivate static void Posterize(PixelBuffer src, PixelBuffer dst, float strength, float detail, int size)\n{\n    var levels = Math.Max(2, (int)(2 + detail * 14));\n    var step = 1f / levels;\n\n    dst.ParallelForEachPixel((x, y) =>\n    {\n        var (r, g, b, a) = src.GetPixel(x, y);\n\n        r = MathF.Round(r / step) * step;\n        g = MathF.Round(g / step) * step;\n        b = MathF.Round(b / step) * step;\n\n        // Blend between original and posterized\n        r = Lerp(r, src.GetPixel(x, y).R, 1f - strength);\n        g = Lerp(g, src.GetPixel(x, y).G, 1f - strength);\n        b = Lerp(b, src.GetPixel(x, y).B, 1f - strength);\n\n        dst.SetPixel(x, y, r, g, b, a);\n    });\n}\n\nprivate static void Watercolor(PixelBuffer src, PixelBuffer dst, float strength, float smoothness, int size)\n{\n    // Blur + color shift for watercolor effect\n    var blurRadius = Math.Max(2, (int)(smoothness * 5) + 1);\n    var temp = new PixelBuffer(size, size);\n\n    // Box blur first pass\n    temp.ParallelForEachPixel((x, y) =>\n    {\n        var sumR = 0f; var sumG = 0f; var sumB = 0f; var count = 0;\n        for (var dx = -blurRadius; dx <= blurRadius; dx++)\n        {\n            var (pr, pg, pb, _) = src.GetPixelWrapped(x + dx, y);\n            sumR += pr; sumG += pg; sumB += pb; count++;\n        }\n        var inv = 1f / count;\n        temp.SetPixel(x, y, sumR * inv, sumG * inv, sumB * inv, 1f);\n    });\n\n    // Second pass with color bleeding\n    dst.ParallelForEachPixel((x, y) =>\n    {\n        var sumR = 0f; var sumG = 0f; var sumB = 0f;\n        var weights = 0f;\n        for (var dy = -blurRadius; dy <= blurRadius; dy++)\n        {\n            for (var dx = -blurRadius; dx <= blurRadius; dx++)\n            {\n                var (pr, pg, pb, _) = temp.GetPixelWrapped(x + dx, y + dy);\n                var dist = MathF.Sqrt(dx * dx + dy * dy);\n                var w = MathF.Exp(-dist * dist / (2f * (blurRadius * 0.5f) * (blurRadius * 0.5f)));\n                sumR += pr * w;\n                sumG += pg * w;\n                sumB += pb * w;\n                weights += w;\n            }\n        }\n        var invW = 1f / weights;\n\n        // Add slight color variation (watercolor bleed)\n        var bleed = strength * 0.1f;\n        var (origR, origG, origB, a) = src.GetPixel(x, y);\n\n        dst.SetPixel(x, y,\n            Math.Clamp(Lerp(origR, sumR * invW, strength * 0.7f) + (sumR * invW - 0.5f) * bleed, 0f, 1f),\n            Math.Clamp(Lerp(origG, sumG * invW, strength * 0.7f) + (sumG * invW - 0.5f) * bleed * 0.8f, 0f, 1f),\n            Math.Clamp(Lerp(origB, sumB * invW, strength * 0.7f) + (sumB * invW - 0.5f) * bleed * 0.6f, 0f, 1f),\n            a);\n    });\n    }\n}"
+  }
+}

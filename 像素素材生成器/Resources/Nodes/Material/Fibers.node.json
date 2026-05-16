@@ -1,0 +1,119 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "Fibers",
+    "displayName": {
+      "zh-Hans": "纤维",
+      "en": "Fibers"
+    },
+    "category": "Material",
+    "description": {
+      "zh-Hans": "生成重复的纤维/丝状高光，类似于Substance Designer的Fibers节点。产生可平铺的灰度图像，其中明亮的椭圆形/条纹状高光沿对角线重复。",
+      "en": "Generates repeated fiber/strand-like highlights similar to Substance Designer's Fibers node. Produces a tileable grayscale image where bright elliptical/striped highlights repeat diagonally."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "遮罩",
+          "en": "Mask"
+        },
+        "type": "Mask"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "角度",
+        "en": "Angle"
+      },
+      "kind": "Number",
+      "default": 45.0,
+      "min": 0.0,
+      "max": 360.0,
+      "step": 1.0
+    },
+    {
+      "name": {
+        "zh-Hans": "密度",
+        "en": "Density"
+      },
+      "kind": "Integer",
+      "default": 5,
+      "min": 2,
+      "max": 8,
+      "step": 1
+    },
+    {
+      "name": {
+        "zh-Hans": "宽度",
+        "en": "Width"
+      },
+      "kind": "Number",
+      "default": 0.2,
+      "min": 0.01,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "亮度",
+        "en": "Brightness"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": -1.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "对比度",
+        "en": "Contrast"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": -1.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "反相",
+        "en": "Invert"
+      },
+      "kind": "Boolean",
+      "default": false
+    }
+  ],
+  "ai": {
+    "capabilities": ["material", "procedural-texture", "fabric", "tileable"],
+    "triggers": {
+      "zh-Hans": "纤维, 丝状高光, 拉丝, 纹理高光, 反光条纹",
+      "en": "fibers, strand highlights, brushed metal, anisotropic, filament"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "生成重复纤维高光纹理，用于金属拉丝、布料或塑料表面的各向异性高光效果。",
+      "en": "Generate repeated fiber highlight textures for brushed metal, cloth, or anisotropic surface highlights on plastic."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar angleDeg = GetFloat(parameters, \"angle\", 45f);\n        // Density is an integer slider (2..8) to guarantee seamless tiling.\n        var density = Math.Max(0.01f, (float)GetInt(parameters, \"density\", 5));\n        var width = Math.Clamp(GetFloat(parameters, \"width\", 0.2f), 0.001f, 2f);\n        // Noise removed: background noise is not desired for this node.\n        var brightness = GetFloat(parameters, \"brightness\", 0f);\n        var contrast = GetFloat(parameters, \"contrast\", 0f);\n        var invert = GetBool(parameters, \"invert\", false);\n\n        var size = context.TileSize;\n        var buffer = new PixelBuffer(size, size);\n\n        var angle = angleDeg * MathF.PI / 180f;\n        var cosA = MathF.Cos(angle);\n        var sinA = MathF.Sin(angle);\n\n        // Width parameter controls the apparent size of each fiber blob relative to spacing.\n        var safeWidth = MathF.Max(0.0005f, width);\n\n        buffer.ParallelForEachPixel((x, y) =>\n        {\n            // normalized coordinates centered at 0\n            var nx = x / (float)size - 0.5f;\n            var ny = y / (float)size - 0.5f;\n\n            // rotate coordinates so fibers run along the rotated Y axis\n            var rx = nx * cosA - ny * sinA;\n            var ry = nx * sinA + ny * cosA;\n\n            // Repeat along the image X axis so each element's center stays on\n            // the same horizontal line (y = 0 in normalized coords). We still\n            // rotate the element shape itself by `angle` so highlights are\n            // slanted while their centers remain aligned horizontally.\n            var pos = nx * density; // repeat coordinate along image X\n            var nearest = MathF.Round(pos);\n            var d = pos - nearest; // signed distance in repeat units (longitudinal)\n\n            // Build contributions from several neighboring repeat centers so a\n            // rotated element that extends beyond its primary cell isn't\n            // visually clipped. We evaluate nearby centers (±2) and take the\n            // maximum contribution.\n            var localPerp = ny * density;\n\n            // Separate longitudinal/perpendicular sigmas (in repeat units).\n            var sigmaLong = MathF.Max(0.001f, safeWidth * 0.6f);\n            var sigmaPerp = MathF.Max(0.001f, safeWidth * 1.4f);\n\n            var v = 0f;\n            // check several neighbors to avoid clipping when the rotated\n            // shape crosses cell boundaries (tileable wrap-around)\n            for (int oi = -2; oi <= 2; ++oi)\n            {\n                var center = nearest + oi;\n                var localLong = pos - center; // signed distance to this center\n\n                // Rotate the local vector so the element shape is oriented by angle\n                var rLong = localLong * cosA - localPerp * sinA;\n                var rPerp = localLong * sinA + localPerp * cosA;\n\n                var ndLong = rLong / sigmaLong;\n                var ndPerp = rPerp / sigmaPerp;\n\n                var soft = MathF.Exp(-0.5f * (ndLong * ndLong + ndPerp * ndPerp));\n                var core = MathF.Exp(-0.5f * ((ndLong * 0.5f) * (ndLong * 0.5f) + (ndPerp * 0.5f) * (ndPerp * 0.5f)));\n                // Adapt core weight based on element width so wider fibers don't produce\n                // excessively large saturated regions. Wider shapes get a smaller core\n                // contribution and stronger soft (diffuse) contribution. Reduce the\n                // core weight more aggressively for wide elements to avoid large\n                // flat white plateaus.\n                var widthFactor = Math.Clamp((safeWidth - 0.001f) / 1.5f, 0f, 1f);\n                var coreWeight = 0.35f * (1f - 0.6f * widthFactor);\n                var softWeight = 0.75f * (1f - 0.12f * widthFactor);\n                var contrib = Math.Clamp(soft * softWeight + core * coreWeight, 0f, 1f);\n                if (contrib > v) v = contrib;\n            }\n\n            // background noise removed\n\n            // Soften the very brightest highlights so they blend smoothly with surrounding grays.\n            // Use a small lerp toward a slightly compressed curve (pow > 1) to reduce harsh \"cut\" edges.\n            // Increase softening to reduce the absolute peak intensity and smooth transition.\n            // Adaptive softening: stronger softening for wider elements so the\n            // brightest area doesn't become a large flat white plateau.\n            var widthFactorGlobal = Math.Clamp((safeWidth - 0.001f) / 1.5f, 0f, 1f);\n            // Stronger base softening so peaks are reduced earlier; additional\n            // softening scales with width to avoid wide flat whites.\n            var peakSoftenBase = 0.45f;\n            var peakSoften = peakSoftenBase + 0.5f * widthFactorGlobal; // 0.45 .. ~0.95\n            var powBase = 1.25f;\n            var powExp = powBase + 0.9f * widthFactorGlobal; // 1.25 .. ~2.15\n            // Manual lerp because MathF.Lerp is not available in this target\n            v = v * (1f - peakSoften) + MathF.Pow(v, powExp) * peakSoften;\n\n            // Contrast & brightness\n            if (MathF.Abs(contrast) > 0.0001f)\n            {\n                var factor = 1f + contrast;\n                v = (v - 0.5f) * factor + 0.5f;\n            }\n\n            v += brightness;\n            v = Math.Clamp(v, 0f, 1f);\n            // Soft knee to avoid a hard \"cut\" at the top of the curve. The knee\n            // threshold lowers for wider elements to keep large highlights smooth.\n            // Soft knee to avoid a hard \"cut\" at the top of the curve. Lower the\n            // knee threshold for wider elements and use a width-dependent ease\n            // exponent so the shoulder becomes smoother as width increases.\n            var kneeStart = 0.88f - 0.25f * widthFactorGlobal; // e.g. 0.88 .. 0.63\n            if (v > kneeStart)\n            {\n                var t = (v - kneeStart) / (1f - kneeStart);\n                // Use a stronger ease-out for wider elements to produce a gradual\n                // approach to 1.0 instead of a hard plateau.\n                var easeExp = 1f + 2f * widthFactorGlobal; // 1 .. 3\n                var eased = 1f - MathF.Pow(1f - t, easeExp);\n                v = kneeStart + (1f - kneeStart) * eased;\n            }\n            if (invert) v = 1f - v;\n\n            buffer.SetPixel(x, y, v, v, v, 1f);\n        });\n\n        return buffer;\n}"
+  }
+}

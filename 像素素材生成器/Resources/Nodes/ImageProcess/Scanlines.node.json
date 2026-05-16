@@ -1,0 +1,147 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "Scanlines",
+    "displayName": {
+      "zh-Hans": "扫描线",
+      "en": "Scanlines"
+    },
+    "category": "ImageProcess",
+    "description": {
+      "zh-Hans": "应用CRT扫描线/复古显示效果：水平扫描线、垂直遮罩、荧光辉光和屏幕曲率。",
+      "en": "Applies CRT scanline / retro display effects: horizontal scanlines, vertical shadow mask, phosphor glow, and screen curvature."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      }
+    ],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "结果",
+          "en": "Result"
+        },
+        "type": "Image"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "模式",
+        "en": "Mode"
+      },
+      "kind": "Choice",
+      "default": "horizontalScanlines",
+      "choices": [
+        {
+          "value": "horizontalScanlines",
+          "label": {
+            "zh-Hans": "水平扫描线",
+            "en": "horizontalScanlines"
+          }
+        },
+        {
+          "value": "verticalScanlines",
+          "label": {
+            "zh-Hans": "垂直扫描线",
+            "en": "verticalScanlines"
+          }
+        },
+        {
+          "value": "grid",
+          "label": {
+            "zh-Hans": "网格",
+            "en": "grid"
+          }
+        },
+        {
+          "value": "shadowMask",
+          "label": {
+            "zh-Hans": "遮罩",
+            "en": "shadowMask"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "zh-Hans": "密度",
+        "en": "Density"
+      },
+      "kind": "Number",
+      "default": 0.7,
+      "min": 0.1,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "强度",
+        "en": "Intensity"
+      },
+      "kind": "Number",
+      "default": 0.55,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "亮度",
+        "en": "Brightness"
+      },
+      "kind": "Number",
+      "default": 0.1,
+      "min": 0.0,
+      "max": 0.5,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "曲率",
+        "en": "Curvature"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 0.3,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "保留透明通道",
+        "en": "Preserve Alpha"
+      },
+      "kind": "Boolean",
+      "default": true
+    }
+  ],
+  "ai": {
+    "capabilities": ["effect", "stylize"],
+    "triggers": {
+      "zh-Hans": "扫描线, CRT效果, 复古显示, 扫描线效果, 网格",
+      "en": "scanlines, CRT effect, retro display, scan line effect, grid"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "添加CRT扫描线效果，模拟复古显示器的外观。",
+      "en": "Add CRT scanlines to simulate a retro monitor look."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar src = inputs.Length > 0 ? inputs[0] : null;\nif (src == null)\n    return new PixelBuffer(context.TileSize, context.TileSize);\n\nvar mode = GetChoice(parameters, \"mode\", \"horizontalScanlines\");\nvar density = GetFloat(parameters, \"density\", 0.5f);\nvar intensity = GetFloat(parameters, \"intensity\", 0.4f);\nvar brightness = GetFloat(parameters, \"brightness\", 0.1f);\nvar curvature = GetFloat(parameters, \"curvature\", 0f);\nvar preserveAlpha = GetBool(parameters, \"preserveAlpha\", true);\n\nvar size = context.TileSize;\nvar result = new PixelBuffer(size, size);\nvar lineSpacing = Math.Max(2, (int)((1f - density * 0.7f) * 8f + 2f));\nvar cx = size * 0.5f;\nvar cy = size * 0.5f;\n\nresult.ParallelForEachPixel((x, y) =>\n{\n    var (r, g, b, a) = src.GetPixel(x, y);\n\n    // Screen curvature: displace coordinates\n    float scanX = x, scanY = y;\n    if (curvature > 0.001f)\n    {\n        var nx = (x - cx) / cx;\n        var ny = (y - cy) / cy;\n        var dist2 = nx * nx + ny * ny;\n        scanX = x + nx * dist2 * curvature * cx;\n        scanY = y + ny * dist2 * curvature * cy;\n\n        // Sample from curved position\n        var sx = (int)Math.Clamp(scanX, 0, size - 1);\n        var sy = (int)Math.Clamp(scanY, 0, size - 1);\n        (r, g, b, a) = src.GetPixel(sx, sy);\n    }\n\n    // Compute scanline mask\n    var lineVal = 1f;\n    switch (mode)\n    {\n        case \"horizontalScanlines\":\n        {\n            var linePos = (int)scanY % lineSpacing;\n            lineVal = linePos == 0 ? (1f - intensity) : 1f;\n            break;\n        }\n        case \"verticalScanlines\":\n        {\n            var linePos = (int)scanX % lineSpacing;\n            lineVal = linePos == 0 ? (1f - intensity) : 1f;\n            break;\n        }\n        case \"grid\":\n        {\n            var hPos = (int)scanY % lineSpacing;\n            var vPos = (int)scanX % lineSpacing;\n            lineVal = (hPos == 0 || vPos == 0) ? (1f - intensity) : 1f;\n            break;\n        }\n        case \"shadowMask\":\n        {\n            var shadowX = (int)(scanX * 0.5f) % 4;\n            lineVal = shadowX < 2 ? (1f - intensity * 0.7f) : 1f;\n            var shadowY = (int)(scanY * 0.5f) % 4;\n            if (shadowY < 2) lineVal *= (1f - intensity * 0.3f);\n            break;\n        }\n    }\n\n    // Brightness boost (CRT phosphor glow)\n    var boost = brightness;\n    r = Math.Clamp(r * lineVal + boost, 0f, 1f);\n    g = Math.Clamp(g * lineVal + boost * 0.9f, 0f, 1f);\n    b = Math.Clamp(b * lineVal + boost * 0.8f, 0f, 1f);\n\n    // RGB bloom on bright areas\n    if (r + g + b > 2f)\n    {\n        var bloom = (r + g + b - 2f) * 0.2f;\n        r = Math.Clamp(r + bloom, 0f, 1f);\n        g = Math.Clamp(g + bloom * 0.8f, 0f, 1f);\n        b = Math.Clamp(b + bloom * 0.6f, 0f, 1f);\n    }\n\n    result.SetPixel(x, y, r, g, b, preserveAlpha ? a : 1f);\n});\n\nreturn result;\n}"
+  }
+}

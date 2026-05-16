@@ -1,0 +1,113 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "FrameInterpolation",
+    "displayName": {
+      "zh-Hans": "帧插值",
+      "en": "Frame Interpolation"
+    },
+    "category": "ImageProcess",
+    "description": {
+      "zh-Hans": "使用三种插值模式之一混合两个输入帧：交叉淡入淡出（线性插值）、随机像素溶解或水平滑动。输出混合结果作为「图像」，混合权重作为「遮罩」。",
+      "en": "Blends two input frames using one of three interpolation modes: cross-fade (lerp), random pixel dissolve, or horizontal slide. Outputs the blended result as \"image\" and the blend weight as \"mask\"."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [
+      {
+        "name": {
+          "zh-Hans": "源图像",
+          "en": "SourceImage"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "目标图像",
+          "en": "TargetImage"
+        },
+        "type": "Image"
+      }
+    ],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "遮罩",
+          "en": "Mask"
+        },
+        "type": "Mask"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "混合",
+        "en": "Blend"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "模式",
+        "en": "Mode"
+      },
+      "kind": "Choice",
+      "default": "crossFade",
+      "choices": [
+        {
+          "value": "crossFade",
+          "label": {
+            "zh-Hans": "交叉淡入淡出",
+            "en": "crossFade"
+          }
+        },
+        {
+          "value": "dissolve",
+          "label": {
+            "zh-Hans": "溶解",
+            "en": "dissolve"
+          }
+        },
+        {
+          "value": "slide",
+          "label": {
+            "zh-Hans": "滑动",
+            "en": "slide"
+          }
+        }
+      ]
+    }
+  ],
+  "ai": {
+    "capabilities": ["blend", "effect"],
+    "triggers": {
+      "zh-Hans": "帧插值, 交叉淡入淡出, 溶解, 滑动, 帧混合",
+      "en": "frame interpolation, cross fade, dissolve, slide, frame blend"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "在两个动画帧之间创建交叉淡入淡出过渡效果。",
+      "en": "Create a cross-fade transition between two animation frames."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nreturn ProcessMultiImpl(inputs, parameters, context)[0];\n\nprivate static PixelBuffer[] ProcessMultiImpl(PixelBuffer?[] inputs, IReadOnlyDictionary<string, object> parameters, PixelGraphContext context)\n{\n    var source = inputs.Length > 0 ? inputs[0] : null;\n    var target = inputs.Length > 1 ? inputs[1] : null;\n    var size = context.TileSize;\n\n    if (source is null && target is null)\n    {\n        var empty = PixelBuffer.CreateSolid(size, size, 0, 0, 0);\n        return [empty, empty.Clone()];\n    }\n    if (source is null)\n        return [target!.Clone(), PixelBuffer.CreateSolid(size, size, 0, 0, 0)];\n    if (target is null)\n        return [source.Clone(), PixelBuffer.CreateSolid(size, size, 1, 1, 1)];\n\n    var blend = GetFloat(parameters, \"blend\", 0.5f);\n    var mode = GetChoice(parameters, \"mode\", \"crossFade\");\n\n    var image = new PixelBuffer(size, size);\n    var mask = new PixelBuffer(size, size);\n    var invSize = 1f / size;\n\n    image.ParallelForEachPixel((x, y) =>\n    {\n        var (sr, sg, sb, sa) = source.GetPixelWrapped(x, y);\n        var (tr, tg, tb, ta) = target.GetPixelWrapped(x, y);\n\n        float blendFactor;\n        switch (mode)\n        {\n            case \"dissolve\":\n            {\n                // Per-pixel hash-based dissolve: switch from source to target when hash > blend\n                var hash = HashToUnit(x * 7 + y * 13, y * 11 + x * 5, 42);\n                blendFactor = hash < blend ? 1f : 0f;\n                break;\n            }\n            case \"slide\":\n            {\n                // Horizontal slide: split line at blend position\n                var splitPos = blend * size;\n                blendFactor = x < splitPos ? 1f : 0f;\n                // Smooth edge (2-pixel transition)\n                if (x >= splitPos - 1f && x < splitPos + 1f)\n                    blendFactor = (x - splitPos + 1f) * 0.5f;\n                break;\n            }\n            default: // crossFade\n            {\n                blendFactor = blend;\n                break;\n            }\n        }\n\n        blendFactor = Math.Clamp(blendFactor, 0f, 1f);\n\n        // Blend channels\n        var outR = Lerp(sr, tr, blendFactor);\n        var outG = Lerp(sg, tg, blendFactor);\n        var outB = Lerp(sb, tb, blendFactor);\n        var outA = Lerp(sa, ta, blendFactor);\n\n        image.SetPixel(x, y,\n            Math.Clamp(outR, 0f, 1f),\n            Math.Clamp(outG, 0f, 1f),\n            Math.Clamp(outB, 0f, 1f),\n            Math.Clamp(outA, 0f, 1f));\n\n        // Mask: blend weight as grayscale\n        mask.SetPixel(x, y, blendFactor, blendFactor, blendFactor, 1f);\n    });\n\n    return [image, mask];\n    }\n}"
+  }
+}

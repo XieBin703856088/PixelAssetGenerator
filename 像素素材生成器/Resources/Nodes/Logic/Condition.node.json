@@ -1,0 +1,156 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "Condition",
+    "displayName": {
+      "zh-Hans": "条件",
+      "en": "Condition"
+    },
+    "category": "Logic",
+    "description": {
+      "zh-Hans": "将浮点输入与阈值比较，并将两张图像之一路由到输出。根据分析结果实现分支图流程。",
+      "en": "Compares a float input against a threshold and routes one of two images to output. Enables branching graphs based on analysis results."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [
+      {
+        "name": {
+          "zh-Hans": "数值",
+          "en": "Value"
+        },
+        "type": "Float"
+      },
+      {
+        "name": {
+          "zh-Hans": "阈值",
+          "en": "Threshold"
+        },
+        "type": "Float"
+      },
+      {
+        "name": {
+          "zh-Hans": "输入A",
+          "en": "InputA"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "输入B",
+          "en": "InputB"
+        },
+        "type": "Image"
+      }
+    ],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "输出",
+          "en": "Output"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "条件遮罩",
+          "en": "ConditionMask"
+        },
+        "type": "Mask"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "运算符",
+        "en": "Operator"
+      },
+      "kind": "Choice",
+      "default": "greaterThan",
+      "choices": [
+        {
+          "value": "greaterThan",
+          "label": {
+            "zh-Hans": "大于",
+            "en": "greaterThan"
+          }
+        },
+        {
+          "value": "lessThan",
+          "label": {
+            "zh-Hans": "小于",
+            "en": "lessThan"
+          }
+        },
+        {
+          "value": "equalTo",
+          "label": {
+            "zh-Hans": "等于",
+            "en": "equalTo"
+          }
+        },
+        {
+          "value": "inRange",
+          "label": {
+            "zh-Hans": "范围内",
+            "en": "inRange"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "zh-Hans": "阈值",
+        "en": "Threshold"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "下界",
+        "en": "Lower Bound"
+      },
+      "kind": "Number",
+      "default": 0.3,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "上界",
+        "en": "Upper Bound"
+      },
+      "kind": "Number",
+      "default": 0.7,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    }
+  ],
+  "ai": {
+    "capabilities": ["logic", "condition", "control-flow"],
+    "triggers": {
+      "zh-Hans": "条件, 判断, 分支, 如果否则, 阈值比较",
+      "en": "condition, if-else, branch, comparison, threshold"
+    },
+    "suggestedInputs": ["ImageAnalysis"],
+    "exampleUsage": {
+      "zh-Hans": "根据图像平均亮度判断是否选择不同的输出图像实现分支。",
+      "en": "Branch between two output images based on the average luminance of an image analysis result."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\n// inputs: [0]=InputA [1]=InputB, float input from parameters\nvar inputA = inputs[0];\nvar inputB = inputs[1];\nvar op = GetChoice(parameters, \"operator\", \"greaterThan\");\nvar threshold = GetFloat(parameters, \"threshold\", 0.5f);\nvar lowerBound = GetFloat(parameters, \"lowerBound\", 0.3f);\nvar upperBound = GetFloat(parameters, \"upperBound\", 0.7f);\n// For Condition we evaluate using pixel luminance of InputA vs threshold\nvar size = context.TileSize;\nvar result = new PixelBuffer(size, size);\n// Compute average luminance of inputA as 'value'\nfloat value = 0.5f;\nif (inputA != null)\n{\n    double sum = 0;\n    for (var y = 0; y < size; y += 4)\n    for (var x = 0; x < size; x += 4)\n    {\n        var (r, g, b, _) = inputA.GetPixel(x, y);\n        sum += 0.2126 * r + 0.7152 * g + 0.0722 * b;\n    }\n    value = (float)(sum / ((size / 4) * (size / 4)));\n}\nbool condition = op switch\n{\n    \"greaterThan\" => value > threshold,\n    \"lessThan\" => value < threshold,\n    \"equalTo\" => MathF.Abs(value - threshold) < 0.05f,\n    \"inRange\" => value >= lowerBound && value <= upperBound,\n    _ => value > threshold\n};\nvar chosen = condition ? inputA : inputB;\nif (chosen == null) chosen = condition ? inputB : inputA;\nif (chosen != null)\n    result.ParallelForEachPixel((x, y) => { var (r,g,b,a) = chosen.GetPixel(x,y); result.SetPixel(x,y,r,g,b,a); });\nreturn result;\n}"
+  }
+}

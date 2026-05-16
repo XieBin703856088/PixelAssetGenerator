@@ -1,0 +1,227 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "Fence",
+    "displayName": {
+      "zh-Hans": "栅栏",
+      "en": "Fence"
+    },
+    "category": "Pattern",
+    "description": {
+      "zh-Hans": "生成木栅栏/栏杆/木桩图案，具有重复的垂直板条、可选的水平横栏、木纹细节、逐板颜色变化、风化效果以及钉子/螺丝细节。所有噪波均可平铺。",
+      "en": "Generates wooden fence / railing / palisade patterns with repeating vertical slats, optional horizontal rails, wood grain detail, per-plank color variation, weathering, and nail/screw details. All noise is tileable."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "遮罩",
+          "en": "Mask"
+        },
+        "type": "Mask"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "种子",
+        "en": "Seed"
+      },
+      "kind": "Seed",
+      "default": 42,
+      "min": 0,
+      "max": 9999
+    },
+    {
+      "name": {
+        "zh-Hans": "板条数量",
+        "en": "Slat Count"
+      },
+      "kind": "Integer",
+      "default": 6,
+      "min": 3,
+      "max": 16,
+      "step": 1
+    },
+    {
+      "name": {
+        "zh-Hans": "板条宽度",
+        "en": "Slat Width"
+      },
+      "kind": "Number",
+      "default": 0.65,
+      "min": 0.3,
+      "max": 0.95,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "板条高度",
+        "en": "Slat Height"
+      },
+      "kind": "Number",
+      "default": 0.9,
+      "min": 0.3,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "顶部形状",
+        "en": "Top Shape"
+      },
+      "kind": "Choice",
+      "default": "flat",
+      "choices": [
+        {
+          "value": "flat",
+          "label": {
+            "zh-Hans": "扁平",
+            "en": "flat"
+          }
+        },
+        {
+          "value": "pointed",
+          "label": {
+            "zh-Hans": "尖顶",
+            "en": "pointed"
+          }
+        },
+        {
+          "value": "rounded",
+          "label": {
+            "zh-Hans": "圆顶",
+            "en": "rounded"
+          }
+        },
+        {
+          "value": "vShape",
+          "label": {
+            "zh-Hans": "V形",
+            "en": "vShape"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "zh-Hans": "横栏数量",
+        "en": "Rail Count"
+      },
+      "kind": "Number",
+      "default": 1.0,
+      "min": 0.0,
+      "max": 3.0,
+      "step": 1.0
+    },
+    {
+      "name": {
+        "zh-Hans": "木材颜色",
+        "en": "Wood Color"
+      },
+      "kind": "Color",
+      "default": "#FFFFFFFF"
+    },
+    {
+      "name": {
+        "zh-Hans": "深色木材颜色",
+        "en": "Dark Wood Color"
+      },
+      "kind": "Color",
+      "default": "#404040FF"
+    },
+    {
+      "name": {
+        "zh-Hans": "颜色变化",
+        "en": "Color Variation"
+      },
+      "kind": "Number",
+      "default": 0.2,
+      "min": 0.0,
+      "max": 0.5,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "磨损程度",
+        "en": "Wear Amount"
+      },
+      "kind": "Number",
+      "default": 0.15,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "木纹",
+        "en": "Wood Grain"
+      },
+      "kind": "Number",
+      "default": 0.6,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "亮度",
+        "en": "Brightness"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": -0.3,
+      "max": 0.3,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "对比度",
+        "en": "Contrast"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": -0.5,
+      "max": 0.5,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "反相",
+        "en": "Invert"
+      },
+      "kind": "Boolean",
+      "default": false
+    }
+  ],
+  "ai": {
+    "capabilities": ["pattern", "geometric", "tiling"],
+    "triggers": {
+      "zh-Hans": "栅栏, 木栅栏, 栏杆, 木桩",
+      "en": "fence, wood fence, railing, palisade"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "为像素艺术游戏场景生成带木纹和风化效果的尖顶木栅栏。",
+      "en": "Generate a pointed-top wooden fence with wood grain and weathering for a pixel art game scene."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar seed = GetInt(parameters, \"seed\", context.Seed);\nvar slatCount = Math.Clamp(GetInt(parameters, \"slatCount\", 6), 3, 16);\nvar slatWidth = GetFloat(parameters, \"slatWidth\", 0.7f);\nvar slatHeight = GetFloat(parameters, \"slatHeight\", 0.8f);\nvar topShape = GetChoice(parameters, \"topShape\", \"flat\");\nvar railCount = Math.Clamp(GetInt(parameters, \"railCount\", 1), 0, 3);\nvar woodColor = GetColor(parameters, \"woodColor\", Color.FromRgb(160, 120, 80));\nvar darkWood = GetColor(parameters, \"darkWoodColor\", Color.FromRgb(100, 70, 40));\nvar colorVar = GetFloat(parameters, \"colorVariation\", 0.2f);\nvar wearAmount = GetFloat(parameters, \"wearAmount\", 0.2f);\nvar woodGrain = GetFloat(parameters, \"woodGrain\", 0.5f);\nvar brightness = GetFloat(parameters, \"brightness\", 0f);\nvar contrast = GetFloat(parameters, \"contrast\", 0f);\nvar invert = GetBool(parameters, \"invert\", false);\n\nvar size = context.TileSize;\nvar buffer = new PixelBuffer(size, size);\n\nvar wR = woodColor.R / 255f; var wG = woodColor.G / 255f; var wB = woodColor.B / 255f;\nvar dR = darkWood.R / 255f; var dG = darkWood.G / 255f; var dB = darkWood.B / 255f;\n\n// Pre-compute per-slat data\nvar slatData = new (float hue, float wear, float grainOffset)[slatCount];\nfor (var i = 0; i < slatCount; i++)\n{\n    slatData[i] = (\n        (HashToUnit(i * 7, seed, 111) - 0.5f) * colorVar,\n        HashToUnit(i * 13, seed + 50, 222),\n        HashToUnit(i * 17, seed + 100, 333)\n    );\n}\n\n// Horizontal rail positions (in UV, top of tile = 0)\nvar railPositions = new float[railCount];\nfor (var i = 0; i < railCount; i++)\n{\n    railPositions[i] = 0.2f + (i + 1f) / (railCount + 1f) * 0.55f;\n}\n\nvar gapWidth = 1f - slatWidth;\nvar skyHeight = (1f - slatHeight) * 0.5f;\n\n// Background color (sky/dirt depending on position)\nvar skyR = 150f / 255f; var skyG = 200f / 255f; var skyB = 255f / 255f;\nvar groundR = 100f / 255f; var groundG = 180f / 255f; var groundB = 80f / 255f;\n\nbuffer.ParallelForEachPixel((x, y) =>\n{\n    var u = (x + 0.5f) / size;\n    var v = (y + 0.5f) / size;\n\n    // Slat index\n    var rawSlat = u * slatCount;\n    var slatIdx = ((int)rawSlat % slatCount + slatCount) % slatCount;\n    var localU = rawSlat - MathF.Floor(rawSlat);\n\n    // Gap between slats\n    var gapHalf = gapWidth * 0.5f;\n    var isGap = localU < gapHalf || localU > 1f - gapHalf;\n\n    // Top shape mask\n    var topMask = 1f;\n    if (v < skyHeight || v > 1f - skyHeight)\n    {\n        // Above or below fence\n        if (!isGap)\n        {\n            // Check top shape\n            var localV = v < skyHeight\n                ? v / skyHeight  // 0..1 from top\n                : (v - (1f - skyHeight)) / skyHeight; // 0..1 from bottom\n\n            if (v < skyHeight)\n            {\n                // Top shape\n                var localTop = 1f - localV; // 1 at tip, 0 at base\n                topMask = topShape switch\n                {\n                    \"pointed\" => localU < gapHalf || localU > 1f - gapHalf ? 1f :\n                        (localTop > 0f ? 1f - (localU - gapHalf) / (1f - gapWidth) * localTop * 2f : 0f),\n                    \"rounded\" => localU < gapHalf || localU > 1f - gapHalf ? 1f :\n                        (1f - localV > 0.1f ? 1f : (localU - gapHalf) / (1f - gapWidth)),\n                    \"vShape\" => localU < gapHalf || localU > 1f - gapHalf ? 1f :\n                        (localTop > 0f ? (localU - gapHalf) / (1f - gapWidth) * (1f - localTop) + localTop : 0f),\n                    _ => 1f // flat\n                };\n            }\n            else\n            {\n                // Bottom: return to 1\n                topMask = 1f;\n            }\n        }\n\n        if (topMask < 0.01f)\n        {\n            // Background behind fence\n            var bgR = Lerp(skyR, groundR, v);\n            var bgG = Lerp(skyG, groundG, v);\n            var bgB = Lerp(skyB, groundB, v * 0.5f + 0.5f);\n            buffer.SetPixel(x, y, bgR, bgG, bgB, 1f);\n            return;\n        }\n    }\n\n    float r, g, b;\n\n    if (isGap)\n    {\n        // Gap between slats — dark\n        r = 0.15f; g = 0.1f; b = 0.08f;\n    }\n    else\n    {\n        // Slat surface\n        var sd = slatData[slatIdx];\n\n        // Base wood color with variation\n        r = Math.Clamp(wR + sd.hue, 0f, 1f);\n        g = Math.Clamp(wG + sd.hue * 0.8f, 0f, 1f);\n        b = Math.Clamp(wB + sd.hue * 0.6f, 0f, 1f);\n\n        // Horizontal rails overlay\n        var isRail = false;\n        foreach (var rp in railPositions)\n        {\n            if (v > rp - 0.03f && v < rp + 0.03f)\n            {\n                isRail = true;\n                break;\n            }\n        }\n\n        if (isRail)\n        {\n            // Rail is slightly darker\n            r *= 0.85f;\n            g *= 0.85f;\n            b *= 0.85f;\n        }\n\n        // Wood grain (vertical streaks)\n        if (woodGrain > 0f)\n        {\n            var grainNoise = TileableFractalNoise(\n                u * 3f + sd.grainOffset * 10f, v * 4f,\n                Math.Max(1, size / 2), 2, 0.5f, 2.5f, seed + 200);\n            var grainVal = (grainNoise - 0.5f) * woodGrain * 0.2f;\n            r = Math.Clamp(r + grainVal, 0f, 1f);\n            g = Math.Clamp(g + grainVal * 0.85f, 0f, 1f);\n            b = Math.Clamp(b + grainVal * 0.7f, 0f, 1f);\n\n            // Knots\n            var knotNoise = TileableFractalNoise(\n                u * 8f + sd.grainOffset * 20f, v * 6f,\n                Math.Max(1, size / 2), 1, 0.5f, 2f, seed + 300);\n            if (knotNoise > 0.8f)\n            {\n                var knot = (knotNoise - 0.8f) / 0.2f * woodGrain;\n                r = Math.Clamp(r - knot * 0.3f, 0f, 1f);\n                g = Math.Clamp(g - knot * 0.3f, 0f, 1f);\n                b = Math.Clamp(b - knot * 0.25f, 0f, 1f);\n            }\n        }\n\n        // Edge shading: 3D bevel on each slat\n        var edgeDist = MathF.Min(localU - gapHalf, 1f - gapHalf - localU);\n        edgeDist = MathF.Max(0f, edgeDist / (1f - gapWidth));\n        var bevel = 1f - edgeDist * 2f;\n        if (bevel > 0.8f)\n        {\n            var edgeLight = (bevel - 0.8f) / 0.2f * 0.15f;\n            r = Math.Clamp(r + edgeLight, 0f, 1f);\n            g = Math.Clamp(g + edgeLight * 0.9f, 0f, 1f);\n            b = Math.Clamp(b + edgeLight * 0.8f, 0f, 1f);\n        }\n\n        // Wear and tear\n        if (wearAmount > 0f)\n        {\n            var wearNoise = TileableFractalNoise(\n                u * 5f + slatIdx * 3f, v * 5f,\n                Math.Max(1, size / 2), 1, 0.5f, 2f, seed + 400);\n            var wearVal = MathF.Pow(MathF.Max(0f, wearNoise * 1.5f - 0.5f), 2f) * wearAmount;\n\n            // Wear: desaturate and lighten at edges\n            var wearColor = (wR + wG + wB) / 3f * 1.2f;\n            r = Lerp(r, Math.Clamp(wearColor, 0f, 1f), wearVal * 0.5f);\n            g = Lerp(g, Math.Clamp(wearColor * 0.95f, 0f, 1f), wearVal * 0.5f);\n            b = Lerp(b, Math.Clamp(wearColor * 0.9f, 0f, 1f), wearVal * 0.5f);\n\n            // Nail/screw at each slat center\n            if (wearNoise > 0.7f && v > 0.3f && v < 0.7f)\n            {\n                var nailCenterX = (slatIdx + 0.5f) / slatCount;\n                var nailDist = MathF.Abs(u - nailCenterX) * slatCount;\n                if (nailDist < 0.06f)\n                {\n                    var nailBright = 1f - nailDist / 0.06f;\n                    r = Math.Clamp(r + nailBright * 0.3f, 0f, 1f);\n                    g = Math.Clamp(g + nailBright * 0.3f, 0f, 1f);\n                    b = Math.Clamp(b + nailBright * 0.25f, 0f, 1f);\n                }\n            }\n        }\n    }\n\n    // Brightness and contrast\n    r = Math.Clamp(r + brightness, 0f, 1f);\n    g = Math.Clamp(g + brightness, 0f, 1f);\n    b = Math.Clamp(b + brightness, 0f, 1f);\n\n    if (MathF.Abs(contrast) > 0.001f)\n    {\n        var factor = 1f + contrast;\n        r = (r - 0.5f) * factor + 0.5f;\n        g = (g - 0.5f) * factor + 0.5f;\n        b = (b - 0.5f) * factor + 0.5f;\n    }\n\n    if (invert) { r = 1f - r; g = 1f - g; b = 1f - b; }\n\n    buffer.SetPixel(x, y, Math.Clamp(r, 0f, 1f), Math.Clamp(g, 0f, 1f), Math.Clamp(b, 0f, 1f), 1f);\n});\n\nreturn buffer;\n}"
+  }
+}

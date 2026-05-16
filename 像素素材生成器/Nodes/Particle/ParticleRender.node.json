@@ -1,0 +1,66 @@
+{
+  "formatVersion": 2,
+  "processorType": "ParticleRender",
+  "identity": {
+    "typeName": "ParticleRender",
+    "displayName": {
+      "zh-Hans": "粒子渲染",
+      "en": "Particle Render"
+    },
+    "category": "Particle",
+    "description": {
+      "zh-Hans": "将粒子系统渲染到背景图像上",
+      "en": "Renders particles onto the background image"
+    },
+    "tags": ["particle", "render"],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [
+      {
+        "name": { "zh-Hans": "背景", "en": "Background" },
+        "type": "Image"
+      },
+      {
+        "name": { "zh-Hans": "遮罩", "en": "Mask" },
+        "type": "Mask"
+      }
+    ],
+    "outputs": [
+      {
+        "name": { "zh-Hans": "图像", "en": "Image" },
+        "type": "Image"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": { "zh-Hans": "粒子纹理", "en": "Particle Texture" },
+      "kind": "Choice",
+      "default": "softCircle",
+      "choices": ["circle", "softCircle", "square", "diamond", "star", "glow"]
+    },
+    {
+      "name": { "zh-Hans": "混合模式", "en": "Blend Mode" },
+      "kind": "Choice",
+      "default": "alpha",
+      "choices": ["alpha", "additive", "screen"]
+    },
+    { "name": { "zh-Hans": "柔边", "en": "Soft Edges" }, "kind": "Boolean", "default": true },
+    { "name": { "zh-Hans": "缩放", "en": "Scale" }, "kind": "Number", "default": 1.0, "min": 0.1, "max": 5.0, "step": 0.1 },
+    { "name": { "zh-Hans": "全局透明度", "en": "Global Alpha" }, "kind": "Number", "default": 1.0, "min": 0, "max": 1.0, "step": 0.01 }
+  ],
+  "ai": {
+    "capabilities": ["particle", "render"],
+    "triggers": {
+      "zh-Hans": "粒子渲染, 粒子纹理, 粒子混合, 粒子绘制",
+      "en": "particle render, particle texture, particle blend, particle drawing"
+    },
+    "suggestedInputs": ["ParticleEmitter"],
+    "exampleUsage": {
+      "zh-Hans": "将粒子系统渲染到背景上，使用柔边圆形纹理和透明混合模式",
+      "en": "Render the particle system onto the background using soft circle texture with alpha blend mode"
+    }
+  }
+}

@@ -1,0 +1,128 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "TileWater",
+    "displayName": {
+      "zh-Hans": "水域",
+      "en": "Water"
+    },
+    "category": "Generate",
+    "description": {
+      "zh-Hans": "水域图块",
+      "en": "Water tile"
+    },
+    "tags": [
+      "tile",
+      "water"
+    ],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "种子",
+        "en": "Seed"
+      },
+      "kind": "Integer",
+      "default": 42,
+      "min": 0,
+      "max": 9999
+    },
+    {
+      "name": {
+        "zh-Hans": "波浪尺度",
+        "en": "Wave Scale"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0,
+      "max": 1,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "深度变化",
+        "en": "Depth Variation"
+      },
+      "kind": "Number",
+      "default": 0.4,
+      "min": 0,
+      "max": 1,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "波涛汹涌度",
+        "en": "Choppiness"
+      },
+      "kind": "Number",
+      "default": 0.3,
+      "min": 0,
+      "max": 1,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "泡沫密度",
+        "en": "Foam Density"
+      },
+      "kind": "Number",
+      "default": 0.2,
+      "min": 0,
+      "max": 1,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "水流强度",
+        "en": "Current Strength"
+      },
+      "kind": "Number",
+      "default": 0.3,
+      "min": 0,
+      "max": 1,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "水流方向",
+        "en": "Current Direction"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0,
+      "max": 1,
+      "step": 0.01
+    }
+  ],
+  "ai": {
+    "capabilities": ["generate-tile", "organic", "procedural-texture", "tileable", "atmospheric-effect"],
+    "triggers": {
+      "zh-Hans": "水域, 水面, 河流, 海洋, 湖水, 波浪",
+      "en": "water, ocean, sea, lake, river, wave"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "生成一块可平铺的像素艺术水域图块，带有波浪、泡沫和深度变化。",
+      "en": "Generates a tileable pixel-art water tile with waves, foam, and depth variation."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "static float DirBands(float px, float py, float dir, int hc, float po)\n{\n    var wd = dir - MathF.Floor(dir);\n    var sec = Math.Min(3, (int)MathF.Floor(wd * 4f));\n    var bl = SmoothStep(wd * 4f - sec);\n    var h = Math.Max(1, hc);\n    var hz = 0.5f + 0.5f * MathF.Sin(px * h + po);\n    var dd = 0.5f + 0.5f * MathF.Sin((px + py) * h + po);\n    var vt = 0.5f + 0.5f * MathF.Sin(py * h + po);\n    var du = 0.5f + 0.5f * MathF.Sin((px - py) * h + po);\n    if (sec == 0) return Lerp(hz, dd, bl);\n    if (sec == 1) return Lerp(dd, vt, bl);\n    if (sec == 2) return Lerp(vt, du, bl);\n    return Lerp(du, hz, bl);\n}\n\nstatic float SelW(float t, float c0, float c1, float c2, float c3)\n{\n    if (t < 0.18f) return Lerp(c0, c1, SmoothStep(0.02f, 0.18f, t));\n    if (t < 0.42f) return Lerp(c1, c2, SmoothStep(0.18f, 0.42f, t));\n    if (t < 0.72f) return Lerp(c2, c3, SmoothStep(0.42f, 0.72f, t));\n    return Lerp(c3, c0, SmoothStep(0.72f, 0.96f, t));\n}\n\nvar size = context.TileSize;\nvar seed = GetInt(parameters, \"seed\", 42);\nvar waveScale = GetFloat(parameters, \"waveScale\", 0.5f);\nvar depthVariation = GetFloat(parameters, \"depthVariation\", 0.4f);\nvar choppiness = GetFloat(parameters, \"choppiness\", 0.3f);\nvar foamDensity = GetFloat(parameters, \"foamDensity\", 0.2f);\nvar currentStrength = GetFloat(parameters, \"currentStrength\", 0.3f);\nvar currentDirection = GetFloat(parameters, \"currentDirection\", 0.5f);\n\n// Water palette (0..1 floats)\nvar abyssR = 18f / 255f; var abyssG = 44f / 255f; var abyssB = 118f / 255f;\nvar deepR = 28f / 255f; var deepG = 72f / 255f; var deepB = 152f / 255f;\nvar midR = 50f / 255f; var midG = 112f / 255f; var midB = 188f / 255f;\nvar shallowR = 84f / 255f; var shallowG = 156f / 255f; var shallowB = 214f / 255f;\nvar crestR = 132f / 255f; var crestG = 196f / 255f; var crestB = 236f / 255f;\nvar sparkleR = 204f / 255f; var sparkleG = 236f / 255f; var sparkleB = 255f / 255f;\nvar foamR = 238f / 255f; var foamG = 248f / 255f; var foamB = 255f / 255f;\n\nvar result = new PixelBuffer(size, size);\nresult.ParallelForEachPixel((x, y) =>\n{\n    var phaseX = x / (float)size * 6.2832f;\n    var phaseY = y / (float)size * 6.2832f;\n\n    var basin = TileableFractalNoise(x * (0.95f + depthVariation * 0.85f) / (float)size * 6.2832f, y * (0.95f + depthVariation * 0.85f) / (float)size * 6.2832f, Math.Max(2, (int)((float)size * (0.95f + depthVariation * 0.85f) / 6.2832f)), 2, 0.58f, 2f, seed);\n    var pocket = TileableFractalNoise(x * (1.7f + depthVariation * 1.25f) / (float)size * 6.2832f, y * (1.7f + depthVariation * 1.25f) / (float)size * 6.2832f, Math.Max(2, (int)((float)size * (1.7f + depthVariation * 1.25f) / 6.2832f)), 2, 0.54f, 2f, seed + 17);\n    var currentField = TileableFractalNoise(x * (2.15f + currentStrength * 2.2f) / (float)size * 6.2832f, y * (2.15f + currentStrength * 2.2f) / (float)size * 6.2832f, Math.Max(2, (int)((float)size * (2.15f + currentStrength * 2.2f) / 6.2832f)), 2, 0.52f, 2f, seed + 41);\n    var crestField = TileableFractalNoise(x * (3.1f + waveScale * 2.6f) / (float)size * 6.2832f, y * (3.1f + waveScale * 2.6f) / (float)size * 6.2832f, Math.Max(2, (int)((float)size * (3.1f + waveScale * 2.6f) / 6.2832f)), 2, 0.56f, 2f, seed + 67);\n\n    var directionalBands = DirBands(phaseX, phaseY, currentDirection, 3 + (int)MathF.Round(waveScale * 5f), (currentField - 0.5f) * (0.9f + currentStrength * 1.8f));\n    var crossBands = DirBands(phaseX, phaseY, currentDirection + 0.25f, 1 + (int)MathF.Round(waveScale * 2f), crestField * 6.2832f);\n    var checker = ((x + y) & 1) == 0 ? -0.012f : 0.012f;\n\n    var depthVal = basin * 0.56f + pocket * 0.24f + currentField * 0.2f;\n    depthVal = Lerp(depthVal, pocket, depthVariation * 0.26f);\n\n    var waveLift = SmoothStep(0.34f - choppiness * 0.08f, 0.8f, directionalBands);\n    var crestMask = SmoothStep(0.7f - choppiness * 0.12f, 0.98f, directionalBands) * (0.58f + crossBands * 0.42f);\n    var tone = depthVal * 0.76f + waveLift * (0.15f + choppiness * 0.13f) + crossBands * 0.05f;\n    tone = Math.Clamp(tone + checker * (0.45f + choppiness * 0.65f), 0f, 1f);\n\n    // Base water color\n    var r = SelW(tone, abyssR, deepR, midR, shallowR);\n    var g = SelW(tone, abyssG, deepG, midG, shallowG);\n    var b = SelW(tone, abyssB, deepB, midB, shallowB);\n\n    // Crest brightening\n    var cm = crestMask * (0.2f + waveScale * 0.14f);\n    r = Lerp(r, crestR, cm);\n    g = Lerp(g, crestG, cm);\n    b = Lerp(b, crestB, cm);\n\n    // Sparkles (small bright specular highlights on wave crests)\n    if (foamDensity > 0.01f && crestMask > 0.05f)\n    {\n        var cellSz = Math.Max(4, (int)MathF.Round(size / (3.5f + foamDensity * 3f)));\n        var prd = Math.Max(1, size / cellSz);\n        var cx2 = x / cellSz;\n        var cy2 = y / cellSz;\n        var lx2 = x % cellSz;\n        var ly2 = y % cellSz;\n        var wx2 = Mod(cx2, prd);\n        var wy2 = Mod(cy2, prd);\n\n        var sparkleRoll = HashToUnit(wx2, wy2, seed + 101);\n        var threshold = 0.9f - foamDensity * 0.26f - crestMask * 0.12f;\n        if (sparkleRoll >= threshold)\n        {\n            var centX = Math.Min(cellSz - 2, 1 + (int)(HashToUnit(wx2, wy2, seed + 109) * Math.Max(1, cellSz - 2)));\n            var centY = Math.Min(cellSz - 2, 1 + (int)(HashToUnit(wx2, wy2, seed + 113) * Math.Max(1, cellSz - 2)));\n            var halfW = waveScale >= 0.72f ? 2 : waveScale >= 0.3f ? 1 : 0;\n            var dY = Math.Abs(ly2 - centY);\n            var dX = Math.Abs(lx2 - centX);\n\n            if (dY == 0 && dX <= halfW)\n            {\n                var sparkBlend = 0.26f + crestMask * 0.34f;\n                r = Lerp(r, sparkleR, sparkBlend);\n                g = Lerp(g, sparkleG, sparkBlend);\n                b = Lerp(b, sparkleB, sparkBlend);\n            }\n\n            if (dX == 0 && dY == 0)\n            {\n                var foamBlend = 0.38f + crestMask * 0.28f;\n                r = Lerp(r, foamR, foamBlend);\n                g = Lerp(g, foamG, foamBlend);\n                b = Lerp(b, foamB, foamBlend);\n            }\n        }\n    }\n\n    // Foam patches on wave crests\n    if (foamDensity > 0.01f && crestMask > 0.08f)\n    {\n        var foamNoise = TileableFractalNoise(x * (9f + waveScale * 10f) / (float)size * 6.2832f, y * (9f + waveScale * 10f) / (float)size * 6.2832f, Math.Max(2, (int)((float)size * (9f + waveScale * 10f) / 6.2832f)), 2, 0.5f, 2f, seed + 149);\n        var foamThresh = 0.93f - foamDensity * 0.18f - crestMask * 0.1f;\n        if (foamNoise > foamThresh)\n        {\n            var foamBlend = SmoothStep(foamThresh, 1f, foamNoise) * (0.2f + crestMask * 0.3f);\n            r = Lerp(r, foamR, foamBlend);\n            g = Lerp(g, foamG, foamBlend);\n            b = Lerp(b, foamB, foamBlend);\n        }\n    }\n\n    result.SetPixel(x, y, Math.Clamp(r, 0f, 1f), Math.Clamp(g, 0f, 1f), Math.Clamp(b, 0f, 1f), 1f);\n});\n\nreturn result;"
+  }
+}

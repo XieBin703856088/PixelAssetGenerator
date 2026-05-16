@@ -1,0 +1,221 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "Starfield",
+    "displayName": {
+      "zh-Hans": "星空",
+      "en": "Starfield"
+    },
+    "category": "Noise",
+    "description": {
+      "zh-Hans": "生成星空/太空/星云背景纹理。具有哈希分布的星星（可变大小、亮度和颜色）、分层星云云层以及可选的月亮/行星天体。所有噪波均可平铺，实现无缝背景图块。",
+      "en": "Generates starry sky / space / nebula background textures. Features hash-distributed stars with variable size, brightness, and color, layered nebula clouds, and optional moon/planet body. All noise is tileable for seamless background tiles."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "遮罩",
+          "en": "Mask"
+        },
+        "type": "Mask"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "种子",
+        "en": "Seed"
+      },
+      "kind": "Seed",
+      "default": 42,
+      "min": 0,
+      "max": 9999
+    },
+    {
+      "name": {
+        "zh-Hans": "星星密度",
+        "en": "Star Density"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.1,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "星星大小",
+        "en": "Star Size"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.1,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "星星亮度",
+        "en": "Star Brightness"
+      },
+      "kind": "Number",
+      "default": 0.8,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "星云密度",
+        "en": "Nebula Density"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "星云规模",
+        "en": "Nebula Scale"
+      },
+      "kind": "Number",
+      "default": 2.0,
+      "min": 0.5,
+      "max": 6.0,
+      "step": 0.5
+    },
+    {
+      "name": {
+        "zh-Hans": "星云颜色1",
+        "en": "Nebula Color1"
+      },
+      "kind": "Color",
+      "default": "#7840A0FF"
+    },
+    {
+      "name": {
+        "zh-Hans": "星云颜色2",
+        "en": "Nebula Color2"
+      },
+      "kind": "Color",
+      "default": "#2850B0FF"
+    },
+    {
+      "name": {
+        "zh-Hans": "背景颜色",
+        "en": "Bg Color"
+      },
+      "kind": "Color",
+      "default": "#05050FFF"
+    },
+    {
+      "name": {
+        "zh-Hans": "天体大小",
+        "en": "Celestial Size"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 0.3,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "天体类型",
+        "en": "Celestial Type"
+      },
+      "kind": "Choice",
+      "default": "none",
+      "choices": [
+        {
+          "value": "none",
+          "label": {
+            "zh-Hans": "无",
+            "en": "none"
+          }
+        },
+        {
+          "value": "moon",
+          "label": {
+            "zh-Hans": "月亮",
+            "en": "moon"
+          }
+        },
+        {
+          "value": "planet",
+          "label": {
+            "zh-Hans": "行星",
+            "en": "planet"
+          }
+        },
+        {
+          "value": "star",
+          "label": {
+            "zh-Hans": "星形",
+            "en": "star"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "zh-Hans": "闪烁强度",
+        "en": "Twinkle Strength"
+      },
+      "kind": "Number",
+      "default": 0.3,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "彩色星星",
+        "en": "Colored Stars"
+      },
+      "kind": "Boolean",
+      "default": true
+    },
+    {
+      "name": {
+        "zh-Hans": "反相",
+        "en": "Invert"
+      },
+      "kind": "Boolean",
+      "default": false
+    }
+  ],
+  "ai": {
+    "capabilities": ["generate-noise", "procedural-texture", "organic", "atmospheric-effect", "tileable", "color-map"],
+    "triggers": {
+      "zh-Hans": "星空, 太空, 星云, 宇宙, 银河, 星星, 背景",
+      "en": "starfield, space, nebula, galaxy, starry sky, cosmos, background"
+    },
+    "suggestedInputs": ["Noise"],
+    "exampleUsage": {
+      "zh-Hans": "生成星空/太空/星云背景纹理，带分布星星、分层星云和可选天体，适合游戏场景背景。",
+      "en": "Generates starfield/space/nebula background textures with distributed stars, layered nebula clouds, and optional celestial bodies for game backgrounds."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar seed = GetInt(parameters, \"seed\", context.Seed);\nvar starDensity = GetFloat(parameters, \"starDensity\", 0.6f);\nvar starSize = GetFloat(parameters, \"starSize\", 0.5f);\nvar starBrightness = GetFloat(parameters, \"starBrightness\", 0.7f);\nvar nebulaDensity = GetFloat(parameters, \"nebulaDensity\", 0.4f);\nvar nebulaScale = GetFloat(parameters, \"nebulaScale\", 2f);\nvar nebulaColor1 = GetColor(parameters, \"nebulaColor1\", Color.FromRgb(80, 40, 120));\nvar nebulaColor2 = GetColor(parameters, \"nebulaColor2\", Color.FromRgb(20, 60, 140));\nvar bgColor = GetColor(parameters, \"bgColor\", Color.FromRgb(5, 5, 15));\nvar celestialSize = GetFloat(parameters, \"celestialSize\", 0f);\nvar celestialType = GetChoice(parameters, \"celestialType\", \"none\");\nvar twinkleStrength = GetFloat(parameters, \"twinkleStrength\", 0f);\nvar coloredStars = GetBool(parameters, \"coloredStars\", true);\nvar invert = GetBool(parameters, \"invert\", false);\n\nvar size = context.TileSize;\nvar buffer = new PixelBuffer(size, size);\n\nvar bgR = bgColor.R / 255f; var bgG = bgColor.G / 255f; var bgB = bgColor.B / 255f;\nvar n1R = nebulaColor1.R / 255f; var n1G = nebulaColor1.G / 255f; var n1B = nebulaColor1.B / 255f;\nvar n2R = nebulaColor2.R / 255f; var n2G = nebulaColor2.G / 255f; var n2B = nebulaColor2.B / 255f;\n\n// Generate star candidates using hash-based grid\n// Divide the tile into a grid; each cell may or may not have a star\nvar gridCells = (int)(size * 0.5f); // ~0.5 pixel per cell resolution\ngridCells = Math.Clamp(gridCells, 8, 64);\nvar cellPixelSize = size / (float)gridCells;\n\n// Star data: (x, y, size, brightness, r, g, b)\nvar starCount = (int)(starDensity * gridCells * gridCells * 0.15f);\nstarCount = Math.Clamp(starCount, 0, 2000);\nvar stars = new (float x, float y, float s, float br, float r, float g, float b)[starCount];\nvar starIdx = 0;\n\nfor (var gy = 0; gy < gridCells && starIdx < starCount; gy++)\n{\n    for (var gx = 0; gx < gridCells && starIdx < starCount; gx++)\n    {\n        var hash = HashToUnit(gx * 31 + gy * 17, seed, 111);\n        if (hash > starDensity) continue;\n\n        // Star position within cell\n        var sx = (gx + HashToUnit(gx * 7 + gy * 13, seed + 50, 222)) / gridCells;\n        var sy = (gy + HashToUnit(gx * 11 + gy * 5, seed + 100, 333)) / gridCells;\n\n        // Star size (1-4 pixels)\n        var ss = 0.5f + HashToUnit(gx * 23 + gy * 19, seed + 150, 444) * 1.5f;\n        ss *= starSize;\n\n        // Star brightness\n        var sb = 0.5f + HashToUnit(gx * 29 + gy * 37, seed + 200, 555) * 0.5f;\n        sb *= starBrightness;\n\n        // Star color\n        float sr, sg, sbCol;\n        if (coloredStars)\n        {\n            var colorRoll = HashToUnit(gx * 41 + gy * 43, seed + 250, 666);\n            if (colorRoll < 0.1f)      { sr = 0.8f; sg = 0.5f; sbCol = 0.3f; } // Orange\n            else if (colorRoll < 0.2f) { sr = 0.6f; sg = 0.5f; sbCol = 0.9f; } // Blue\n            else if (colorRoll < 0.3f) { sr = 1.0f; sg = 0.7f; sbCol = 0.4f; } // Yellow\n            else if (colorRoll < 0.4f) { sr = 0.9f; sg = 0.6f; sbCol = 0.6f; } // Reddish\n            else                       { sr = 1.0f; sg = 1.0f; sbCol = 1.0f; } // White\n        }\n        else\n        {\n            sr = 1f; sg = 1f; sbCol = 1f;\n        }\n\n        // Twinkle phase\n        var twinklePhase = HashToUnit(gx * 53 + gy * 59, seed + 300, 777);\n\n        stars[starIdx++] = (sx, sy, ss, sb, sr, sg, sbCol);\n    }\n}\n\n// Resize array to actual star count\nif (starIdx < starCount)\n{\n    Array.Resize(ref stars, starIdx);\n}\n\n// Add ghost stars near edges for seamless horizontal tiling.\n// Stars within threshold of the left or right edge also get a wrapped copy\n// so their glow appears on the opposite side when the texture is tiled.\nvar edgeThreshold = Math.Max(1.5f, starSize * 2f) / size;\nvar extraStars = new List<(float x, float y, float s, float br, float r, float g, float b)>();\nforeach (var star in stars)\n{\n    if (star.x < edgeThreshold)\n        extraStars.Add((star.x + 1f, star.y, star.s, star.br, star.r, star.g, star.b));\n    if (star.x > 1f - edgeThreshold)\n        extraStars.Add((star.x - 1f, star.y, star.s, star.br, star.r, star.g, star.b));\n}\nif (extraStars.Count > 0)\n{\n    var oldLen = stars.Length;\n    Array.Resize(ref stars, oldLen + extraStars.Count);\n    extraStars.CopyTo(stars, oldLen);\n}\n\n// Celestial body position\nvar celestialX = 0.5f;\nvar celestialY = 0.5f;\nvar celestialR = 0f;\nvar celestialG = 0f;\nvar celestialB = 0f;\n\nif (celestialSize > 0.01f && celestialType != \"none\")\n{\n    celestialX = 0.2f + HashToUnit(seed, 0, 888) * 0.6f;\n    celestialY = 0.2f + HashToUnit(seed, 1, 999) * 0.6f;\n\n    (celestialR, celestialG, celestialB) = celestialType switch\n    {\n        \"moon\" => (220f / 255f, 210f / 255f, 180f / 255f),\n        \"planet\" => (180f / 255f, 120f / 255f, 80f / 255f),\n        \"star\" => (255f / 255f, 200f / 255f, 100f / 255f),\n        _ => (0f, 0f, 0f)\n    };\n}\n\nbuffer.ParallelForEachPixel((x, y) =>\n{\n    var u = (x + 0.5f) / size;\n    var v = (y + 0.5f) / size;\n\n    // --- Background: deep space with subtle gradient ---\n    var bgGradient = v * 0.08f;\n    var fr = Math.Clamp(bgR + bgGradient, 0f, 1f);\n    var fg = Math.Clamp(bgG + bgGradient * 0.7f, 0f, 1f);\n    var fb = Math.Clamp(bgB + bgGradient * 1.2f, 0f, 1f);\n\n    // --- Nebula clouds ---\n    if (nebulaDensity > 0.001f)\n    {\n        var nebula = TileableFractalNoise(\n            u * nebulaScale, v * nebulaScale,\n            Math.Max(1, (int)(size * nebulaScale * 0.3f)),\n            3, 0.6f, 2.2f, seed + 400);\n\n        var nebula2 = TileableFractalNoise(\n            u * nebulaScale * 1.3f + 20f, v * nebulaScale * 1.3f + 20f,\n            Math.Max(1, (int)(size * nebulaScale * 0.3f)),\n            2, 0.5f, 2f, seed + 500);\n\n        var nBlend = nebula * nebulaDensity * 0.5f;\n        var nBlend2 = nebula2 * nebulaDensity * 0.3f;\n\n        fr = Lerp(fr, n1R, nBlend);\n        fg = Lerp(fg, n1G, nBlend * 0.8f);\n        fb = Lerp(fb, n1B, nBlend * 1.2f);\n\n        fr = Lerp(fr, n2R, nBlend2);\n        fg = Lerp(fg, n2G, nBlend2 * 0.8f);\n        fb = Lerp(fb, n2B, nBlend2 * 1.2f);\n    }\n\n    // --- Celestial body ---\n    if (celestialSize > 0.01f && celestialType != \"none\")\n    {\n        var dx = u - celestialX;\n        var dy = v - celestialY;\n        if (dx > 0.5f) dx -= 1f; else if (dx < -0.5f) dx += 1f;\n        if (dy > 0.5f) dy -= 1f; else if (dy < -0.5f) dy += 1f;\n        var dist = MathF.Sqrt(dx * dx + dy * dy);\n\n        if (dist < celestialSize * 0.5f)\n        {\n            // Body surface\n            var bodyT = dist / (celestialSize * 0.5f);\n\n            if (celestialType == \"moon\")\n            {\n                // Moon: cratered surface\n                var craterNoise = TileableFractalNoise(\n                    u * 20f, v * 20f,\n                    Math.Max(1, size / 2), 2, 0.5f, 2f, seed + 600);\n                var crater = (craterNoise - 0.5f) * 0.1f;\n                fr = Math.Clamp(celestialR + crater - bodyT * 0.1f, 0f, 1f);\n                fg = Math.Clamp(celestialG + crater * 0.8f - bodyT * 0.1f, 0f, 1f);\n                fb = Math.Clamp(celestialB + crater * 0.6f - bodyT * 0.1f, 0f, 1f);\n            }\n            else if (celestialType == \"star\")\n            {\n                // Star: glowing ball\n                var glow = 1f - bodyT;\n                glow = glow * glow;\n                fr = Math.Clamp(celestialR + glow * 0.5f, 0f, 1f);\n                fg = Math.Clamp(celestialG + glow * 0.3f, 0f, 1f);\n                fb = Math.Clamp(celestialB + glow * 0.1f, 0f, 1f);\n            }\n            else\n            {\n                // Planet: banded surface\n                var bands = MathF.Sin(u * 10f + v * 3f) * 0.5f + 0.5f;\n                var bandVar = (bands - 0.5f) * 0.15f;\n                fr = Math.Clamp(celestialR + bandVar - bodyT * 0.1f, 0f, 1f);\n                fg = Math.Clamp(celestialG + bandVar * 0.7f - bodyT * 0.1f, 0f, 1f);\n                fb = Math.Clamp(celestialB + bandVar * 0.5f - bodyT * 0.1f, 0f, 1f);\n            }\n\n            // Atmosphere glow\n            var glowWidth = 0.03f;\n            var glowEdge = MathF.Abs(bodyT - 0.95f) / glowWidth;\n            if (glowEdge < 1f)\n            {\n                var glowA = 1f - glowEdge;\n                fr += glowA * 0.1f;\n                fg += glowA * 0.05f;\n            }\n        }\n        else if (dist < celestialSize * 0.5f + 0.05f)\n        {\n            // Glow around body\n            var glowT = (dist - celestialSize * 0.5f) / 0.05f;\n            var glow = 1f - glowT;\n            glow = glow * glow * 0.3f;\n            fr = Math.Clamp(fr + glow * celestialR, 0f, 1f);\n            fg = Math.Clamp(fg + glow * celestialG * 0.5f, 0f, 1f);\n            fb = Math.Clamp(fb + glow * celestialB * 0.3f, 0f, 1f);\n        }\n    }\n\n    // --- Stars ---\n    foreach (var (sx, sy, ss, sb, sr, sg, sbColVal) in stars)\n    {\n        var dx = u - sx;\n        var dy = v - sy;\n        if (dx > 0.5f) dx -= 1f; else if (dx < -0.5f) dx += 1f;\n        if (dy > 0.5f) dy -= 1f; else if (dy < -0.5f) dy += 1f;\n        var dist = MathF.Sqrt(dx * dx + dy * dy);\n\n        var pixelDist = dist * size;\n        var starRadius = MathF.Max(0.5f, ss * 1.5f);\n\n        if (pixelDist <= starRadius)\n        {\n            // Star core\n            var core = 1f - pixelDist / starRadius;\n            core = core * core;\n            var brightness = core * sb;\n\n            // Twinkle\n            if (twinkleStrength > 0f)\n            {\n                var twinkle = MathF.Sin(u * 50f + v * 30f + sx * 100f + seed) * 0.5f + 0.5f;\n                brightness *= 1f - (1f - twinkle) * twinkleStrength * 0.5f;\n            }\n\n            // Glow for larger stars\n            if (ss > 0.8f && pixelDist > starRadius * 0.5f)\n            {\n                // Outer glow: softer, wider\n                var glowFalloff = 1f - (pixelDist - starRadius * 0.5f) / (starRadius * 0.5f);\n                glowFalloff = MathF.Max(0f, glowFalloff);\n                glowFalloff = glowFalloff * glowFalloff * 0.3f;\n                fr = Math.Clamp(fr + sr * glowFalloff, 0f, 1f);\n                fg = Math.Clamp(fg + sg * glowFalloff * 0.8f, 0f, 1f);\n                fb = Math.Clamp(fb + sbColVal * glowFalloff * 0.6f, 0f, 1f);\n            }\n\n            // Add star light\n            fr = Math.Clamp(fr + sr * brightness, 0f, 1f);\n            fg = Math.Clamp(fg + sg * brightness, 0f, 1f);\n            fb = Math.Clamp(fb + sbColVal * brightness, 0f, 1f);\n        }\n    }\n\n    if (invert) { fr = 1f - fr; fg = 1f - fg; fb = 1f - fb; }\n\n    buffer.SetPixel(x, y, Math.Clamp(fr, 0f, 1f), Math.Clamp(fg, 0f, 1f), Math.Clamp(fb, 0f, 1f), 1f);\n});\n\nreturn buffer;\n}"
+  }
+}

@@ -1,0 +1,156 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "SeamlessBlend",
+    "displayName": {
+      "zh-Hans": "无缝混合",
+      "en": "Seamless Blend"
+    },
+    "category": "ImageProcess",
+    "description": {
+      "zh-Hans": "通过将边缘区域与其环绕对应部分混合，强制实现无缝平铺。使用「半偏移+交叉淡入」技术：将图像偏移一半，然后使用平滑的径向/边缘遮罩混合原始图像和偏移图像，保证四方无缝边缘和角落连续性。",
+      "en": "Forces seamless tiling by blending edge regions with their wrapped counterparts. Uses the \"offset half + cross-fade\" technique: offsets the image by half, then blends original and offset using a smooth radial/edge mask, guaranteeing four-way seamless edges and corner continuity."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      }
+    ],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "混合宽度",
+        "en": "Blend Width"
+      },
+      "kind": "Number",
+      "default": 0.25,
+      "min": 0.05,
+      "max": 0.5,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "混合形状",
+        "en": "Blend Shape"
+      },
+      "kind": "Choice",
+      "default": "linear",
+      "choices": [
+        {
+          "value": "linear",
+          "label": {
+            "zh-Hans": "线性",
+            "en": "linear"
+          }
+        },
+        {
+          "value": "cosine",
+          "label": {
+            "zh-Hans": "余弦",
+            "en": "cosine"
+          }
+        },
+        {
+          "value": "gaussian",
+          "label": {
+            "zh-Hans": "高斯模糊",
+            "en": "gaussian"
+          }
+        },
+        {
+          "value": "cubic",
+          "label": {
+            "zh-Hans": "三次",
+            "en": "cubic"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "zh-Hans": "混合方向",
+        "en": "Blend Direction"
+      },
+      "kind": "Choice",
+      "default": "both",
+      "choices": [
+        {
+          "value": "both",
+          "label": {
+            "zh-Hans": "双向",
+            "en": "both"
+          }
+        },
+        {
+          "value": "horizontal",
+          "label": {
+            "zh-Hans": "水平",
+            "en": "horizontal"
+          }
+        },
+        {
+          "value": "vertical",
+          "label": {
+            "zh-Hans": "垂直",
+            "en": "vertical"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "zh-Hans": "强度",
+        "en": "Intensity"
+      },
+      "kind": "Number",
+      "default": 1.0,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "显示接缝",
+        "en": "Show Seam"
+      },
+      "kind": "Boolean",
+      "default": false
+    }
+  ],
+  "ai": {
+    "capabilities": ["blend", "effect"],
+    "triggers": {
+      "zh-Hans": "无缝混合, 边缘混合, 平铺混合, 接缝消除",
+      "en": "seamless blend, edge blend, tile blend, seam removal"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "混合可平铺纹理的边缘以创建无缝图案。",
+      "en": "Blend the edges of a tileable texture to create a seamless pattern."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar input = inputs.Length > 0 ? inputs[0] : null;\n        if (input is null)\n            return PixelBuffer.CreateSolid(context.TileSize, context.TileSize, 0, 0, 0);\n\n        var blendWidth = GetFloat(parameters, \"blendWidth\", 0.25f);\n        var blendShape = GetChoice(parameters, \"blendShape\", \"linear\");\n        var blendDirection = GetChoice(parameters, \"blendDirection\", \"both\");\n        var blendStrength = GetFloat(parameters, \"intensity\", 1f);\n        var showSeam = GetBool(parameters, \"showSeam\");\n\n        var size = input.Width;\n        var halfSize = size / 2;\n        var blendPixels = Math.Max(1, (int)(blendWidth * size));\n\n        // Create the offset copy (shifted by half tile in both axes)\n        var offset = new PixelBuffer(size, size);\n        offset.ParallelForEachPixel((x, y) =>\n        {\n            var ox = blendDirection == \"vertical\" ? x : x + halfSize;\n            var oy = blendDirection == \"horizontal\" ? y : y + halfSize;\n            var (r, g, b, a) = input.GetPixelWrapped(ox, oy);\n            offset.SetPixel(x, y, r, g, b, a);\n        });\n\n        // Create the blending mask\n        var result = new PixelBuffer(size, size);\n        result.ParallelForEachPixel((x, y) =>\n        {\n            float cx, cy;\n            float edgeDistance;\n\n            if (blendDirection == \"horizontal\")\n            {\n                cx = MathF.Abs(x - size * 0.5f + 0.5f) / (size * 0.5f);\n                edgeDistance = cx;\n            }\n            else if (blendDirection == \"vertical\")\n            {\n                cy = MathF.Abs(y - size * 0.5f + 0.5f) / (size * 0.5f);\n                edgeDistance = cy;\n            }\n            else\n            {\n                cx = MathF.Abs(x - size * 0.5f + 0.5f) / (size * 0.5f);\n                cy = MathF.Abs(y - size * 0.5f + 0.5f) / (size * 0.5f);\n                edgeDistance = MathF.Max(cx, cy);\n            }\n\n            var blendStart = 1f - blendWidth * 2f;\n            float t;\n            if (edgeDistance <= blendStart)\n            {\n                t = 0f;\n            }\n            else if (edgeDistance >= 1f)\n            {\n                t = 1f;\n            }\n            else\n            {\n                var normalized = (edgeDistance - blendStart) / (1f - blendStart);\n                t = blendShape switch\n                {\n                    \"cosine\" => 0.5f - 0.5f * MathF.Cos(normalized * MathF.PI),\n                    \"gaussian\" => 1f - MathF.Exp(-normalized * normalized * 4f),\n                    \"cubic\" => normalized * normalized * (3f - 2f * normalized),\n                    _ => normalized // linear\n                };\n            }\n\n            t = Math.Clamp(t * blendStrength, 0f, 1f);\n\n            var (or, og, ob, oa) = input.GetPixelWrapped(x, y);\n            var (fr, fg, fb, fa) = offset.GetPixel(x, y);\n\n            var outR = Lerp(or, fr, t);\n            var outG = Lerp(og, fg, t);\n            var outB = Lerp(ob, fb, t);\n            var outA = Lerp(oa, fa, t);\n\n            // Show seam debug line\n            if (showSeam)\n            {\n                var edgePixels = 1f / size;\n                if (MathF.Abs(edgeDistance - blendStart) < edgePixels * 2f)\n                {\n                    outR = 1f; outG = 0f; outB = 0f; outA = 1f;\n                }\n            }\n\n            result.SetPixel(x, y, outR, outG, outB, outA);\n        });\n\n        return result;\n}"
+  }
+}

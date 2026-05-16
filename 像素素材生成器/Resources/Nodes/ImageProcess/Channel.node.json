@@ -1,0 +1,177 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "Channel",
+    "displayName": {
+      "zh-Hans": "通道",
+      "en": "Channel"
+    },
+    "category": "ImageProcess",
+    "description": {
+      "zh-Hans": "将RGBA图像拆分为单个通道，或将多个通道合并为RGBA图像。",
+      "en": "Splits an RGBA image into individual channels or combines channels into an RGBA image."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [
+      {
+        "name": {
+          "zh-Hans": "源图像",
+          "en": "SourceImage"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "R/灰度",
+          "en": "R/Gray"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "G通道",
+          "en": "G"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "B通道",
+          "en": "B"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "A通道",
+          "en": "A"
+        },
+        "type": "Image"
+      }
+    ],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "输出",
+          "en": "Output"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "遮罩",
+          "en": "Mask"
+        },
+        "type": "Mask"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "模式",
+        "en": "Mode"
+      },
+      "kind": "Choice",
+      "default": "extractRed",
+      "choices": [
+        {
+          "value": "extractRed",
+          "label": {
+            "zh-Hans": "提取红色",
+            "en": "extractRed"
+          }
+        },
+        {
+          "value": "extractGreen",
+          "label": {
+            "zh-Hans": "提取绿色",
+            "en": "extractGreen"
+          }
+        },
+        {
+          "value": "extractBlue",
+          "label": {
+            "zh-Hans": "提取蓝色",
+            "en": "extractBlue"
+          }
+        },
+        {
+          "value": "extractAlpha",
+          "label": {
+            "zh-Hans": "提取透明通道",
+            "en": "extractAlpha"
+          }
+        },
+        {
+          "value": "combineRGBA",
+          "label": {
+            "zh-Hans": "合并RGBA",
+            "en": "combineRGBA"
+          }
+        },
+        {
+          "value": "grayscale",
+          "label": {
+            "zh-Hans": "灰度",
+            "en": "grayscale"
+          }
+        },
+        {
+          "value": "invertColors",
+          "label": {
+            "zh-Hans": "反色",
+            "en": "invertColors"
+          }
+        },
+        {
+          "value": "posterize",
+          "label": {
+            "zh-Hans": "色调分离",
+            "en": "posterize"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "zh-Hans": "色调分离级别",
+        "en": "Posterize Levels"
+      },
+      "kind": "Integer",
+      "default": 4,
+      "min": 2,
+      "max": 32,
+      "step": 1
+    },
+    {
+      "name": {
+        "zh-Hans": "保留透明通道",
+        "en": "Keep Alpha"
+      },
+      "kind": "Boolean",
+      "default": true
+    }
+  ],
+  "ai": {
+    "capabilities": ["channel"],
+    "triggers": {
+      "zh-Hans": "通道, 提取通道, 合并通道, RGB拆分, 灰度, 反色",
+      "en": "channel, extract channel, combine channels, split RGB, grayscale, invert"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "提取图像的红色通道用作遮罩。",
+      "en": "Extract the red channel from an image to use as a mask."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar mode = GetChoice(parameters, \"mode\", \"extractRed\");\nvar levels = GetInt(parameters, \"posterizeLevels\", 4);\nvar keepAlpha = GetBool(parameters, \"keepAlpha\", true);\n\nvar size = context.TileSize;\nvar result = new PixelBuffer(size, size);\n\nvar src = inputs.Length > 0 ? inputs[0] : null;\n\nif (mode == \"combineRGBA\")\n{\n    var rChannel = inputs.Length > 1 ? inputs[1] : null;\n    var gChannel = inputs.Length > 2 ? inputs[2] : null;\n    var bChannel = inputs.Length > 3 ? inputs[3] : null;\n    var aChannel = inputs.Length > 4 ? inputs[4] : null;\n\n    result.ParallelForEachPixel((x, y) =>\n    {\n        float ra = 0, ga = 0, ba = 0, aa = 1;\n        if (rChannel != null) (ra, _, _, _) = rChannel.GetPixel(x, y);\n        if (gChannel != null) (_, ga, _, _) = gChannel.GetPixel(x, y);\n        if (bChannel != null) (_, _, ba, _) = bChannel.GetPixel(x, y);\n        if (aChannel != null) (_, _, _, aa) = aChannel.GetPixel(x, y);\n        result.SetPixel(x, y, ra, ga, ba, aa);\n    });\n}\nelse if (mode == \"grayscale\")\n{\n    result.ParallelForEachPixel((x, y) =>\n    {\n        if (src != null)\n        {\n            var (r, g, b, a) = src.GetPixel(x, y);\n            var gray = 0.299f * r + 0.587f * g + 0.114f * b;\n            result.SetPixel(x, y, gray, gray, gray, keepAlpha ? a : 1f);\n        }\n    });\n}\nelse if (mode == \"invertColors\")\n{\n    result.ParallelForEachPixel((x, y) =>\n    {\n        if (src != null)\n        {\n            var (r, g, b, a) = src.GetPixel(x, y);\n            result.SetPixel(x, y, 1f - r, 1f - g, 1f - b, keepAlpha ? a : 1f);\n        }\n    });\n}\nelse if (mode == \"posterize\")\n{\n    var step = 1f / levels;\n    result.ParallelForEachPixel((x, y) =>\n    {\n        if (src != null)\n        {\n            var (r, g, b, a) = src.GetPixel(x, y);\n            r = MathF.Round(r / step) * step;\n            g = MathF.Round(g / step) * step;\n            b = MathF.Round(b / step) * step;\n            result.SetPixel(x, y, r, g, b, keepAlpha ? a : 1f);\n        }\n    });\n}\nelse\n{\n    // Channel extraction\n    int channelIndex = mode switch\n    {\n        \"extractRed\" => 0,\n        \"extractGreen\" => 1,\n        \"extractBlue\" => 2,\n        \"extractAlpha\" => 3,\n        _ => 0\n    };\n\n    result.ParallelForEachPixel((x, y) =>\n    {\n        if (src != null)\n        {\n            var (r, g, b, a) = src.GetPixel(x, y);\n            float val = channelIndex switch\n            {\n                0 => r, 1 => g, 2 => b, 3 => a, _ => r\n            };\n            result.SetPixel(x, y, val, val, val, 1f);\n        }\n    });\n}\n\nreturn result;\n}"
+  }
+}

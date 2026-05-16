@@ -1,0 +1,476 @@
+<?xml version='1.0' encoding='utf-8'?>
+<root xmlns:ns1="urn:schemas-microsoft-com:xml-msdata" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:schema id="root">
+    <xs:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xs:element name="root" ns1:IsDataSet="true">
+      <xs:complexType>
+        <xs:choice maxOccurs="unbounded">
+          <xs:element name="metadata">
+            <xs:complexType>
+              <xs:sequence>
+                <xs:element name="value" type="xsd:string" minOccurs="0" />
+              </xs:sequence>
+              <xs:attribute name="name" type="xsd:string" />
+            </xs:complexType>
+          </xs:element>
+          <xs:element name="assembly">
+            <xs:complexType>
+              <xs:attribute name="alias" type="xsd:string" />
+              <xs:attribute name="name" type="xsd:string" />
+            </xs:complexType>
+          </xs:element>
+          <xs:element name="data">
+            <xs:complexType>
+              <xs:sequence>
+                <xs:element name="value" type="xsd:string" minOccurs="0" ns1:Ordinal="1" />
+                <xs:element name="comment" type="xsd:string" minOccurs="0" ns1:Ordinal="2" />
+              </xs:sequence>
+              <xs:attribute name="name" type="xsd:string" />
+              <xs:attribute name="type" type="xsd:string" />
+              <xs:attribute name="mimetype" type="xsd:string" />
+            </xs:complexType>
+          </xs:element>
+          <xs:element name="resheader">
+            <xs:complexType>
+              <xs:sequence>
+                <xs:element name="value" type="xsd:string" minOccurs="0" ns1:Ordinal="1" />
+              </xs:sequence>
+              <xs:attribute name="name" type="xsd:string" />
+            </xs:complexType>
+          </xs:element>
+        </xs:choice>
+      </xs:complexType>
+    </xs:element>
+  </xs:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+
+
+  <data name="AppTitle" xml:space="preserve"><value>像素素材生成器</value></data>
+    <data name="Settings_Title" xml:space="preserve"><value>设置</value></data>
+    <data name="Settings_ThemeSection" xml:space="preserve"><value>主题设置</value></data>
+    <data name="Settings_DarkTheme" xml:space="preserve"><value>暗色主题</value></data>
+    <data name="Settings_LightTheme" xml:space="preserve"><value>亮色主题</value></data>
+    <data name="Settings_ShortcutSection" xml:space="preserve"><value>快捷键设置</value></data>
+    <data name="Settings_Operation" xml:space="preserve"><value>操作</value></data>
+    <data name="Settings_Shortcut" xml:space="preserve"><value>快捷键</value></data>
+    <data name="Settings_Edit" xml:space="preserve"><value>编辑</value></data>
+    <data name="Settings_Cancel" xml:space="preserve"><value>取消</value></data>
+    <data name="Settings_PressKey" xml:space="preserve"><value>请按键…</value></data>
+    <data name="Settings_ShortcutHint" xml:space="preserve"><value>提示：在快捷键列表中点击【编辑】按钮后按下目标组合键即可录制；按 Delete 可清除绑定；按 Esc 取消。</value></data>
+    <data name="Settings_ResetShortcuts" xml:space="preserve"><value>恢复默认快捷键</value></data>
+    <data name="Settings_TabGeneral" xml:space="preserve"><value>基本</value></data>
+    <data name="Settings_TabShortcuts" xml:space="preserve"><value>快捷键</value></data>
+    <data name="Settings_OpenLangFolder" xml:space="preserve"><value>打开本地化文件夹</value></data>
+    <data name="Settings_NodesSection" xml:space="preserve"><value>节点扩展</value></data>
+    <data name="Settings_NodesPath" xml:space="preserve"><value>自定义节点目录</value></data>
+    <data name="Settings_BrowseNodes" xml:space="preserve"><value>浏览…</value></data>
+    <data name="Settings_NodesPathHint" xml:space="preserve"><value>将他人编写好的 .node.json 文件放入此目录，重启后会自动加载为可用节点。</value></data>
+    <data name="Settings_ResetNodesPath" xml:space="preserve"><value>恢复默认</value></data>
+    <data name="Settings_OK" xml:space="preserve"><value>确定</value></data>
+    <data name="Settings_CacheSection" xml:space="preserve"><value>脚本缓存</value></data>
+    <data name="Settings_CachePath" xml:space="preserve"><value>缓存目录</value></data>
+    <data name="Settings_OpenCacheFolder" xml:space="preserve"><value>打开…</value></data>
+    <data name="Lang_Language" xml:space="preserve"><value>语言</value></data>
+    <data name="Shortcut_Undo" xml:space="preserve"><value>撤销</value></data>
+    <data name="Shortcut_Redo" xml:space="preserve"><value>重做</value></data>
+    <data name="Shortcut_DrawingModePencil" xml:space="preserve"><value>切换铅笔模式（绘制窗口）</value></data>
+    <data name="Shortcut_DrawingModePath" xml:space="preserve"><value>切换路径模式（绘制窗口）</value></data>
+    <data name="Shortcut_DrawingModeMove" xml:space="preserve"><value>切换选择模式（绘制窗口）</value></data>
+    <data name="Shortcut_DrawingModeShape" xml:space="preserve"><value>切换形状模式（绘制窗口）</value></data>
+    <data name="Shortcut_BrushSizeIncrease" xml:space="preserve"><value>增大画笔/形状大小（绘制窗口）</value></data>
+    <data name="Shortcut_BrushSizeDecrease" xml:space="preserve"><value>减小画笔/形状大小（绘制窗口）</value></data>
+    <data name="Shortcut_ToggleEraser" xml:space="preserve"><value>切换橡皮擦（绘制窗口）</value></data>
+    <data name="Shortcut_FinishPath" xml:space="preserve"><value>完成路径（绘制窗口）</value></data>
+    <data name="Shortcut_Cancel" xml:space="preserve"><value>取消 / 退出编辑（绘制窗口）</value></data>
+    <data name="Shortcut_ClearCanvas" xml:space="preserve"><value>清空画布（绘制窗口）</value></data>
+    <data name="Shortcut_SelectAll" xml:space="preserve"><value>全选节点</value></data>
+    <data name="Shortcut_CopyNodes" xml:space="preserve"><value>复制节点</value></data>
+    <data name="Shortcut_PasteNodes" xml:space="preserve"><value>粘贴节点</value></data>
+    <data name="Shortcut_DeleteSelected" xml:space="preserve"><value>删除所选</value></data>
+    <data name="Shortcut_ZoomToSelected" xml:space="preserve"><value>缩放到所选节点</value></data>
+    <data name="Shortcut_TogglePreviewGrid" xml:space="preserve"><value>切换预览像素网格</value></data>
+    <data name="Shortcut_ToggleTilePreview" xml:space="preserve"><value>切换平铺预览</value></data>
+    <data name="Shortcut_FitPreview" xml:space="preserve"><value>适应预览</value></data>
+    <data name="Shortcut_NewProject" xml:space="preserve"><value>新建项目</value></data>
+    <data name="Shortcut_OpenProject" xml:space="preserve"><value>打开项目</value></data>
+    <data name="Shortcut_SaveProject" xml:space="preserve"><value>保存项目</value></data>
+    <data name="Shortcut_ExportTiles" xml:space="preserve"><value>导出图块</value></data>
+    <data name="Shortcut_AutoArrange" xml:space="preserve"><value>自动排列节点</value></data>
+    <data name="Shortcut_ToggleNoiseNode" xml:space="preserve"><value>添加噪声节点</value></data>
+    <data name="Hint_Unbound" xml:space="preserve"><value>（未绑定）</value></data>
+    <data name="Hint_FitPreview" xml:space="preserve"><value>适应 ({0})</value></data>
+    <data name="Hint_TogglePreviewGrid" xml:space="preserve"><value>在实时预览中显示像素栅格 ({0})</value></data>
+    <data name="Hint_ToggleTilePreview" xml:space="preserve"><value>切换平铺预览 ({0})</value></data>
+    <data name="Hint_DeleteSelected" xml:space="preserve"><value>删除所选节点({0})</value></data>
+    <data name="Hint_FinishPath" xml:space="preserve"><value>结束当前路径 ({0})</value></data>
+    <data name="Hint_BrushSize" xml:space="preserve"><value>画笔/形状大小  {0} 减小  {1} 增大</value></data>
+    <data name="Hint_Eraser" xml:space="preserve"><value>橡皮擦 — 左键点击或拖动擦除像素 ({0})</value></data>
+    <data name="Hint_ClearCanvas" xml:space="preserve"><value>清空画布 ({0})</value></data>
+    <data name="Hint_PencilMode" xml:space="preserve"><value>铅笔模式 — 自由绘制像素笔画 ({0})</value></data>
+    <data name="Hint_PathMode" xml:space="preserve"><value>路径模式 — 点击放置锚点，连成线段路径 ({0})</value></data>
+    <data name="Hint_MoveMode" xml:space="preserve"><value>选择模式 — 框选锚点并批量移动 ({0})</value></data>
+    <data name="Hint_ShapeMode" xml:space="preserve"><value>形状图章 — 拖动绘制形状；长按切换形状种类 ({0})</value></data>
+    <data name="Hint_PencilInstructions" xml:space="preserve"><value>按住左键绘制；{0} 撤销；{1} 重做；{2} 切换橡皮擦；{3} 清空画布。</value></data>
+    <data name="Hint_PathInstructions" xml:space="preserve"><value>左键点击放置锚点；点击首个锚点可闭合路径；右键或 {0} 完成；{1} 撤销；{2} 重做。</value></data>
+    <data name="Hint_MoveInstructions" xml:space="preserve"><value>左键点击选中锚点；Ctrl+左键多选/取消；拖框框选多个锚点；拖动已选锚点批量移动；{0} 取消选择；{1} 撤销。</value></data>
+    <data name="Hint_ShapeStampInstructions" xml:space="preserve"><value>左键点击放置形状路径；拖动确定大小；形状将创建为路径图层，可编辑锚点；{0} 长按切换形状种类；{1} 撤销。</value></data>
+    <data name="Hint_EditModeInstructions" xml:space="preserve"><value>编辑模式：左键选中锚点；Ctrl+左键/框选多选；拖动已选锚点批量移动；右键多选时统一设置类型；{0} 撤销。</value></data>
+    <data name="Hint_FinishEditPathInstructions" xml:space="preserve"><value>左键点击放置锚点；右键或 {0} 完成当前路径；{1} 撤销；{2} 重做；{3} 取消。</value></data>
+    <data name="Hint_FinishEditMoveInstructions" xml:space="preserve"><value>左键点击选中锚点；Ctrl+左键多选/取消；拖框框选多个锚点；拖动已选锚点批量移动；{0} 取消选择；{1} 撤销。</value></data>
+    <data name="AI_Streaming" xml:space="preserve"><value>正在流式输出</value></data>
+    <data name="AI_Thinking" xml:space="preserve"><value>正在推理</value></data>
+    <data name="AI_ContextPreparing" xml:space="preserve"><value>正在整理上下文</value></data>
+    <data name="AI_StartRequest" xml:space="preserve"><value>正在启动首轮请求</value></data>
+    <data name="AI_ContinueRequest" xml:space="preserve"><value>正在继续第 {0} 轮</value></data>
+    <data name="AI_ToolReceived" xml:space="preserve"><value>收到 {0} 个工具调用</value></data>
+    <data name="AI_ExecutingTool" xml:space="preserve"><value>正在执行工具: {0}</value></data>
+    <data name="AI_MaxRoundsReached" xml:space="preserve"><value>已达到最大工具调用轮次 ({0})，停止</value></data>
+    <data name="AI_WaitingConfirm" xml:space="preserve"><value>等待用户确认: {0}</value></data>
+    <data name="AI_Cancelled" xml:space="preserve"><value>已取消: {0}</value></data>
+    <data name="AI_Error" xml:space="preserve"><value>发生错误: {0}</value></data>
+    <data name="AI_Compressing" xml:space="preserve"><value>上下文已达 {0} tokens，正在压缩历史...</value></data>
+    <data name="AI_CompressDone" xml:space="preserve"><value>压缩完成，释放了约 {0} tokens</value></data>
+    <data name="AI_CompressFailed" xml:space="preserve"><value>压缩失败: {0}，将丢弃旧消息</value></data>
+    <data name="AI_CompressEmpty" xml:space="preserve"><value>压缩结果为空，丢弃旧消息</value></data>
+    <data name="AI_InvokePrompt" xml:space="preserve"><value>请输入消息...</value></data>
+    <data name="AI_Send" xml:space="preserve"><value>发送</value></data>
+    <data name="NodeLib_Title" xml:space="preserve"><value>节点库</value></data>
+    <data name="NodeLib_Search" xml:space="preserve"><value>搜索节点...</value></data>
+    <data name="NodeLib_Category_Generator" xml:space="preserve"><value>生成器</value></data>
+    <data name="NodeLib_Category_Filter" xml:space="preserve"><value>滤镜</value></data>
+    <data name="NodeLib_Category_Blend" xml:space="preserve"><value>混合</value></data>
+    <data name="NodeLib_Category_Edge" xml:space="preserve"><value>边缘</value></data>
+    <data name="NodeLib_Category_Tool" xml:space="preserve"><value>工具</value></data>
+    <data name="NodeLib_Category_Building" xml:space="preserve"><value>建筑</value></data>
+    <data name="NodeLib_Category_Intelligent" xml:space="preserve"><value>智能</value></data>
+    <data name="MW_File" xml:space="preserve"><value>文件</value></data>
+    <data name="MW_OpenProjectFile" xml:space="preserve"><value>打开项目文件</value></data>
+    <data name="MW_SaveProjectFile" xml:space="preserve"><value>保存项目文件</value></data>
+    <data name="MW_ExportTiles" xml:space="preserve"><value>导出图块</value></data>
+    <data name="MW_BatchExportSeeds" xml:space="preserve"><value>批量导出种子...</value></data>
+    <data name="MW_AI_Settings" xml:space="preserve"><value>AI 设置</value></data>
+    <data name="MW_Settings" xml:space="preserve"><value>⚙ 设置</value></data>
+    <data name="MW_OpenSettings" xml:space="preserve"><value>打开设置（主题、快捷键）</value></data>
+    <data name="MW_NodeLibrary" xml:space="preserve"><value>节点库</value></data>
+    <data name="MW_SearchNodes" xml:space="preserve"><value>搜索节点...</value></data>
+    <data name="MW_Templates" xml:space="preserve"><value>模板</value></data>
+    <data name="MW_DragTemplateHint" xml:space="preserve"><value>从模板库拖入画布以实例化</value></data>
+    <data name="MW_Rename" xml:space="preserve"><value>重命名</value></data>
+    <data name="MW_Delete" xml:space="preserve"><value>删除</value></data>
+    <data name="MW_SaveAsTemplate" xml:space="preserve"><value>将选中节点另存为模板...</value></data>
+    <data name="MW_NodeCanvas" xml:space="preserve"><value>节点画布</value></data>
+    <data name="MW_DragAndConnect" xml:space="preserve"><value>拖拽与连线</value></data>
+    <data name="MW_SelectAll" xml:space="preserve"><value>全选(&amp;A)</value></data>
+    <data name="MW_AutoArrangeNodes" xml:space="preserve"><value>自动排列节点</value></data>
+    <data name="MW_AddNodeNoise" xml:space="preserve"><value>添加节点：噪声</value></data>
+    <data name="MW_Copy" xml:space="preserve"><value>复制</value></data>
+    <data name="MW_LivePreview" xml:space="preserve"><value>实时预览</value></data>
+    <data name="MW_GlobalSettings" xml:space="preserve"><value>全局设置</value></data>
+    <data name="MW_TileSize" xml:space="preserve"><value>图块大小</value></data>
+    <data name="MW_16px" xml:space="preserve"><value>16 像素</value></data>
+    <data name="MW_32px" xml:space="preserve"><value>32 像素</value></data>
+    <data name="MW_64px" xml:space="preserve"><value>64 像素</value></data>
+    <data name="MW_NodeProperties" xml:space="preserve"><value>节点属性</value></data>
+    <data name="MW_NodeParameters" xml:space="preserve"><value>节点参数</value></data>
+    <data name="MW_Enable" xml:space="preserve"><value>启用</value></data>
+    <data name="MW_DrawCustomShape" xml:space="preserve"><value>✏ 绘制自定义形状…</value></data>
+    <data name="MW_OpenColorWheel" xml:space="preserve"><value>打开色环取色器</value></data>
+    <data name="MW_RandomizeSeed" xml:space="preserve"><value>随机生成种子</value></data>
+    <data name="MW_GrassParameters" xml:space="preserve"><value>草地参数</value></data>
+    <data name="MW_RandomSeed" xml:space="preserve"><value>随机种子</value></data>
+    <data name="MW_GrassPreset" xml:space="preserve"><value>草地预设</value></data>
+    <data name="MW_GrassA" xml:space="preserve"><value>草地 A</value></data>
+    <data name="MW_GrassB" xml:space="preserve"><value>草地 B</value></data>
+    <data name="MW_ForestGrass" xml:space="preserve"><value>森林草地</value></data>
+    <data name="MW_FlowerSource" xml:space="preserve"><value>花朵来源</value></data>
+    <data name="MW_BuiltinFlowers" xml:space="preserve"><value>内置花朵</value></data>
+    <data name="MW_CustomFlowers" xml:space="preserve"><value>自定义花朵</value></data>
+    <data name="MW_CustomFlowersHint" xml:space="preserve"><value>切换为自定义花朵后，节点会新增一个输入端口，用来接收花朵图案。</value></data>
+    <data name="MW_ColorVariation" xml:space="preserve"><value>颜色变化</value></data>
+    <data name="MW_BladeDensity" xml:space="preserve"><value>草叶密度</value></data>
+    <data name="MW_BladeHeight" xml:space="preserve"><value>草叶高度</value></data>
+    <data name="MW_Patchiness" xml:space="preserve"><value>草地斑驳</value></data>
+    <data name="MW_FlowerDensity" xml:space="preserve"><value>花朵密度</value></data>
+    <data name="MW_FlowerSize" xml:space="preserve"><value>花朵大小</value></data>
+    <data name="MW_FlowerColor" xml:space="preserve"><value>花朵颜色</value></data>
+    <data name="MW_AddColor" xml:space="preserve"><value>添加颜色</value></data>
+    <data name="MW_StoneParameters" xml:space="preserve"><value>石块参数</value></data>
+    <data name="MW_HorizontalTiles" xml:space="preserve"><value>横排平铺数量</value></data>
+    <data name="MW_VerticalTiles" xml:space="preserve"><value>竖排平铺数量</value></data>
+    <data name="MW_CrackDensity" xml:space="preserve"><value>裂缝密度</value></data>
+    <data name="MW_MossCoverage" xml:space="preserve"><value>苔藓覆盖</value></data>
+    <data name="MW_WaterParameters" xml:space="preserve"><value>水面参数</value></data>
+    <data name="MW_FlowOffset" xml:space="preserve"><value>流向偏移</value></data>
+    <data name="MW_FlowIntensity" xml:space="preserve"><value>流动强度</value></data>
+    <data name="MW_DepthLevels" xml:space="preserve"><value>深浅层次</value></data>
+    <data name="MW_WaveSpan" xml:space="preserve"><value>主波跨度</value></data>
+    <data name="MW_WaveSharpness" xml:space="preserve"><value>波峰锐度</value></data>
+    <data name="MW_SandParameters" xml:space="preserve"><value>沙地参数</value></data>
+    <data name="MW_LightDarkPatches" xml:space="preserve"><value>明暗块面</value></data>
+    <data name="MW_PatchHardness" xml:space="preserve"><value>块面硬度</value></data>
+    <data name="MW_ColorTemperature" xml:space="preserve"><value>色温变化</value></data>
+    <data name="MW_WindRippleStrength" xml:space="preserve"><value>风纹强度</value></data>
+    <data name="MW_WindDirection" xml:space="preserve"><value>风纹方向</value></data>
+    <data name="MW_WindSpacing" xml:space="preserve"><value>风纹间距</value></data>
+    <data name="MW_GravelDensity" xml:space="preserve"><value>碎石密度</value></data>
+    <data name="MW_GravelSize" xml:space="preserve"><value>碎石尺寸</value></data>
+    <data name="MW_RoadParameters" xml:space="preserve"><value>道路参数</value></data>
+    <data name="MW_RoadLayout" xml:space="preserve"><value>路面布局</value></data>
+    <data name="MW_StraightVertical" xml:space="preserve"><value>直线(竖)</value></data>
+    <data name="MW_StraightHorizontal" xml:space="preserve"><value>直线(横)</value></data>
+    <data name="MW_CurveNE" xml:space="preserve"><value>弯道(东北)</value></data>
+    <data name="MW_CurveSE" xml:space="preserve"><value>弯道(东南)</value></data>
+    <data name="MW_CurveSW" xml:space="preserve"><value>弯道(西南)</value></data>
+    <data name="MW_CurveNW" xml:space="preserve"><value>弯道(西北)</value></data>
+    <data name="MW_TJunctionUp" xml:space="preserve"><value>丁字(上)</value></data>
+    <data name="MW_TJunctionRight" xml:space="preserve"><value>丁字(右)</value></data>
+    <data name="MW_TJunctionDown" xml:space="preserve"><value>丁字(下)</value></data>
+    <data name="MW_TJunctionLeft" xml:space="preserve"><value>丁字(左)</value></data>
+    <data name="MW_Crossroads" xml:space="preserve"><value>十字路口</value></data>
+    <data name="MW_RoadWidth" xml:space="preserve"><value>路面宽度</value></data>
+    <data name="MW_GravelDensity2" xml:space="preserve"><value>砂砾密度</value></data>
+    <data name="MW_LineRoughness" xml:space="preserve"><value>白线粗糙度</value></data>
+    <data name="MW_RutDepth" xml:space="preserve"><value>车辙深度</value></data>
+    <data name="MW_ShoulderWidth" xml:space="preserve"><value>路肩宽度</value></data>
+    <data name="MW_ShoulderRoughness" xml:space="preserve"><value>路肩粗糙度</value></data>
+    <data name="MW_CornerRounding" xml:space="preserve"><value>弯角圆润</value></data>
+    <data name="MW_CenterlineWidth" xml:space="preserve"><value>中心线宽度</value></data>
+    <data name="MW_CenterlineRoughness" xml:space="preserve"><value>中心线粗糙度</value></data>
+    <data name="MW_BuildingPreview" xml:space="preserve"><value>建筑预览</value></data>
+    <data name="MW_VariationPreview" xml:space="preserve"><value>变体预览</value></data>
+    <data name="MW_SelectNodeToEdit" xml:space="preserve"><value>请选择一个节点以编辑</value></data>
+    <data name="MW_Node" xml:space="preserve"><value>节点</value></data>
+    <data name="MW_ChatHistory" xml:space="preserve"><value>对话历史</value></data>
+    <data name="MW_NewChat" xml:space="preserve"><value>新对话</value></data>
+    <data name="MW_ExecutionMode" xml:space="preserve"><value>执行模式</value></data>
+    <data name="MW_Execute" xml:space="preserve"><value>⚡ 执行</value></data>
+    <data name="MW_Plan" xml:space="preserve"><value>📋 计划</value></data>
+    <data name="MW_SkipPermissions" xml:space="preserve"><value>🚀 跳过权限</value></data>
+    <data name="MW_NewChat2" xml:space="preserve"><value>新建对话</value></data>
+    <data name="MW_TaskPlan" xml:space="preserve"><value>任务计划</value></data>
+    <data name="MW_OpenPlanFile" xml:space="preserve"><value>在文件管理器中打开计划文件</value></data>
+    <data name="MW_CollapsePlanPanel" xml:space="preserve"><value>折叠计划面板</value></data>
+    <data name="MW_ViewTaskPlan" xml:space="preserve"><value>查看任务计划</value></data>
+    <data name="MW_UploadImageOrFile" xml:space="preserve"><value>上传图片或文件</value></data>
+    <data name="MW_SendEnter" xml:space="preserve"><value>发送 (Enter)</value></data>
+    <data name="MW_Send" xml:space="preserve"><value>发送</value></data>
+    <data name="MW_Thinking" xml:space="preserve"><value>推理:</value></data>
+    <data name="MW_Close" xml:space="preserve"><value>关闭</value></data>
+    <data name="MW_Lowest" xml:space="preserve"><value>最低</value></data>
+    <data name="MW_Low" xml:space="preserve"><value>低</value></data>
+    <data name="MW_Medium" xml:space="preserve"><value>中</value></data>
+    <data name="MW_High" xml:space="preserve"><value>高</value></data>
+    <data name="MW_Highest" xml:space="preserve"><value>最高</value></data>
+    <data name="MW_Stop" xml:space="preserve"><value>⬛ 停止</value></data>
+    <data name="MW_Ready" xml:space="preserve"><value>就绪</value></data>
+    <data name="LibCat_All" xml:space="preserve"><value>全部</value></data>
+    <data name="LibCat_Blend" xml:space="preserve"><value>混合节点</value></data>
+    <data name="LibCat_PixelTile" xml:space="preserve"><value>像素图块</value></data>
+    <data name="AI_ThinkingProcess" xml:space="preserve"><value>思考过程</value></data>
+    <data name="AI_ClickExpand" xml:space="preserve"><value>点击展开</value></data>
+    <data name="AI_ClickCollapse" xml:space="preserve"><value>点击收起</value></data>
+    <data name="AI_GeneratingThoughts" xml:space="preserve"><value>正在生成思考内容…</value></data>
+    <data name="AI_ClickToViewThoughts" xml:space="preserve"><value>点击展开查看思考内容</value></data>
+    <data name="AI_Ready" xml:space="preserve"><value>就绪</value></data>
+    <data name="AI_Standby" xml:space="preserve"><value>待命</value></data>
+    <data name="NodeName_SolidColor" xml:space="preserve"><value>纯色</value></data>
+    <data name="NodeName_Noise" xml:space="preserve"><value>噪波</value></data>
+    <data name="NodeName_Gradient" xml:space="preserve"><value>渐变</value></data>
+    <data name="NodeName_Checkerboard" xml:space="preserve"><value>棋盘</value></data>
+    <data name="NodeName_Wood" xml:space="preserve"><value>木材</value></data>
+    <data name="NodeName_Cloud" xml:space="preserve"><value>云朵</value></data>
+    <data name="NodeName_Marble" xml:space="preserve"><value>大理石</value></data>
+    <data name="NodeName_Terrain" xml:space="preserve"><value>地形</value></data>
+    <data name="NodeName_WaterFlow" xml:space="preserve"><value>水流</value></data>
+    <data name="NodeName_Fibers" xml:space="preserve"><value>纤维</value></data>
+    <data name="NodeName_Weave" xml:space="preserve"><value>编织</value></data>
+    <data name="NodeName_Fabric" xml:space="preserve"><value>布料</value></data>
+    <data name="NodeName_Chainmail" xml:space="preserve"><value>锁甲</value></data>
+    <data name="NodeName_Camo" xml:space="preserve"><value>迷彩</value></data>
+    <data name="NodeName_Mosaic" xml:space="preserve"><value>马赛克</value></data>
+    <data name="NodeName_Leather" xml:space="preserve"><value>皮革</value></data>
+    <data name="NodeName_Fence" xml:space="preserve"><value>栅栏</value></data>
+    <data name="NodeName_Brick" xml:space="preserve"><value>砖块</value></data>
+    <data name="NodeName_Alveolus" xml:space="preserve"><value>蜂巢</value></data>
+    <data name="NodeName_Shape" xml:space="preserve"><value>形状</value></data>
+    <data name="NodeName_SplatterCircular" xml:space="preserve"><value>圆形泼溅</value></data>
+    <data name="NodeName_Lattice" xml:space="preserve"><value>格栅</value></data>
+    <data name="NodeName_Concentric" xml:space="preserve"><value>同心圆</value></data>
+    <data name="NodeName_Spiral" xml:space="preserve"><value>螺旋</value></data>
+    <data name="NodeName_Honeycomb" xml:space="preserve"><value>蜂窝</value></data>
+    <data name="NodeName_Wave" xml:space="preserve"><value>波浪</value></data>
+    <data name="NodeName_Circuit" xml:space="preserve"><value>电路</value></data>
+    <data name="NodeName_Starfield" xml:space="preserve"><value>星空</value></data>
+    <data name="NodeName_Crystal" xml:space="preserve"><value>水晶</value></data>
+    <data name="NodeName_Scales" xml:space="preserve"><value>鳞片</value></data>
+    <data name="NodeName_Rust" xml:space="preserve"><value>铁锈</value></data>
+    <data name="NodeName_Magma" xml:space="preserve"><value>岩浆</value></data>
+    <data name="NodeName_LavaFlow" xml:space="preserve"><value>熔岩流</value></data>
+    <data name="NodeName_Bark" xml:space="preserve"><value>树皮</value></data>
+    <data name="NodeName_Cobblestone" xml:space="preserve"><value>鹅卵石</value></data>
+    <data name="NodeName_Flagstone" xml:space="preserve"><value>石板</value></data>
+    <data name="NodeName_Grass" xml:space="preserve"><value>草地</value></data>
+    <data name="NodeName_Moss" xml:space="preserve"><value>苔藓</value></data>
+    <data name="NodeName_Ice" xml:space="preserve"><value>冰面</value></data>
+    <data name="NodeName_Rock" xml:space="preserve"><value>岩石</value></data>
+    <data name="NodeName_Bush" xml:space="preserve"><value>灌木</value></data>
+    <data name="NodeName_Mushroom" xml:space="preserve"><value>蘑菇</value></data>
+    <data name="NodeName_Gem" xml:space="preserve"><value>宝石</value></data>
+    <data name="NodeName_Shield" xml:space="preserve"><value>护盾</value></data>
+    <data name="NodeName_HealthBar" xml:space="preserve"><value>血条</value></data>
+    <data name="NodeName_Fire" xml:space="preserve"><value>火焰</value></data>
+    <data name="NodeName_Lightning" xml:space="preserve"><value>闪电</value></data>
+    <data name="NodeName_Smoke" xml:space="preserve"><value>烟雾</value></data>
+    <data name="NodeName_Rain" xml:space="preserve"><value>雨水</value></data>
+    <data name="NodeName_Snow" xml:space="preserve"><value>雪花</value></data>
+    <data name="NodeName_Fog" xml:space="preserve"><value>雾气</value></data>
+    <data name="NodeName_Slime" xml:space="preserve"><value>史莱姆</value></data>
+    <data name="NodeName_Plasma" xml:space="preserve"><value>等离子</value></data>
+    <data name="NodeName_Rune" xml:space="preserve"><value>符文</value></data>
+    <data name="NodeName_EnergyField" xml:space="preserve"><value>能量场</value></data>
+    <data name="NodeName_Hologram" xml:space="preserve"><value>全息</value></data>
+    <data name="NodeName_UIPanel" xml:space="preserve"><value>UI面板</value></data>
+    <data name="NodeName_UIButton" xml:space="preserve"><value>UI按钮</value></data>
+    <data name="NodeName_Icon" xml:space="preserve"><value>图标</value></data>
+    <data name="NodeName_Torch" xml:space="preserve"><value>火炬</value></data>
+    <data name="NodeName_Tree" xml:space="preserve"><value>树木</value></data>
+    <data name="NodeName_FrameSequence" xml:space="preserve"><value>帧序列</value></data>
+    <data name="NodeName_ParameterAnimation" xml:space="preserve"><value>参数动画</value></data>
+    <data name="NodeName_Wall" xml:space="preserve"><value>墙壁</value></data>
+    <data name="NodeName_Floor" xml:space="preserve"><value>地板</value></data>
+    <data name="NodeName_ColorAdjust" xml:space="preserve"><value>颜色调整</value></data>
+    <data name="NodeName_ColorQuantize" xml:space="preserve"><value>颜色量化</value></data>
+    <data name="NodeName_Grayscale" xml:space="preserve"><value>灰度</value></data>
+    <data name="NodeName_Blur" xml:space="preserve"><value>模糊</value></data>
+    <data name="NodeName_Sharpen" xml:space="preserve"><value>锐化</value></data>
+    <data name="NodeName_Glow" xml:space="preserve"><value>发光</value></data>
+    <data name="NodeName_Scanlines" xml:space="preserve"><value>扫描线</value></data>
+    <data name="NodeName_NoiseInjection" xml:space="preserve"><value>噪波注入</value></data>
+    <data name="NodeName_Vignette" xml:space="preserve"><value>暗角</value></data>
+    <data name="NodeName_ChromaticAberration" xml:space="preserve"><value>色差</value></data>
+    <data name="NodeName_Stylize" xml:space="preserve"><value>风格化</value></data>
+    <data name="NodeName_Pixelate" xml:space="preserve"><value>像素化</value></data>
+    <data name="NodeName_Distort" xml:space="preserve"><value>扭曲</value></data>
+    <data name="NodeName_Convolution" xml:space="preserve"><value>卷积</value></data>
+    <data name="NodeName_Threshold" xml:space="preserve"><value>阈值</value></data>
+    <data name="NodeName_Outline" xml:space="preserve"><value>描边</value></data>
+    <data name="NodeName_PixelPerfectOutline" xml:space="preserve"><value>像素描边</value></data>
+    <data name="NodeName_PaletteMap" xml:space="preserve"><value>调色板映射</value></data>
+    <data name="NodeName_DropShadow" xml:space="preserve"><value>投影</value></data>
+    <data name="NodeName_NormalMap" xml:space="preserve"><value>法线贴图</value></data>
+    <data name="NodeName_Bevel" xml:space="preserve"><value>斜面</value></data>
+    <data name="NodeName_Displace" xml:space="preserve"><value>置换</value></data>
+    <data name="NodeName_MathOp" xml:space="preserve"><value>数学运算</value></data>
+    <data name="NodeName_Channel" xml:space="preserve"><value>通道</value></data>
+    <data name="NodeName_Transform" xml:space="preserve"><value>变换</value></data>
+    <data name="NodeName_BlendMode" xml:space="preserve"><value>混合模式</value></data>
+    <data name="NodeName_MaskBlend" xml:space="preserve"><value>遮罩混合</value></data>
+    <data name="NodeName_Colorize" xml:space="preserve"><value>着色</value></data>
+    <data name="NodeName_Lighting" xml:space="preserve"><value>光照</value></data>
+    <data name="NodeName_GradientMap" xml:space="preserve"><value>渐变映射</value></data>
+    <data name="NodeName_FrameInterpolation" xml:space="preserve"><value>帧插值</value></data>
+    <data name="NodeName_OffsetWrap" xml:space="preserve"><value>偏移环绕</value></data>
+    <data name="NodeName_SeamlessBlend" xml:space="preserve"><value>无缝混合</value></data>
+    <data name="NodeName_TileMirror" xml:space="preserve"><value>瓦片镜像</value></data>
+    <data name="NodeName_TileCombine" xml:space="preserve"><value>瓦片组合</value></data>
+    <data name="NodeName_Output" xml:space="preserve"><value>输出</value></data>
+    <data name="NodeName_Preview" xml:space="preserve"><value>预览</value></data>
+    <data name="NodeName_Text" xml:space="preserve"><value>文本</value></data>
+    <data name="NodeName_ColorExtraction" xml:space="preserve"><value>颜色提取</value></data>
+    <data name="NodeName_Constant" xml:space="preserve"><value>常量</value></data>
+    <data name="NodeName_Comment" xml:space="preserve"><value>注释</value></data>
+    <data name="NodeName_Symmetry" xml:space="preserve"><value>对称</value></data>
+    <data name="NodeName_RandomSelect" xml:space="preserve"><value>随机选择</value></data>
+    <data name="NodeName_SpriteSheet" xml:space="preserve"><value>精灵表</value></data>
+    <data name="NodeName_SpriteSlice" xml:space="preserve"><value>精灵切片</value></data>
+    <data name="NodeName_NineSlice" xml:space="preserve"><value>九宫格</value></data>
+    <data name="NodeName_Cache" xml:space="preserve"><value>缓存</value></data>
+    <data name="NodeName_PerspectiveTransform" xml:space="preserve"><value>透视变换</value></data>
+    <data name="NodeName_ImageAnalysis" xml:space="preserve"><value>图像分析</value></data>
+    <data name="NodeName_Condition" xml:space="preserve"><value>条件</value></data>
+    <data name="NodeName_Selector" xml:space="preserve"><value>选择器</value></data>
+    <data name="NodeName_SemanticControl" xml:space="preserve"><value>语义控制</value></data>
+    <data name="NodeName_Variation" xml:space="preserve"><value>变体</value></data>
+    <data name="NodeName_AutoTile" xml:space="preserve"><value>自动瓦片</value></data>
+    <data name="NodeName_AiImageGen" xml:space="preserve"><value>AI图像生成</value></data>
+    <data name="NodeName_Brush" xml:space="preserve"><value>画笔</value></data>
+    <data name="NodeName_Line" xml:space="preserve"><value>线条</value></data>
+    <data name="NodeName_Rectangle" xml:space="preserve"><value>矩形</value></data>
+    <data name="NodeName_FloodFill" xml:space="preserve"><value>填充</value></data>
+    <data name="NodeName_HslAdjust" xml:space="preserve"><value>HSL调整</value></data>
+    <data name="NodeName_Curves" xml:space="preserve"><value>曲线</value></data>
+    <data name="NodeName_Posterize" xml:space="preserve"><value>色调分离</value></data>
+    <data name="NodeName_MotionBlur" xml:space="preserve"><value>运动模糊</value></data>
+    <data name="NodeName_RadialBlur" xml:space="preserve"><value>径向模糊</value></data>
+    <data name="NodeName_Twirl" xml:space="preserve"><value>旋涡</value></data>
+    <data name="NodeName_Ripple" xml:space="preserve"><value>波纹</value></data>
+    <data name="Tile_Grass" xml:space="preserve"><value>草地</value></data>
+    <data name="Tile_Stone" xml:space="preserve"><value>石头</value></data>
+    <data name="Tile_Water" xml:space="preserve"><value>水面</value></data>
+    <data name="Tile_Sand" xml:space="preserve"><value>沙地</value></data>
+    <data name="Tile_Road" xml:space="preserve"><value>公路</value></data>
+    <data name="NodeLib_Port_Bitmap" xml:space="preserve"><value>位图</value></data>
+    <data name="Cat_Source" xml:space="preserve"><value>源节点</value></data>
+    <data name="Cat_Nature" xml:space="preserve"><value>自然</value></data>
+    <data name="Cat_Material" xml:space="preserve"><value>材质</value></data>
+    <data name="Cat_Structure" xml:space="preserve"><value>结构</value></data>
+    <data name="Cat_Adjust" xml:space="preserve"><value>调整</value></data>
+    <data name="Cat_Effect" xml:space="preserve"><value>特效</value></data>
+    <data name="Cat_Utility" xml:space="preserve"><value>工具</value></data>
+    <data name="Cat_Custom" xml:space="preserve"><value>自定义</value></data>
+    <data name="MW_Error" xml:space="preserve"><value>错误</value></data>
+    <data name="MW_ConfirmDeleteTemplate" xml:space="preserve"><value>删除模板</value></data>
+    <data name="MW_DeleteTemplate" xml:space="preserve"><value>删除模板</value></data>
+    <data name="MW_FailedToDeleteTemplate" xml:space="preserve"><value>删除模板失败：</value></data>
+    <data name="MW_FailedToSaveTemplate" xml:space="preserve"><value>保存模板失败：</value></data>
+    <data name="MW_EnterTemplateName" xml:space="preserve"><value>输入新模板名称：</value></data>
+    <data name="MW_RenameTemplate" xml:space="preserve"><value>重命名模板</value></data>
+    <data name="MW_FileAlreadyExists" xml:space="preserve"><value>文件已存在：</value></data>
+    <data name="MW_RenameFailed" xml:space="preserve"><value>重命名失败</value></data>
+    <data name="MW_FailedToRename" xml:space="preserve"><value>重命名失败：</value></data>
+    <data name="MW_SelectFileToUpload" xml:space="preserve"><value>选择要上传的文件</value></data>
+    <data name="MW_NewConversation" xml:space="preserve"><value>新对话</value></data>
+    <data name="Settings_CacheSection" xml:space="preserve"><value>脚本缓存</value></data>
+    <data name="Settings_CachePath" xml:space="preserve"><value>缓存目录</value></data>
+    <data name="Settings_OpenCacheFolder" xml:space="preserve"><value>打开…</value></data>
+    <data name="AI_ServiceConfig" xml:space="preserve"><value>服务配置</value></data>
+    <data name="AI_SkillManagement" xml:space="preserve"><value>技能管理</value></data>
+    <data name="Cat_Logic" xml:space="preserve"><value>逻辑运算</value></data>
+    <data name="Cat_Pattern" xml:space="preserve"><value>图案</value></data>
+    <data name="Cat_Noise" xml:space="preserve"><value>噪点</value></data>
+    <data name="Cat_ImageProcess" xml:space="preserve"><value>图像处理</value></data>
+    <data name="Cat_Generate" xml:space="preserve"><value>生成</value></data>
+    <data name="Cat_Tool" xml:space="preserve"><value>工具</value></data>
+    <data name="NodeName_TileGrass" xml:space="preserve"><value>草地图块</value></data>
+    <data name="NodeName_TileRoad" xml:space="preserve"><value>道路图块</value></data>
+    <data name="NodeName_TileSand" xml:space="preserve"><value>沙地图块</value></data>
+    <data name="NodeName_TileStone" xml:space="preserve"><value>石块图块</value></data>
+    <data name="NodeName_TileWater" xml:space="preserve"><value>水图块</value></data>
+    <data name="DarkMsgBox_OK" xml:space="preserve"><value>确定</value></data>
+    <data name="DarkMsgBox_Yes" xml:space="preserve"><value>是</value></data>
+    <data name="DarkMsgBox_Cancel" xml:space="preserve"><value>取消</value></data>
+    <data name="AI_ConfirmTitle" xml:space="preserve"><value>确认操作</value></data>
+    <data name="AI_ConfirmMessage" xml:space="preserve"><value>AI 请求执行以下操作：</value></data>
+    <data name="Cat_Particle" xml:space="preserve"><value>粒子</value></data>
+    <data name="Cat_Physics" xml:space="preserve"><value>物理</value></data>
+    <data name="Cat_Animation" xml:space="preserve"><value>动画</value></data>
+    <data name="NodeName_ParticleEmitter" xml:space="preserve"><value>粒子发射器</value></data>
+    <data name="NodeName_ParticleForce" xml:space="preserve"><value>粒子力场</value></data>
+    <data name="NodeName_ParticleRender" xml:space="preserve"><value>粒子渲染</value></data>
+    <data name="NodeName_PhysicsSimulate" xml:space="preserve"><value>物理模拟</value></data>
+    <data name="NodeName_PhysicsField" xml:space="preserve"><value>物理场</value></data>
+    <data name="NodeName_AnimatedParameter" xml:space="preserve"><value>参数动画</value></data>
+    <data name="NodeName_FrameBlend" xml:space="preserve"><value>帧混合</value></data>
+    <data name="NodeName_Time" xml:space="preserve"><value>时间</value></data>
+</root>

@@ -1,0 +1,473 @@
+<?xml version='1.0' encoding='utf-8'?>
+<root xmlns:ns1="urn:schemas-microsoft-com:xml-msdata" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:schema id="root">
+    <xs:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xs:element name="root" ns1:IsDataSet="true">
+      <xs:complexType>
+        <xs:choice maxOccurs="unbounded">
+          <xs:element name="metadata">
+            <xs:complexType>
+              <xs:sequence>
+                <xs:element name="value" type="xsd:string" minOccurs="0" />
+              </xs:sequence>
+              <xs:attribute name="name" type="xsd:string" />
+            </xs:complexType>
+          </xs:element>
+          <xs:element name="assembly">
+            <xs:complexType>
+              <xs:attribute name="alias" type="xsd:string" />
+              <xs:attribute name="name" type="xsd:string" />
+            </xs:complexType>
+          </xs:element>
+          <xs:element name="data">
+            <xs:complexType>
+              <xs:sequence>
+                <xs:element name="value" type="xsd:string" minOccurs="0" ns1:Ordinal="1" />
+                <xs:element name="comment" type="xsd:string" minOccurs="0" ns1:Ordinal="2" />
+              </xs:sequence>
+              <xs:attribute name="name" type="xsd:string" />
+              <xs:attribute name="type" type="xsd:string" />
+              <xs:attribute name="mimetype" type="xsd:string" />
+            </xs:complexType>
+          </xs:element>
+          <xs:element name="resheader">
+            <xs:complexType>
+              <xs:sequence>
+                <xs:element name="value" type="xsd:string" minOccurs="0" ns1:Ordinal="1" />
+              </xs:sequence>
+              <xs:attribute name="name" type="xsd:string" />
+            </xs:complexType>
+          </xs:element>
+        </xs:choice>
+      </xs:complexType>
+    </xs:element>
+  </xs:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+
+  
+  <data name="AppTitle" xml:space="preserve"><value>Pixel Asset Generator</value></data>
+    <data name="Settings_Title" xml:space="preserve"><value>Settings</value></data>
+    <data name="Settings_ThemeSection" xml:space="preserve"><value>Theme</value></data>
+    <data name="Settings_DarkTheme" xml:space="preserve"><value>Dark Theme</value></data>
+    <data name="Settings_LightTheme" xml:space="preserve"><value>Light Theme</value></data>
+    <data name="Settings_ShortcutSection" xml:space="preserve"><value>Keyboard Shortcuts</value></data>
+    <data name="Settings_Operation" xml:space="preserve"><value>Action</value></data>
+    <data name="Settings_Shortcut" xml:space="preserve"><value>Shortcut</value></data>
+    <data name="Settings_Edit" xml:space="preserve"><value>Edit</value></data>
+    <data name="Settings_Cancel" xml:space="preserve"><value>Cancel</value></data>
+    <data name="Settings_PressKey" xml:space="preserve"><value>Press a key…</value></data>
+    <data name="Settings_ShortcutHint" xml:space="preserve"><value>Tip: Click [Edit] then press the desired key combination. Delete to clear binding. Esc to cancel.</value></data>
+    <data name="Settings_ResetShortcuts" xml:space="preserve"><value>Reset Defaults</value></data>
+    <data name="Settings_TabGeneral" xml:space="preserve"><value>General</value></data>
+    <data name="Settings_TabShortcuts" xml:space="preserve"><value>Shortcuts</value></data>
+    <data name="Settings_OpenLangFolder" xml:space="preserve"><value>Open localization folder</value></data>
+    <data name="Settings_NodesSection" xml:space="preserve"><value>Node Extensions</value></data>
+    <data name="Settings_NodesPath" xml:space="preserve"><value>Custom Nodes Directory</value></data>
+    <data name="Settings_BrowseNodes" xml:space="preserve"><value>Browse…</value></data>
+    <data name="Settings_NodesPathHint" xml:space="preserve"><value>Place .node.json files into this directory. They will be loaded as nodes on next launch.</value></data>
+    <data name="Settings_ResetNodesPath" xml:space="preserve"><value>Reset Default</value></data>
+    <data name="Settings_OK" xml:space="preserve"><value>OK</value></data>
+    <data name="Lang_Language" xml:space="preserve"><value>Language</value></data>
+    <data name="Shortcut_Undo" xml:space="preserve"><value>Undo</value></data>
+    <data name="Shortcut_Redo" xml:space="preserve"><value>Redo</value></data>
+    <data name="Shortcut_DrawingModePencil" xml:space="preserve"><value>Switch to Pencil Mode (Drawing Window)</value></data>
+    <data name="Shortcut_DrawingModePath" xml:space="preserve"><value>Switch to Path Mode (Drawing Window)</value></data>
+    <data name="Shortcut_DrawingModeMove" xml:space="preserve"><value>Switch to Select Mode (Drawing Window)</value></data>
+    <data name="Shortcut_DrawingModeShape" xml:space="preserve"><value>Switch to Shape Mode (Drawing Window)</value></data>
+    <data name="Shortcut_BrushSizeIncrease" xml:space="preserve"><value>Increase Brush/Shape Size (Drawing Window)</value></data>
+    <data name="Shortcut_BrushSizeDecrease" xml:space="preserve"><value>Decrease Brush/Shape Size (Drawing Window)</value></data>
+    <data name="Shortcut_ToggleEraser" xml:space="preserve"><value>Toggle Eraser (Drawing Window)</value></data>
+    <data name="Shortcut_FinishPath" xml:space="preserve"><value>Finish Path (Drawing Window)</value></data>
+    <data name="Shortcut_Cancel" xml:space="preserve"><value>Cancel / Exit Edit (Drawing Window)</value></data>
+    <data name="Shortcut_ClearCanvas" xml:space="preserve"><value>Clear Canvas (Drawing Window)</value></data>
+    <data name="Shortcut_SelectAll" xml:space="preserve"><value>Select All Nodes</value></data>
+    <data name="Shortcut_CopyNodes" xml:space="preserve"><value>Copy Nodes</value></data>
+    <data name="Shortcut_PasteNodes" xml:space="preserve"><value>Paste Nodes</value></data>
+    <data name="Shortcut_DeleteSelected" xml:space="preserve"><value>Delete Selected</value></data>
+    <data name="Shortcut_ZoomToSelected" xml:space="preserve"><value>Zoom to Selected Nodes</value></data>
+    <data name="Shortcut_TogglePreviewGrid" xml:space="preserve"><value>Toggle Preview Pixel Grid</value></data>
+    <data name="Shortcut_ToggleTilePreview" xml:space="preserve"><value>Toggle Tiled Preview</value></data>
+    <data name="Shortcut_FitPreview" xml:space="preserve"><value>Fit Preview</value></data>
+    <data name="Shortcut_NewProject" xml:space="preserve"><value>New Project</value></data>
+    <data name="Shortcut_OpenProject" xml:space="preserve"><value>Open Project</value></data>
+    <data name="Shortcut_SaveProject" xml:space="preserve"><value>Save Project</value></data>
+    <data name="Shortcut_ExportTiles" xml:space="preserve"><value>Export Tiles</value></data>
+    <data name="Shortcut_AutoArrange" xml:space="preserve"><value>Auto Arrange Nodes</value></data>
+    <data name="Shortcut_ToggleNoiseNode" xml:space="preserve"><value>Add Noise Node</value></data>
+    <data name="Hint_Unbound" xml:space="preserve"><value>(Unbound)</value></data>
+    <data name="Hint_FitPreview" xml:space="preserve"><value>Fit ({0})</value></data>
+    <data name="Hint_TogglePreviewGrid" xml:space="preserve"><value>Show pixel grid in live preview ({0})</value></data>
+    <data name="Hint_ToggleTilePreview" xml:space="preserve"><value>Toggle tiled preview ({0})</value></data>
+    <data name="Hint_DeleteSelected" xml:space="preserve"><value>Delete selected node(s) ({0})</value></data>
+    <data name="Hint_FinishPath" xml:space="preserve"><value>Finish current path ({0})</value></data>
+    <data name="Hint_BrushSize" xml:space="preserve"><value>Brush/Shape size  {0} decrease  {1} increase</value></data>
+    <data name="Hint_Eraser" xml:space="preserve"><value>Eraser — left click or drag to erase pixels ({0})</value></data>
+    <data name="Hint_ClearCanvas" xml:space="preserve"><value>Clear canvas ({0})</value></data>
+    <data name="Hint_PencilMode" xml:space="preserve"><value>Pencil mode — freehand pixel drawing ({0})</value></data>
+    <data name="Hint_PathMode" xml:space="preserve"><value>Path mode — click to place anchors, forms line segments ({0})</value></data>
+    <data name="Hint_MoveMode" xml:space="preserve"><value>Select mode — box select anchors and move in bulk ({0})</value></data>
+    <data name="Hint_ShapeMode" xml:space="preserve"><value>Shape stamp — drag to draw shapes; long press to switch shape type ({0})</value></data>
+    <data name="Hint_PencilInstructions" xml:space="preserve"><value>Hold left button to draw; {0} undo; {1} redo; {2} toggle eraser; {3} clear canvas.</value></data>
+    <data name="Hint_PathInstructions" xml:space="preserve"><value>Left click to place anchor; click first anchor to close path; right click or {0} to finish; {1} undo; {2} redo.</value></data>
+    <data name="Hint_MoveInstructions" xml:space="preserve"><value>Left click to select anchor; Ctrl+click to toggle multi-select; drag box to select multiple; drag selected anchors to move; {0} deselect; {1} undo.</value></data>
+    <data name="Hint_ShapeStampInstructions" xml:space="preserve"><value>Left click to place shape; drag to set size; shape creates a path layer with editable anchors; {0} long press to switch shape type; {1} undo.</value></data>
+    <data name="Hint_EditModeInstructions" xml:space="preserve"><value>Edit mode: left click to select anchor; Ctrl+click/box-select to multi-select; drag selected to move; right-click multi-select to set type; {0} undo.</value></data>
+    <data name="Hint_FinishEditPathInstructions" xml:space="preserve"><value>Left click to place anchor; right click or {0} to finish current path; {1} undo; {2} redo; {3} cancel.</value></data>
+    <data name="Hint_FinishEditMoveInstructions" xml:space="preserve"><value>Left click to select anchor; Ctrl+click to toggle multi-select; drag box to select multiple; drag selected anchors to move; {0} deselect; {1} undo.</value></data>
+    <data name="AI_Streaming" xml:space="preserve"><value>Streaming</value></data>
+    <data name="AI_Thinking" xml:space="preserve"><value>Thinking</value></data>
+    <data name="AI_ContextPreparing" xml:space="preserve"><value>Preparing context</value></data>
+    <data name="AI_StartRequest" xml:space="preserve"><value>Starting first request</value></data>
+    <data name="AI_ContinueRequest" xml:space="preserve"><value>Continuing round {0}</value></data>
+    <data name="AI_ToolReceived" xml:space="preserve"><value>Received {0} tool call(s)</value></data>
+    <data name="AI_ExecutingTool" xml:space="preserve"><value>Executing tool: {0}</value></data>
+    <data name="AI_MaxRoundsReached" xml:space="preserve"><value>Max tool call rounds reached ({0}), stopping</value></data>
+    <data name="AI_WaitingConfirm" xml:space="preserve"><value>Waiting for user confirmation: {0}</value></data>
+    <data name="AI_Cancelled" xml:space="preserve"><value>Cancelled: {0}</value></data>
+    <data name="AI_Error" xml:space="preserve"><value>Error: {0}</value></data>
+    <data name="AI_Compressing" xml:space="preserve"><value>Context at {0} tokens, compressing history...</value></data>
+    <data name="AI_CompressDone" xml:space="preserve"><value>Compression done, freed ~{0} tokens</value></data>
+    <data name="AI_CompressFailed" xml:space="preserve"><value>Compression failed: {0}, discarding old messages</value></data>
+    <data name="AI_CompressEmpty" xml:space="preserve"><value>Compression result empty, discarding old messages</value></data>
+    <data name="AI_InvokePrompt" xml:space="preserve"><value>Enter a message...</value></data>
+    <data name="AI_Send" xml:space="preserve"><value>Send</value></data>
+    <data name="NodeLib_Title" xml:space="preserve"><value>Node Library</value></data>
+    <data name="NodeLib_Search" xml:space="preserve"><value>Search nodes...</value></data>
+    <data name="NodeLib_Category_Generator" xml:space="preserve"><value>Generator</value></data>
+    <data name="NodeLib_Category_Filter" xml:space="preserve"><value>Filter</value></data>
+    <data name="NodeLib_Category_Blend" xml:space="preserve"><value>Blend</value></data>
+    <data name="NodeLib_Category_Edge" xml:space="preserve"><value>Edge</value></data>
+    <data name="NodeLib_Category_Tool" xml:space="preserve"><value>Tool</value></data>
+    <data name="NodeLib_Category_Building" xml:space="preserve"><value>Building</value></data>
+    <data name="NodeLib_Category_Intelligent" xml:space="preserve"><value>Intelligent</value></data>
+    <data name="MW_File" xml:space="preserve"><value>File</value></data>
+    <data name="MW_OpenProjectFile" xml:space="preserve"><value>Open Project File</value></data>
+    <data name="MW_SaveProjectFile" xml:space="preserve"><value>Save Project File</value></data>
+    <data name="MW_ExportTiles" xml:space="preserve"><value>Export Tiles</value></data>
+    <data name="MW_BatchExportSeeds" xml:space="preserve"><value>Batch Export Seeds...</value></data>
+    <data name="MW_AI_Settings" xml:space="preserve"><value>AI Settings</value></data>
+    <data name="MW_Settings" xml:space="preserve"><value>⚙ Settings</value></data>
+    <data name="MW_OpenSettings" xml:space="preserve"><value>Open Settings (Theme, Shortcuts)</value></data>
+    <data name="MW_NodeLibrary" xml:space="preserve"><value>Node Library</value></data>
+    <data name="MW_SearchNodes" xml:space="preserve"><value>Search Nodes...</value></data>
+    <data name="MW_Templates" xml:space="preserve"><value>Templates</value></data>
+    <data name="MW_DragTemplateHint" xml:space="preserve"><value>Drag from library onto canvas to instantiate</value></data>
+    <data name="MW_Rename" xml:space="preserve"><value>Rename</value></data>
+    <data name="MW_Delete" xml:space="preserve"><value>Delete</value></data>
+    <data name="MW_SaveAsTemplate" xml:space="preserve"><value>Save Selected Nodes as Template...</value></data>
+    <data name="MW_NodeCanvas" xml:space="preserve"><value>Node Canvas</value></data>
+    <data name="MW_DragAndConnect" xml:space="preserve"><value>Drag &amp; Connect</value></data>
+    <data name="MW_SelectAll" xml:space="preserve"><value>全选(&amp;amp;A)</value></data>
+    <data name="MW_AutoArrangeNodes" xml:space="preserve"><value>Auto Arrange Nodes</value></data>
+    <data name="MW_AddNodeNoise" xml:space="preserve"><value>Add Node: Noise</value></data>
+    <data name="MW_Copy" xml:space="preserve"><value>Copy</value></data>
+    <data name="MW_LivePreview" xml:space="preserve"><value>Live Preview</value></data>
+    <data name="MW_GlobalSettings" xml:space="preserve"><value>Global Settings</value></data>
+    <data name="MW_TileSize" xml:space="preserve"><value>Tile Size</value></data>
+    <data name="MW_16px" xml:space="preserve"><value>16 px</value></data>
+    <data name="MW_32px" xml:space="preserve"><value>32 px</value></data>
+    <data name="MW_64px" xml:space="preserve"><value>64 px</value></data>
+    <data name="MW_NodeProperties" xml:space="preserve"><value>Node Properties</value></data>
+    <data name="MW_NodeParameters" xml:space="preserve"><value>Node Parameters</value></data>
+    <data name="MW_Enable" xml:space="preserve"><value>Enable</value></data>
+    <data name="MW_DrawCustomShape" xml:space="preserve"><value>✏ Draw Custom Shape…</value></data>
+    <data name="MW_OpenColorWheel" xml:space="preserve"><value>Open Color Wheel</value></data>
+    <data name="MW_RandomizeSeed" xml:space="preserve"><value>Randomize Seed</value></data>
+    <data name="MW_GrassParameters" xml:space="preserve"><value>Grass Parameters</value></data>
+    <data name="MW_RandomSeed" xml:space="preserve"><value>Random Seed</value></data>
+    <data name="MW_GrassPreset" xml:space="preserve"><value>Grass Preset</value></data>
+    <data name="MW_GrassA" xml:space="preserve"><value>Grass A</value></data>
+    <data name="MW_GrassB" xml:space="preserve"><value>Grass B</value></data>
+    <data name="MW_ForestGrass" xml:space="preserve"><value>Forest Grass</value></data>
+    <data name="MW_FlowerSource" xml:space="preserve"><value>Flower Source</value></data>
+    <data name="MW_BuiltinFlowers" xml:space="preserve"><value>Built-in Flowers</value></data>
+    <data name="MW_CustomFlowers" xml:space="preserve"><value>Custom Flowers</value></data>
+    <data name="MW_CustomFlowersHint" xml:space="preserve"><value>Switching to Custom Flowers adds an input port for flower patterns.</value></data>
+    <data name="MW_ColorVariation" xml:space="preserve"><value>Color Variation</value></data>
+    <data name="MW_BladeDensity" xml:space="preserve"><value>Blade Density</value></data>
+    <data name="MW_BladeHeight" xml:space="preserve"><value>Blade Height</value></data>
+    <data name="MW_Patchiness" xml:space="preserve"><value>Patchiness</value></data>
+    <data name="MW_FlowerDensity" xml:space="preserve"><value>Flower Density</value></data>
+    <data name="MW_FlowerSize" xml:space="preserve"><value>Flower Size</value></data>
+    <data name="MW_FlowerColor" xml:space="preserve"><value>Flower Color</value></data>
+    <data name="MW_AddColor" xml:space="preserve"><value>Add Color</value></data>
+    <data name="MW_StoneParameters" xml:space="preserve"><value>Stone Parameters</value></data>
+    <data name="MW_HorizontalTiles" xml:space="preserve"><value>Horizontal Tiles</value></data>
+    <data name="MW_VerticalTiles" xml:space="preserve"><value>Vertical Tiles</value></data>
+    <data name="MW_CrackDensity" xml:space="preserve"><value>Crack Density</value></data>
+    <data name="MW_MossCoverage" xml:space="preserve"><value>Moss Coverage</value></data>
+    <data name="MW_WaterParameters" xml:space="preserve"><value>Water Parameters</value></data>
+    <data name="MW_FlowOffset" xml:space="preserve"><value>Flow Offset</value></data>
+    <data name="MW_FlowIntensity" xml:space="preserve"><value>Flow Intensity</value></data>
+    <data name="MW_DepthLevels" xml:space="preserve"><value>Depth Levels</value></data>
+    <data name="MW_WaveSpan" xml:space="preserve"><value>Wave Span</value></data>
+    <data name="MW_WaveSharpness" xml:space="preserve"><value>Wave Sharpness</value></data>
+    <data name="MW_SandParameters" xml:space="preserve"><value>Sand Parameters</value></data>
+    <data name="MW_LightDarkPatches" xml:space="preserve"><value>Light/Dark Patches</value></data>
+    <data name="MW_PatchHardness" xml:space="preserve"><value>Patch Hardness</value></data>
+    <data name="MW_ColorTemperature" xml:space="preserve"><value>Color Temperature</value></data>
+    <data name="MW_WindRippleStrength" xml:space="preserve"><value>Wind Ripple Strength</value></data>
+    <data name="MW_WindDirection" xml:space="preserve"><value>Wind Direction</value></data>
+    <data name="MW_WindSpacing" xml:space="preserve"><value>Wind Spacing</value></data>
+    <data name="MW_GravelDensity" xml:space="preserve"><value>Gravel Density</value></data>
+    <data name="MW_GravelSize" xml:space="preserve"><value>Gravel Size</value></data>
+    <data name="MW_RoadParameters" xml:space="preserve"><value>Road Parameters</value></data>
+    <data name="MW_RoadLayout" xml:space="preserve"><value>Road Layout</value></data>
+    <data name="MW_StraightVertical" xml:space="preserve"><value>Straight (Vertical)</value></data>
+    <data name="MW_StraightHorizontal" xml:space="preserve"><value>Straight (Horizontal)</value></data>
+    <data name="MW_CurveNE" xml:space="preserve"><value>Curve (NE)</value></data>
+    <data name="MW_CurveSE" xml:space="preserve"><value>Curve (SE)</value></data>
+    <data name="MW_CurveSW" xml:space="preserve"><value>Curve (SW)</value></data>
+    <data name="MW_CurveNW" xml:space="preserve"><value>Curve (NW)</value></data>
+    <data name="MW_TJunctionUp" xml:space="preserve"><value>T-Junction (Up)</value></data>
+    <data name="MW_TJunctionRight" xml:space="preserve"><value>T-Junction (Right)</value></data>
+    <data name="MW_TJunctionDown" xml:space="preserve"><value>T-Junction (Down)</value></data>
+    <data name="MW_TJunctionLeft" xml:space="preserve"><value>T-Junction (Left)</value></data>
+    <data name="MW_Crossroads" xml:space="preserve"><value>Crossroads</value></data>
+    <data name="MW_RoadWidth" xml:space="preserve"><value>Road Width</value></data>
+    <data name="MW_GravelDensity2" xml:space="preserve"><value>Gravel Density</value></data>
+    <data name="MW_LineRoughness" xml:space="preserve"><value>Line Roughness</value></data>
+    <data name="MW_RutDepth" xml:space="preserve"><value>Rut Depth</value></data>
+    <data name="MW_ShoulderWidth" xml:space="preserve"><value>Shoulder Width</value></data>
+    <data name="MW_ShoulderRoughness" xml:space="preserve"><value>Shoulder Roughness</value></data>
+    <data name="MW_CornerRounding" xml:space="preserve"><value>Corner Rounding</value></data>
+    <data name="MW_CenterlineWidth" xml:space="preserve"><value>Centerline Width</value></data>
+    <data name="MW_CenterlineRoughness" xml:space="preserve"><value>Centerline Roughness</value></data>
+    <data name="MW_BuildingPreview" xml:space="preserve"><value>Building Preview</value></data>
+    <data name="MW_VariationPreview" xml:space="preserve"><value>Variation Preview</value></data>
+    <data name="MW_SelectNodeToEdit" xml:space="preserve"><value>Select a node to edit</value></data>
+    <data name="MW_Node" xml:space="preserve"><value>Node</value></data>
+    <data name="MW_ChatHistory" xml:space="preserve"><value>Chat History</value></data>
+    <data name="MW_NewChat" xml:space="preserve"><value>New Chat</value></data>
+    <data name="MW_ExecutionMode" xml:space="preserve"><value>Execute</value></data>
+    <data name="MW_Execute" xml:space="preserve"><value>⚡ Execute</value></data>
+    <data name="MW_Plan" xml:space="preserve"><value>📋 Plan</value></data>
+    <data name="MW_SkipPermissions" xml:space="preserve"><value>🚀 Skip Permissions</value></data>
+    <data name="MW_NewChat2" xml:space="preserve"><value>New Chat</value></data>
+    <data name="MW_TaskPlan" xml:space="preserve"><value>Task Plan</value></data>
+    <data name="MW_OpenPlanFile" xml:space="preserve"><value>Open Plan File in Explorer</value></data>
+    <data name="MW_CollapsePlanPanel" xml:space="preserve"><value>Collapse Plan Panel</value></data>
+    <data name="MW_ViewTaskPlan" xml:space="preserve"><value>View Task Plan</value></data>
+    <data name="MW_UploadImageOrFile" xml:space="preserve"><value>Upload Image or File</value></data>
+    <data name="MW_SendEnter" xml:space="preserve"><value>Send (Enter)</value></data>
+    <data name="MW_Send" xml:space="preserve"><value>Send</value></data>
+    <data name="MW_Thinking" xml:space="preserve"><value>Thinking:</value></data>
+    <data name="MW_Close" xml:space="preserve"><value>Close</value></data>
+    <data name="MW_Lowest" xml:space="preserve"><value>Lowest</value></data>
+    <data name="MW_Low" xml:space="preserve"><value>Low</value></data>
+    <data name="MW_Medium" xml:space="preserve"><value>Medium</value></data>
+    <data name="MW_High" xml:space="preserve"><value>High</value></data>
+    <data name="MW_Highest" xml:space="preserve"><value>Highest</value></data>
+    <data name="MW_Stop" xml:space="preserve"><value>⬛ Stop</value></data>
+    <data name="MW_Ready" xml:space="preserve"><value>Ready</value></data>
+    <data name="LibCat_All" xml:space="preserve"><value>All</value></data>
+    <data name="LibCat_Blend" xml:space="preserve"><value>Blend</value></data>
+    <data name="LibCat_PixelTile" xml:space="preserve"><value>Pixel Tile</value></data>
+    <data name="AI_ThinkingProcess" xml:space="preserve"><value>Thinking</value></data>
+    <data name="AI_ClickExpand" xml:space="preserve"><value>Click to expand</value></data>
+    <data name="AI_ClickCollapse" xml:space="preserve"><value>Click to collapse</value></data>
+    <data name="AI_GeneratingThoughts" xml:space="preserve"><value>Generating thoughts...</value></data>
+    <data name="AI_ClickToViewThoughts" xml:space="preserve"><value>Click to view thinking</value></data>
+    <data name="AI_Ready" xml:space="preserve"><value>Ready</value></data>
+    <data name="AI_Standby" xml:space="preserve"><value>Standby</value></data>
+    <data name="NodeName_AiImageGen" xml:space="preserve"><value>AI Image Gen</value></data>
+    <data name="NodeName_Alveolus" xml:space="preserve"><value>Alveolus</value></data>
+    <data name="NodeName_AutoTile" xml:space="preserve"><value>Auto Tile</value></data>
+    <data name="NodeName_Bark" xml:space="preserve"><value>Bark</value></data>
+    <data name="NodeName_Bevel" xml:space="preserve"><value>Bevel</value></data>
+    <data name="NodeName_BlendMode" xml:space="preserve"><value>Blend Mode</value></data>
+    <data name="NodeName_Blur" xml:space="preserve"><value>Blur</value></data>
+    <data name="NodeName_Brick" xml:space="preserve"><value>Brick</value></data>
+    <data name="NodeName_Brush" xml:space="preserve"><value>Brush</value></data>
+    <data name="NodeName_Bush" xml:space="preserve"><value>Bush</value></data>
+    <data name="NodeName_Cache" xml:space="preserve"><value>Cache</value></data>
+    <data name="NodeName_Camo" xml:space="preserve"><value>Camo</value></data>
+    <data name="NodeName_Chainmail" xml:space="preserve"><value>Chainmail</value></data>
+    <data name="NodeName_Channel" xml:space="preserve"><value>Channel</value></data>
+    <data name="NodeName_Checkerboard" xml:space="preserve"><value>Checkerboard</value></data>
+    <data name="NodeName_ChromaticAberration" xml:space="preserve"><value>Chromatic Aberration</value></data>
+    <data name="NodeName_Circuit" xml:space="preserve"><value>Circuit</value></data>
+    <data name="NodeName_Cloud" xml:space="preserve"><value>Cloud</value></data>
+    <data name="NodeName_Cobblestone" xml:space="preserve"><value>Cobblestone</value></data>
+    <data name="NodeName_ColorAdjust" xml:space="preserve"><value>Color Adjust</value></data>
+    <data name="NodeName_ColorExtraction" xml:space="preserve"><value>Color Extraction</value></data>
+    <data name="NodeName_ColorQuantize" xml:space="preserve"><value>Color Quantize</value></data>
+    <data name="NodeName_Colorize" xml:space="preserve"><value>Colorize</value></data>
+    <data name="NodeName_Comment" xml:space="preserve"><value>Comment</value></data>
+    <data name="NodeName_Concentric" xml:space="preserve"><value>Concentric</value></data>
+    <data name="NodeName_Condition" xml:space="preserve"><value>Condition</value></data>
+    <data name="NodeName_Constant" xml:space="preserve"><value>Constant</value></data>
+    <data name="NodeName_Convolution" xml:space="preserve"><value>Convolution</value></data>
+    <data name="NodeName_Crystal" xml:space="preserve"><value>Crystal</value></data>
+    <data name="NodeName_Curves" xml:space="preserve"><value>Curves</value></data>
+    <data name="NodeName_Displace" xml:space="preserve"><value>Displace</value></data>
+    <data name="NodeName_Distort" xml:space="preserve"><value>Distort</value></data>
+    <data name="NodeName_DropShadow" xml:space="preserve"><value>Drop Shadow</value></data>
+    <data name="NodeName_EnergyField" xml:space="preserve"><value>Energy Field</value></data>
+    <data name="NodeName_Fabric" xml:space="preserve"><value>Fabric</value></data>
+    <data name="NodeName_Fence" xml:space="preserve"><value>Fence</value></data>
+    <data name="NodeName_Fibers" xml:space="preserve"><value>Fibers</value></data>
+    <data name="NodeName_Fire" xml:space="preserve"><value>Fire</value></data>
+    <data name="NodeName_Flagstone" xml:space="preserve"><value>Flagstone</value></data>
+    <data name="NodeName_FloodFill" xml:space="preserve"><value>Flood Fill</value></data>
+    <data name="NodeName_Floor" xml:space="preserve"><value>Floor</value></data>
+    <data name="NodeName_Fog" xml:space="preserve"><value>Fog</value></data>
+    <data name="NodeName_FrameInterpolation" xml:space="preserve"><value>Frame Interpolation</value></data>
+    <data name="NodeName_FrameSequence" xml:space="preserve"><value>Frame Sequence</value></data>
+    <data name="NodeName_Gem" xml:space="preserve"><value>Gem</value></data>
+    <data name="NodeName_Glow" xml:space="preserve"><value>Glow</value></data>
+    <data name="NodeName_Gradient" xml:space="preserve"><value>Gradient</value></data>
+    <data name="NodeName_GradientMap" xml:space="preserve"><value>Gradient Map</value></data>
+    <data name="NodeName_Grass" xml:space="preserve"><value>Grass</value></data>
+    <data name="NodeName_Grayscale" xml:space="preserve"><value>Grayscale</value></data>
+    <data name="NodeName_HealthBar" xml:space="preserve"><value>Health Bar</value></data>
+    <data name="NodeName_Hologram" xml:space="preserve"><value>Hologram</value></data>
+    <data name="NodeName_Honeycomb" xml:space="preserve"><value>Honeycomb</value></data>
+    <data name="NodeName_HslAdjust" xml:space="preserve"><value>HSL Adjust</value></data>
+    <data name="NodeName_Ice" xml:space="preserve"><value>Ice</value></data>
+    <data name="NodeName_Icon" xml:space="preserve"><value>Icon</value></data>
+    <data name="NodeName_ImageAnalysis" xml:space="preserve"><value>Image Analysis</value></data>
+    <data name="NodeName_Lattice" xml:space="preserve"><value>Lattice</value></data>
+    <data name="NodeName_LavaFlow" xml:space="preserve"><value>Lava Flow</value></data>
+    <data name="NodeName_Leather" xml:space="preserve"><value>Leather</value></data>
+    <data name="NodeName_Lighting" xml:space="preserve"><value>Lighting</value></data>
+    <data name="NodeName_Lightning" xml:space="preserve"><value>Lightning</value></data>
+    <data name="NodeName_Line" xml:space="preserve"><value>Line</value></data>
+    <data name="NodeName_Magma" xml:space="preserve"><value>Magma</value></data>
+    <data name="NodeName_Marble" xml:space="preserve"><value>Marble</value></data>
+    <data name="NodeName_MaskBlend" xml:space="preserve"><value>Mask Blend</value></data>
+    <data name="NodeName_MathOp" xml:space="preserve"><value>Math Op</value></data>
+    <data name="NodeName_Mosaic" xml:space="preserve"><value>Mosaic</value></data>
+    <data name="NodeName_Moss" xml:space="preserve"><value>Moss</value></data>
+    <data name="NodeName_MotionBlur" xml:space="preserve"><value>Motion Blur</value></data>
+    <data name="NodeName_Mushroom" xml:space="preserve"><value>Mushroom</value></data>
+    <data name="NodeName_NineSlice" xml:space="preserve"><value>Nine Slice</value></data>
+    <data name="NodeName_Noise" xml:space="preserve"><value>Noise</value></data>
+    <data name="NodeName_NoiseInjection" xml:space="preserve"><value>Noise Injection</value></data>
+    <data name="NodeName_NormalMap" xml:space="preserve"><value>Normal Map</value></data>
+    <data name="NodeName_OffsetWrap" xml:space="preserve"><value>Offset Wrap</value></data>
+    <data name="NodeName_Outline" xml:space="preserve"><value>Outline</value></data>
+    <data name="NodeName_Output" xml:space="preserve"><value>Output</value></data>
+    <data name="NodeName_PaletteMap" xml:space="preserve"><value>Palette Map</value></data>
+    <data name="NodeName_ParameterAnimation" xml:space="preserve"><value>Parameter Animation</value></data>
+    <data name="NodeName_PerspectiveTransform" xml:space="preserve"><value>Perspective Transform</value></data>
+    <data name="NodeName_PixelPerfectOutline" xml:space="preserve"><value>Pixel Outline</value></data>
+    <data name="NodeName_Pixelate" xml:space="preserve"><value>Pixelate</value></data>
+    <data name="NodeName_Plasma" xml:space="preserve"><value>Plasma</value></data>
+    <data name="NodeName_Posterize" xml:space="preserve"><value>Posterize</value></data>
+    <data name="NodeName_Preview" xml:space="preserve"><value>Preview</value></data>
+    <data name="NodeName_RadialBlur" xml:space="preserve"><value>Radial Blur</value></data>
+    <data name="NodeName_Rain" xml:space="preserve"><value>Rain</value></data>
+    <data name="NodeName_RandomSelect" xml:space="preserve"><value>Random Select</value></data>
+    <data name="NodeName_Rectangle" xml:space="preserve"><value>Rectangle</value></data>
+    <data name="NodeName_Ripple" xml:space="preserve"><value>Ripple</value></data>
+    <data name="NodeName_Rock" xml:space="preserve"><value>Rock</value></data>
+    <data name="NodeName_Rune" xml:space="preserve"><value>Rune</value></data>
+    <data name="NodeName_Rust" xml:space="preserve"><value>Rust</value></data>
+    <data name="NodeName_Scales" xml:space="preserve"><value>Scales</value></data>
+    <data name="NodeName_Scanlines" xml:space="preserve"><value>Scanlines</value></data>
+    <data name="NodeName_SeamlessBlend" xml:space="preserve"><value>Seamless Blend</value></data>
+    <data name="NodeName_Selector" xml:space="preserve"><value>Selector</value></data>
+    <data name="NodeName_SemanticControl" xml:space="preserve"><value>Semantic Control</value></data>
+    <data name="NodeName_Shape" xml:space="preserve"><value>Shape</value></data>
+    <data name="NodeName_Sharpen" xml:space="preserve"><value>Sharpen</value></data>
+    <data name="NodeName_Shield" xml:space="preserve"><value>Shield</value></data>
+    <data name="NodeName_Slime" xml:space="preserve"><value>Slime</value></data>
+    <data name="NodeName_Smoke" xml:space="preserve"><value>Smoke</value></data>
+    <data name="NodeName_Snow" xml:space="preserve"><value>Snow</value></data>
+    <data name="NodeName_SolidColor" xml:space="preserve"><value>Solid Color</value></data>
+    <data name="NodeName_Spiral" xml:space="preserve"><value>Spiral</value></data>
+    <data name="NodeName_SplatterCircular" xml:space="preserve"><value>Splatter Circular</value></data>
+    <data name="NodeName_SpriteSheet" xml:space="preserve"><value>Sprite Sheet</value></data>
+    <data name="NodeName_SpriteSlice" xml:space="preserve"><value>Sprite Slice</value></data>
+    <data name="NodeName_Starfield" xml:space="preserve"><value>Starfield</value></data>
+    <data name="NodeName_Stylize" xml:space="preserve"><value>Stylize</value></data>
+    <data name="NodeName_Symmetry" xml:space="preserve"><value>Symmetry</value></data>
+    <data name="NodeName_Terrain" xml:space="preserve"><value>Terrain</value></data>
+    <data name="NodeName_Text" xml:space="preserve"><value>Text</value></data>
+    <data name="NodeName_Threshold" xml:space="preserve"><value>Threshold</value></data>
+    <data name="NodeName_TileCombine" xml:space="preserve"><value>Tile Combine</value></data>
+    <data name="NodeName_TileMirror" xml:space="preserve"><value>Tile Mirror</value></data>
+    <data name="NodeName_Torch" xml:space="preserve"><value>Torch</value></data>
+    <data name="NodeName_Transform" xml:space="preserve"><value>Transform</value></data>
+    <data name="NodeName_Tree" xml:space="preserve"><value>Tree</value></data>
+    <data name="NodeName_Twirl" xml:space="preserve"><value>Twirl</value></data>
+    <data name="NodeName_UIButton" xml:space="preserve"><value>UI Button</value></data>
+    <data name="NodeName_UIPanel" xml:space="preserve"><value>UI Panel</value></data>
+    <data name="NodeName_Variation" xml:space="preserve"><value>Variation</value></data>
+    <data name="NodeName_Vignette" xml:space="preserve"><value>Vignette</value></data>
+    <data name="NodeName_Wall" xml:space="preserve"><value>Wall</value></data>
+    <data name="NodeName_WaterFlow" xml:space="preserve"><value>Water Flow</value></data>
+    <data name="NodeName_Wave" xml:space="preserve"><value>Wave</value></data>
+    <data name="NodeName_Weave" xml:space="preserve"><value>Weave</value></data>
+    <data name="NodeName_Wood" xml:space="preserve"><value>Wood</value></data>
+    <data name="Tile_Grass" xml:space="preserve"><value>Grass</value></data>
+    <data name="Tile_Stone" xml:space="preserve"><value>Stone</value></data>
+    <data name="Tile_Water" xml:space="preserve"><value>Water</value></data>
+    <data name="Tile_Sand" xml:space="preserve"><value>Sand</value></data>
+    <data name="Tile_Road" xml:space="preserve"><value>Road</value></data>
+    <data name="NodeLib_Port_Bitmap" xml:space="preserve"><value>Bitmap</value></data>
+    <data name="Cat_Source" xml:space="preserve"><value>Source</value></data>
+    <data name="Cat_Nature" xml:space="preserve"><value>Nature</value></data>
+    <data name="Cat_Material" xml:space="preserve"><value>Material</value></data>
+    <data name="Cat_Structure" xml:space="preserve"><value>Structure</value></data>
+    <data name="Cat_Adjust" xml:space="preserve"><value>Adjust</value></data>
+    <data name="Cat_Effect" xml:space="preserve"><value>Effect</value></data>
+    <data name="Cat_Utility" xml:space="preserve"><value>Utility</value></data>
+    <data name="Cat_Custom" xml:space="preserve"><value>Custom</value></data>
+    <data name="MW_Error" xml:space="preserve"><value>Error</value></data>
+    <data name="MW_ConfirmDeleteTemplate" xml:space="preserve"><value>Delete template</value></data>
+    <data name="MW_DeleteTemplate" xml:space="preserve"><value>Delete Template</value></data>
+    <data name="MW_FailedToDeleteTemplate" xml:space="preserve"><value>Failed to delete template:</value></data>
+    <data name="MW_FailedToSaveTemplate" xml:space="preserve"><value>Failed to save template:</value></data>
+    <data name="MW_EnterTemplateName" xml:space="preserve"><value>Enter new template name:</value></data>
+    <data name="MW_RenameTemplate" xml:space="preserve"><value>Rename Template</value></data>
+    <data name="MW_FileAlreadyExists" xml:space="preserve"><value>File already exists:</value></data>
+    <data name="MW_RenameFailed" xml:space="preserve"><value>Rename Failed</value></data>
+    <data name="MW_FailedToRename" xml:space="preserve"><value>Failed to rename:</value></data>
+    <data name="MW_SelectFileToUpload" xml:space="preserve"><value>Select file to upload</value></data>
+    <data name="MW_NewConversation" xml:space="preserve"><value>New Conversation</value></data>
+    <data name="Settings_CacheSection" xml:space="preserve"><value>Script Cache</value></data>
+    <data name="Settings_CachePath" xml:space="preserve"><value>Cache Directory</value></data>
+    <data name="Settings_OpenCacheFolder" xml:space="preserve"><value>Open…</value></data>
+    <data name="AI_ServiceConfig" xml:space="preserve"><value>Service Config</value></data>
+    <data name="AI_SkillManagement" xml:space="preserve"><value>Skills</value></data>
+    <data name="Cat_Logic" xml:space="preserve"><value>Logic</value></data>
+    <data name="Cat_Pattern" xml:space="preserve"><value>Pattern</value></data>
+    <data name="Cat_Noise" xml:space="preserve"><value>Noise</value></data>
+    <data name="Cat_ImageProcess" xml:space="preserve"><value>Image Process</value></data>
+    <data name="Cat_Generate" xml:space="preserve"><value>Generate</value></data>
+    <data name="Cat_Tool" xml:space="preserve"><value>Tool</value></data>
+    <data name="NodeName_TileGrass" xml:space="preserve"><value>Grass Tile</value></data>
+    <data name="NodeName_TileRoad" xml:space="preserve"><value>Road Tile</value></data>
+    <data name="NodeName_TileSand" xml:space="preserve"><value>Sand Tile</value></data>
+    <data name="NodeName_TileStone" xml:space="preserve"><value>Stone Tile</value></data>
+    <data name="NodeName_TileWater" xml:space="preserve"><value>Water Tile</value></data>
+    <data name="DarkMsgBox_OK" xml:space="preserve"><value>OK</value></data>
+    <data name="DarkMsgBox_Yes" xml:space="preserve"><value>Yes</value></data>
+    <data name="DarkMsgBox_Cancel" xml:space="preserve"><value>Cancel</value></data>
+    <data name="AI_ConfirmTitle" xml:space="preserve"><value>Confirm Operation</value></data>
+    <data name="AI_ConfirmMessage" xml:space="preserve"><value>AI requests to perform the following operation:</value></data>
+    <data name="Cat_Particle" xml:space="preserve"><value>Particle</value></data>
+    <data name="Cat_Physics" xml:space="preserve"><value>Physics</value></data>
+    <data name="Cat_Animation" xml:space="preserve"><value>Animation</value></data>
+    <data name="NodeName_ParticleEmitter" xml:space="preserve"><value>Particle Emitter</value></data>
+    <data name="NodeName_ParticleForce" xml:space="preserve"><value>Particle Force</value></data>
+    <data name="NodeName_ParticleRender" xml:space="preserve"><value>Particle Render</value></data>
+    <data name="NodeName_PhysicsSimulate" xml:space="preserve"><value>Physics Simulate</value></data>
+    <data name="NodeName_PhysicsField" xml:space="preserve"><value>Physics Field</value></data>
+    <data name="NodeName_AnimatedParameter" xml:space="preserve"><value>Animated Parameter</value></data>
+    <data name="NodeName_FrameBlend" xml:space="preserve"><value>Frame Blend</value></data>
+    <data name="NodeName_Time" xml:space="preserve"><value>Time</value></data>
+</root>

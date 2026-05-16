@@ -1,0 +1,191 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "PixelPerfectOutline",
+    "displayName": {
+      "zh-Hans": "像素描边",
+      "en": "Pixel Perfect Outline"
+    },
+    "category": "ImageProcess",
+    "description": {
+      "zh-Hans": "基于透明通道/颜色过渡的像素级完美描边检测。扫描内部/外部区域之间的硬过渡，在精灵边界周围生成清晰的1像素轮廓，支持角落连接控制。与基于Sobel算子的OutlineNode不同，此节点专为需要精确轮廓控制和干净角落的像素艺术精灵设计。",
+      "en": "Pixel-perfect outline detection based on alpha/color transitions. Scans for hard transitions between inside/outside regions to produce crisp 1px outlines around sprite boundaries with corner join control. Unlike the Sobel-based OutlineNode, this is designed for pixel art sprites where precise silhouette control and clean corners are required."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      }
+    ],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "模式",
+        "en": "Mode"
+      },
+      "kind": "Choice",
+      "default": "outside",
+      "choices": [
+        {
+          "value": "outside",
+          "label": {
+            "zh-Hans": "外部",
+            "en": "outside"
+          }
+        },
+        {
+          "value": "inside",
+          "label": {
+            "zh-Hans": "内部",
+            "en": "inside"
+          }
+        },
+        {
+          "value": "both",
+          "label": {
+            "zh-Hans": "双向",
+            "en": "both"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "zh-Hans": "线条颜色",
+        "en": "Line Color"
+      },
+      "kind": "Color",
+      "default": "#0A1428FF"
+    },
+    {
+      "name": {
+        "zh-Hans": "厚度",
+        "en": "Thickness"
+      },
+      "kind": "Integer",
+      "default": 1,
+      "min": 1,
+      "max": 8,
+      "step": 1
+    },
+    {
+      "name": {
+        "zh-Hans": "角落处理",
+        "en": "Corner"
+      },
+      "kind": "Choice",
+      "default": "sharp",
+      "choices": [
+        {
+          "value": "sharp",
+          "label": {
+            "zh-Hans": "锐利",
+            "en": "sharp"
+          }
+        },
+        {
+          "value": "diagonal",
+          "label": {
+            "zh-Hans": "对角线",
+            "en": "diagonal"
+          }
+        },
+        {
+          "value": "rounded",
+          "label": {
+            "zh-Hans": "圆顶",
+            "en": "rounded"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "zh-Hans": "阈值",
+        "en": "Threshold"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "检测模式",
+        "en": "Detect Mode"
+      },
+      "kind": "Choice",
+      "default": "alpha",
+      "choices": [
+        {
+          "value": "alpha",
+          "label": {
+            "zh-Hans": "透明通道",
+            "en": "alpha"
+          }
+        },
+        {
+          "value": "luminance",
+          "label": {
+            "zh-Hans": "亮度",
+            "en": "luminance"
+          }
+        },
+        {
+          "value": "color",
+          "label": {
+            "zh-Hans": "颜色",
+            "en": "color"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "zh-Hans": "不透明度",
+        "en": "Opacity"
+      },
+      "kind": "Number",
+      "default": 1.0,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    }
+  ],
+  "ai": {
+    "capabilities": ["edge"],
+    "triggers": {
+      "zh-Hans": "像素描边, 精确描边, 像素完美描边, 精灵描边",
+      "en": "pixel perfect outline, crisp outline, sprite border, edge outline"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "为像素艺术角色添加像素完美的外部描边线。",
+      "en": "Add a pixel-perfect outline to a pixel art character."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar input = inputs.Length > 0 && inputs[0] != null ? inputs[0]! :\n        new PixelBuffer(context.TileSize, context.TileSize);\n    var mode = GetChoice(parameters, \"mode\", \"outside\");\n    var lineColor = GetColor(parameters, \"lineColor\", Colors.Black);\n    var thickness = Math.Max(1, GetInt(parameters, \"thickness\", 1));\n    var cornerMode = GetChoice(parameters, \"corner\", \"sharp\");\n    var threshold = GetFloat(parameters, \"threshold\", 0.5f);\n    var detectMode = GetChoice(parameters, \"detectMode\", \"alpha\");\n    var opacity = GetFloat(parameters, \"opacity\", 1f);\n\n    var size = context.TileSize;\n    var output = input.Clone();\n\n    var lR = lineColor.R / 255f;\n    var lG = lineColor.G / 255f;\n    var lB = lineColor.B / 255f;\n\n    // Step 1: Compute pixel-perfect edge mask\n    var edgeMask = ComputeCrispEdges(input, size, threshold, detectMode, cornerMode, mode);\n\n    // Step 2: Dilate for thickness\n    if (thickness > 1)\n        edgeMask = DilateEdges(edgeMask, size, thickness);\n\n    // Step 3: Apply outline colors\n    output.ParallelForEachPixel((x, y) =>\n    {\n        var edge = edgeMask[y * size + x];\n        if (edge <= 0f) return;\n\n        var (r, g, b, a) = output.GetPixel(x, y);\n\n        if (mode == \"outside\")\n        {\n            // Replace pixels outside the sprite with the outline color\n            output.SetPixel(x, y, lR, lG, lB, edge * opacity);\n        }\n        else if (mode == \"inside\")\n        {\n            // Blend outline over interior of the sprite\n            var alpha = Math.Min(1f, edge * opacity);\n            output.SetPixel(x, y,\n                Lerp(r, lR, alpha),\n                Lerp(g, lG, alpha),\n                Lerp(b, lB, alpha),\n                Math.Max(a, alpha));\n        }\n        else // both\n        {\n            // Blend outline everywhere (replaces alpha for outside, blends for inside)\n            if (a < 0.5f)\n                output.SetPixel(x, y, lR, lG, lB, edge * opacity);\n            else\n            {\n                var alpha = Math.Min(1f, edge * opacity);\n                output.SetPixel(x, y,\n                    Lerp(r, lR, alpha),\n                    Lerp(g, lG, alpha),\n                    Lerp(b, lB, alpha),\n                    Math.Max(a, alpha));\n            }\n        }\n    });\n\n    return output;\n\nprivate static float[] ComputeCrispEdges(PixelBuffer input, int size, float threshold, string detectMode, string cornerMode, string outlineMode)\n{\n    var edges = new float[size * size];\n    var useDiagonal = cornerMode != \"sharp\";\n    var detectOuter = outlineMode == \"outside\" || outlineMode == \"both\";\n    var detectInner = outlineMode == \"inside\" || outlineMode == \"both\";\n\n    // Precompute detection values so each pixel is sampled only once\n    var values = new float[size * size];\n    for (var y = 0; y < size; y++)\n    {\n        for (var x = 0; x < size; x++)\n        {\n            values[y * size + x] = GetDetectionValue(input, x, y, detectMode);\n        }\n    }\n\n    // First pass: detect edge pixels\n    for (var y = 0; y < size; y++)\n    {\n        for (var x = 0; x < size; x++)\n        {\n            var centerVal = values[y * size + x];\n            var isInside = centerVal > threshold;\n\n            // Check cardinal neighbors\n            var hasOppositeCardinal = false;\n            var hasOppositeDiagonal = false;\n\n            // Cardinal directions\n            var nInside = IsInside(values, size, x - 1, y, threshold);\n            var eInside = IsInside(values, size, x + 1, y, threshold);\n            var sInside = IsInside(values, size, x, y - 1, threshold);\n            var wInside = IsInside(values, size, x, y + 1, threshold);\n\n            if (nInside != isInside || eInside != isInside || sInside != isInside || wInside != isInside)\n                hasOppositeCardinal = true;\n\n            // Diagonal neighbors\n            if (useDiagonal)\n            {\n                var nwInside = IsInside(values, size, x - 1, y - 1, threshold);\n                var neInside = IsInside(values, size, x + 1, y - 1, threshold);\n                var swInside = IsInside(values, size, x - 1, y + 1, threshold);\n                var seInside = IsInside(values, size, x + 1, y + 1, threshold);\n\n                if (nwInside != isInside || neInside != isInside || swInside != isInside || seInside != isInside)\n                    hasOppositeDiagonal = true;\n            }\n\n            var isEdge = false;\n\n            if (detectOuter && !isInside && hasOppositeCardinal)\n                isEdge = true;\n            if (detectInner && isInside && hasOppositeCardinal)\n                isEdge = true;\n\n            // Extended detection with diagonal neighbors\n            if (!isEdge && useDiagonal)\n            {\n                if (detectOuter && !isInside && hasOppositeDiagonal)\n                    isEdge = true;\n                if (detectInner && isInside && hasOppositeDiagonal)\n                    isEdge = true;\n            }\n\n            edges[y * size + x] = isEdge ? 1f : 0f;\n        }\n    }\n\n    // Corner rounding pass: fill L-shaped corner gaps for \"rounded\"\n    if (cornerMode == \"rounded\")\n    {\n        for (var y = 0; y < size; y++)\n        {\n            for (var x = 0; x < size; x++)\n            {\n                if (edges[y * size + x] > 0f) continue;\n\n                // Check 2x2 blocks for concave corner patterns.\n                // A pixel gets filled if it would round out a 90-degree corner:\n                // two orthogonal edge pixels on adjacent sides with a diagonal\n                // edge pixel opposite.\n                var tl = GetEdge(edges, size, x - 1, y - 1);\n                var t = GetEdge(edges, size, x, y - 1);\n                var tr = GetEdge(edges, size, x + 1, y - 1);\n                var l = GetEdge(edges, size, x - 1, y);\n                var r = GetEdge(edges, size, x + 1, y);\n                var bl = GetEdge(edges, size, x - 1, y + 1);\n                var b = GetEdge(edges, size, x, y + 1);\n                var br = GetEdge(edges, size, x + 1, y + 1);\n\n                // Detect L-shaped corner: two adjacent cardinals + their shared diagonal\n                // e.g., pixel is at the outer corner of an inside block\n                if ((l > 0f && t > 0f && tl > 0f) ||\n                    (r > 0f && t > 0f && tr > 0f) ||\n                    (l > 0f && b > 0f && bl > 0f) ||\n                    (r > 0f && b > 0f && br > 0f))\n                {\n                    edges[y * size + x] = 1f;\n                }\n            }\n        }\n    }\n\n    return edges;\n}\n\nprivate static bool IsInside(float[] values, int size, int x, int y, float threshold)\n{\n    // Wrap around for tileable\n    x = ((x % size) + size) % size;\n    y = ((y % size) + size) % size;\n    return values[y * size + x] > threshold;\n}\n\nprivate static float GetEdge(float[] edges, int size, int x, int y)\n{\n    x = ((x % size) + size) % size;\n    y = ((y % size) + size) % size;\n    return edges[y * size + x];\n}\n\nprivate static float GetDetectionValue(PixelBuffer input, int x, int y, string detectMode)\n{\n    var (r, g, b, a) = input.GetPixel(x, y);\n    return detectMode switch\n    {\n        \"alpha\" => a,\n        \"luminance\" => r * 0.299f + g * 0.587f + b * 0.114f,\n        _ => (r + g + b) / 3f\n    };\n}\n\nprivate static float[] DilateEdges(float[] edges, int size, int thickness)\n{\n    if (thickness <= 1) return edges;\n    var temp = new float[size * size];\n    var src = edges;\n    var dst = temp;\n\n    for (var iter = 1; iter < thickness; iter++)\n    {\n        Array.Clear(dst);\n\n        for (var y = 0; y < size; y++)\n        {\n            for (var x = 0; x < size; x++)\n            {\n                if (src[y * size + x] > 0f)\n                {\n                    dst[y * size + x] = 1f;\n                    continue;\n                }\n\n                // Check all 8 neighbors for dilation\n                for (var dy = -1; dy <= 1; dy++)\n                {\n                    for (var dx = -1; dx <= 1; dx++)\n                    {\n                        if (dx == 0 && dy == 0) continue;\n                        var nx = (x + dx + size) % size;\n                        var ny = (y + dy + size) % size;\n                        if (src[ny * size + nx] > 0f)\n                        {\n                            dst[y * size + x] = 1f;\n                            goto next;\n                        }\n                    }\n                }\n                next:;\n            }\n        }\n\n        (src, dst) = (dst, src);\n    }\n\n    if (thickness % 2 == 0)\n    {\n        Array.Copy(temp, edges, temp.Length);\n    }\n\n    return edges;\n    }\n}"
+  }
+}

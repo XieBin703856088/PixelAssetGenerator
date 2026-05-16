@@ -1,0 +1,168 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "Convolution",
+    "displayName": {
+      "zh-Hans": "卷积",
+      "en": "Convolution"
+    },
+    "category": "ImageProcess",
+    "description": {
+      "zh-Hans": "对输入图像应用卷积核。支持模糊、锐化、边缘检测。使用环绕采样以保持无缝平铺。",
+      "en": "Applies a convolution kernel to the input image. Supports blur, sharpen, edge-detect. Uses wrapped sampling to maintain seamless tiling."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      }
+    ],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "模式",
+        "en": "Mode"
+      },
+      "kind": "Choice",
+      "default": "boxBlur",
+      "choices": [
+        {
+          "value": "boxBlur",
+          "label": {
+            "zh-Hans": "方框模糊",
+            "en": "boxBlur"
+          }
+        },
+        {
+          "value": "gaussianBlur",
+          "label": {
+            "zh-Hans": "高斯模糊",
+            "en": "gaussianBlur"
+          }
+        },
+        {
+          "value": "sharpen",
+          "label": {
+            "zh-Hans": "锐化",
+            "en": "sharpen"
+          }
+        },
+        {
+          "value": "edgeDetect",
+          "label": {
+            "zh-Hans": "边缘检测",
+            "en": "edgeDetect"
+          }
+        },
+        {
+          "value": "emboss",
+          "label": {
+            "zh-Hans": "浮雕",
+            "en": "emboss"
+          }
+        },
+        {
+          "value": "outline",
+          "label": {
+            "zh-Hans": "描边",
+            "en": "outline"
+          }
+        },
+        {
+          "value": "engrave",
+          "label": {
+            "zh-Hans": "雕刻",
+            "en": "engrave"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "zh-Hans": "半径",
+        "en": "Radius"
+      },
+      "kind": "Integer",
+      "default": 1,
+      "min": 1,
+      "max": 4,
+      "step": 1
+    },
+    {
+      "name": {
+        "zh-Hans": "强度",
+        "en": "Intensity"
+      },
+      "kind": "Number",
+      "default": 1.0,
+      "min": 0.0,
+      "max": 2.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "混合比例",
+        "en": "Mix Ratio"
+      },
+      "kind": "Number",
+      "default": 1.0,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "浮雕角度",
+        "en": "Emboss Angle"
+      },
+      "kind": "Number",
+      "default": 135.0,
+      "min": 0.0,
+      "max": 360.0,
+      "step": 1.0
+    },
+    {
+      "name": {
+        "zh-Hans": "保留透明通道",
+        "en": "Preserve Alpha"
+      },
+      "kind": "Boolean",
+      "default": true
+    }
+  ],
+  "ai": {
+    "capabilities": ["filter", "blur", "edge", "sharpen"],
+    "triggers": {
+      "zh-Hans": "卷积, 方框模糊, 高斯模糊, 锐化, 边缘检测, 浮雕, 描边, 雕刻",
+      "en": "convolution, box blur, gaussian blur, sharpen, edge detect, emboss, outline, engrave"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "使用边缘检测卷积核提取图像的轮廓。",
+      "en": "Extract the outlines of an image using an edge detection convolution kernel."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar input = inputs.Length > 0 ? inputs[0] : null;\n        if (input is null)\n            return PixelBuffer.CreateSolid(context.TileSize, context.TileSize, 0, 0, 0);\n\n        var mode = GetChoice(parameters, \"mode\", \"boxBlur\");\n        var radius = Math.Max(1, GetInt(parameters, \"radius\", 1));\n        var strength = GetFloat(parameters, \"intensity\", 1f);\n        var mixRatio = GetFloat(parameters, \"mixRatio\", 1f);\n        var embossAngle = GetFloat(parameters, \"embossAngle\", 135f) * MathF.PI / 180f;\n        var preserveAlpha = GetBool(parameters, \"preserveAlpha\", true);\n\n        var (kernel, kernelSize, divisor) = BuildKernel(mode, radius, embossAngle);\n\n        var w = input.Width;\n        var h = input.Height;\n        var result = new PixelBuffer(w, h);\n        var halfK = kernelSize / 2;\n\n        result.ParallelForEachPixel((x, y) =>\n        {\n            float sumR = 0, sumG = 0, sumB = 0;\n            var (origR, origG, origB, origA) = input.GetPixel(x, y);\n\n            if (mode == \"outline\")\n            {\n                // Combined Sobel magnitude: sqrt(Gx² + Gy²) per channel.\n                // Uses 3x3 Sobel operators for both horizontal and vertical edge detection.\n                float gxR = 0, gxG = 0, gxB = 0;\n                float gyR = 0, gyG = 0, gyB = 0;\n                for (var ky = 0; ky < 3; ky++)\n                {\n                    for (var kx = 0; kx < 3; kx++)\n                    {\n                        var sx = x + kx - 1;\n                        var sy = y + ky - 1;\n                        var (pr, pg, pb, _) = input.GetPixelWrapped(sx, sy);\n                        // Sobel X: horizontal gradient\n                        float wx = (kx == 0 ? -1f : kx == 2 ? 1f : 0f) * (ky == 0 ? -1f : ky == 2 ? 1f : 2f);\n                        // Sobel Y: vertical gradient\n                        float wy = (ky == 0 ? -1f : ky == 2 ? 1f : 0f) * (kx == 0 ? -1f : kx == 2 ? 1f : 2f);\n                        gxR += pr * wx; gyR += pr * wy;\n                        gxG += pg * wx; gyG += pg * wy;\n                        gxB += pb * wx; gyB += pb * wy;\n                    }\n                }\n                sumR = MathF.Sqrt(gxR * gxR + gyR * gyR);\n                sumG = MathF.Sqrt(gxG * gxG + gyG * gyG);\n                sumB = MathF.Sqrt(gxB * gxB + gyB * gyB);\n            }\n            else\n            {\n                for (var ky = 0; ky < kernelSize; ky++)\n                {\n                    for (var kx = 0; kx < kernelSize; kx++)\n                    {\n                        var sx = x + kx - halfK;\n                        var sy = y + ky - halfK;\n                        var (pr, pg, pb, _) = input.GetPixelWrapped(sx, sy);\n                        var weight = kernel[ky * kernelSize + kx];\n                        sumR += pr * weight;\n                        sumG += pg * weight;\n                        sumB += pb * weight;\n                    }\n                }\n            }\n\n            if (MathF.Abs(divisor) > 0.0001f && mode != \"outline\")\n            {\n                sumR /= divisor;\n                sumG /= divisor;\n                sumB /= divisor;\n            }\n\n            // Apply strength multiplier\n            if (MathF.Abs(strength - 1f) > 0.001f)\n            {\n                sumR *= strength;\n                sumG *= strength;\n                sumB *= strength;\n            }\n\n            // Emboss: add 0.5 grey offset so flat areas map to mid-grey and\n            // directional highlights/shadows are centred around neutral.\n            if (mode == \"emboss\")\n            {\n                sumR += 0.5f;\n                sumG += 0.5f;\n                sumB += 0.5f;\n            }\n\n            // Edge detect / stroke modes may produce negative values\n            if (mode is \"edgeDetect\" or \"outline\")\n            {\n                sumR = MathF.Abs(sumR);\n                sumG = MathF.Abs(sumG);\n                sumB = MathF.Abs(sumB);\n            }\n\n            // Mix with original\n            if (mixRatio < 0.999f)\n            {\n                sumR = origR + (sumR - origR) * mixRatio;\n                sumG = origG + (sumG - origG) * mixRatio;\n                sumB = origB + (sumB - origB) * mixRatio;\n            }\n\n            var outA = preserveAlpha ? origA : Math.Clamp(MathF.Max(MathF.Max(MathF.Abs(sumR), MathF.Abs(sumG)), MathF.Abs(sumB)), 0f, 1f);\n\n            result.SetPixel(x, y,\n                Math.Clamp(sumR, 0f, 1f),\n                Math.Clamp(sumG, 0f, 1f),\n                Math.Clamp(sumB, 0f, 1f),\n                outA);\n        });\n\n        return result;\n\n    private static (float[] kernel, int size, float divisor) BuildKernel(string mode, int radius, float embossAngle)\n    {\n        switch (mode)\n        {\n            case \"sharpen\":\n                return (new float[]\n                {\n                    0, -1, 0,\n                    -1, 5, -1,\n                    0, -1, 0\n                }, 3, 1f);\n\n            case \"edgeDetect\":\n                return (new float[]\n                {\n                    -1, -1, -1,\n                    -1, 8, -1,\n                    -1, -1, -1\n                }, 3, 1f);\n\n            case \"emboss\":\n            {\n                // Directional emboss: center weight must be 0 so the original pixel is\n                // removed from the sum. A +0.5 grey offset is added in Process() so that\n                // flat areas map to mid-grey and the angle change is clearly visible.\n                var cosA = MathF.Cos(embossAngle);\n                var sinA = MathF.Sin(embossAngle);\n                return (new float[]\n                {\n                    -cosA - sinA, -sinA, cosA - sinA,\n                    -cosA, 0, cosA,\n                    sinA - cosA, sinA, cosA + sinA\n                }, 3, 1f);\n            }\n\n            case \"engrave\":\n                return (new float[]\n                {\n                    -1, -1, 0,\n                    -1, 0, 1,\n                    0, 1, 1\n                }, 3, 1f);\n\n            case \"gaussianBlur\":\n            {\n                // Approximate Gaussian kernel\n                var size = radius * 2 + 1;\n                var kernel = new float[size * size];\n                var sigma = radius * 0.5f + 0.5f;\n                var sum = 0f;\n                for (var ky = 0; ky < size; ky++)\n                {\n                    for (var kx = 0; kx < size; kx++)\n                    {\n                        var dx = kx - radius;\n                        var dy = ky - radius;\n                        var val = MathF.Exp(-(dx * dx + dy * dy) / (2f * sigma * sigma));\n                        kernel[ky * size + kx] = val;\n                        sum += val;\n                    }\n                }\n                return (kernel, size, sum);\n            }\n\n            default: // \"boxBlur\" - box blur\n            {\n                var size = radius * 2 + 1;\n                var kernel = new float[size * size];\n                Array.Fill(kernel, 1f);\n                return (kernel, size, size * size);\n            }\n        }\n    }\n}"
+  }
+}

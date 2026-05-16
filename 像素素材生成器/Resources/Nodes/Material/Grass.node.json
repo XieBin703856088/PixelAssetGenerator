@@ -1,0 +1,208 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "Grass",
+    "displayName": {
+      "zh-Hans": "草地",
+      "en": "Grass"
+    },
+    "category": "Material",
+    "description": {
+      "zh-Hans": "使用定向叶片状图案生成草地/植被地面纹理。结合土壤基础层与覆盖的草叶，支持可变密度、颜色和方向。所有噪波均可平铺。",
+      "en": "Generates grass / vegetation ground textures using directional blade-like patterns. Combines a soil base layer with overlaid grass blades of variable density, color, and direction. All noise is tileable."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "遮罩",
+          "en": "Mask"
+        },
+        "type": "Mask"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "种子",
+        "en": "Seed"
+      },
+      "kind": "Seed",
+      "default": 42,
+      "min": 0,
+      "max": 9999
+    },
+    {
+      "name": {
+        "zh-Hans": "密度",
+        "en": "Density"
+      },
+      "kind": "Number",
+      "default": 0.7,
+      "min": 0.1,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "草长度",
+        "en": "Grass Length"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.1,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "草宽度",
+        "en": "Grass Width"
+      },
+      "kind": "Number",
+      "default": 0.4,
+      "min": 0.1,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "风向角度",
+        "en": "Wind Angle"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 360.0,
+      "step": 1.0
+    },
+    {
+      "name": {
+        "zh-Hans": "风力强度",
+        "en": "Wind Strength"
+      },
+      "kind": "Number",
+      "default": 0.3,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "草色1",
+        "en": "Grass Color1"
+      },
+      "kind": "Color",
+      "default": "#3C8C28FF"
+    },
+    {
+      "name": {
+        "zh-Hans": "草色2",
+        "en": "Grass Color2"
+      },
+      "kind": "Color",
+      "default": "#64B43CFF"
+    },
+    {
+      "name": {
+        "zh-Hans": "土壤颜色",
+        "en": "Soil Color"
+      },
+      "kind": "Color",
+      "default": "#785A3CFF"
+    },
+    {
+      "name": {
+        "zh-Hans": "颜色变化",
+        "en": "Color Variation"
+      },
+      "kind": "Number",
+      "default": 0.2,
+      "min": 0.0,
+      "max": 0.5,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "丛生度",
+        "en": "Clumping"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "细节",
+        "en": "Detail"
+      },
+      "kind": "Number",
+      "default": 0.3,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "亮度",
+        "en": "Brightness"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": -0.3,
+      "max": 0.3,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "对比度",
+        "en": "Contrast"
+      },
+      "kind": "Number",
+      "default": 0.15,
+      "min": -0.5,
+      "max": 0.5,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "反相",
+        "en": "Invert"
+      },
+      "kind": "Boolean",
+      "default": false
+    }
+  ],
+  "ai": {
+    "capabilities": ["material", "procedural-texture", "nature", "organic", "tileable", "vegetation"],
+    "triggers": {
+      "zh-Hans": "草地, 草坪, 草丛, 植被地面, 田野, 草原",
+      "en": "grass, grassland, turf, vegetation, field, meadow"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "生成草地植被地面纹理，用于室外自然环境场景的地面材质。",
+      "en": "Generate a grass vegetation ground texture for outdoor natural environment scenes."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar seed = GetInt(parameters, \"seed\", context.Seed);\nvar density = GetFloat(parameters, \"density\", 0.7f);\nvar grassLength = GetFloat(parameters, \"grassLength\", 0.5f);\nvar grassWidth = GetFloat(parameters, \"grassWidth\", 0.4f);\nvar windAngle = GetFloat(parameters, \"windAngle\", 0f);\nvar windStrength = GetFloat(parameters, \"windStrength\", 0.3f);\nvar grassColor1 = GetColor(parameters, \"grassColor1\", Color.FromRgb(60, 140, 40));\nvar grassColor2 = GetColor(parameters, \"grassColor2\", Color.FromRgb(100, 180, 60));\nvar soilColor = GetColor(parameters, \"soilColor\", Color.FromRgb(120, 90, 60));\nvar colorVar = GetFloat(parameters, \"colorVariation\", 0.2f);\nvar clumping = GetFloat(parameters, \"clumping\", 0.5f);\nvar detail = GetFloat(parameters, \"detail\", 0.3f);\nvar brightness = GetFloat(parameters, \"brightness\", 0f);\nvar contrast = GetFloat(parameters, \"contrast\", 0f);\nvar invert = GetBool(parameters, \"invert\", false);\n\nvar size = context.TileSize;\nvar buffer = new PixelBuffer(size, size);\n\nvar g1R = grassColor1.R / 255f; var g1G = grassColor1.G / 255f; var g1B = grassColor1.B / 255f;\nvar g2R = grassColor2.R / 255f; var g2G = grassColor2.G / 255f; var g2B = grassColor2.B / 255f;\nvar sR = soilColor.R / 255f; var sG = soilColor.G / 255f; var sB = soilColor.B / 255f;\n\nvar windRad = windAngle * MathF.PI / 180f;\nvar cosWind = MathF.Cos(windRad);\nvar sinWind = MathF.Sin(windRad);\n\n// Number of grass blades (proportional to density and tile size)\nvar bladeCount = (int)(density * density * size * 0.8f);\nbladeCount = Math.Max(8, Math.Min(bladeCount, 500));\n\n// Pre-generate blade positions and properties\nvar blades = new (float x, float y, float len, float width, float bend, float hueShift, float brightness)[bladeCount];\nfor (var i = 0; i < bladeCount; i++)\n{\n    var bx = HashToUnit(i * 7, seed, 111);\n    var by = HashToUnit(i * 13, seed * 3, 222);\n    var bl = 0.3f + HashToUnit(i * 17, seed * 5, 333) * 0.7f; // 0.3-1.0\n    var bw = 0.2f + HashToUnit(i * 23, seed * 7, 444) * 0.8f; // 0.2-1.0\n    var bb = (HashToUnit(i * 29, seed * 11, 555) - 0.5f) * 2f; // -1..1\n    var bh = (HashToUnit(i * 31, seed * 13, 666) - 0.5f) * 2f; // -1..1\n    blades[i] = (bx, by, bl, bw, bb, bh, 0f);\n}\n\n// Pre-compute clump centers\nvar clumpCount = Math.Max(1, (int)(density * size * 0.15f));\nvar clumps = new (float x, float y, float radius)[clumpCount];\nfor (var i = 0; i < clumpCount; i++)\n{\n    clumps[i] = (\n        HashToUnit(i * 37, seed * 17, 777),\n        HashToUnit(i * 41, seed * 19, 888),\n        0.1f + HashToUnit(i * 43, seed * 23, 999) * 0.2f\n    );\n}\n\nbuffer.ParallelForEachPixel((x, y) =>\n{\n    var u = (x + 0.5f) / size;\n    var v = (y + 0.5f) / size;\n\n    // --- Soil base ---\n    var soilNoise = TileableFractalNoise(\n        u * 3f, v * 3f,\n        3, 2, 0.5f, 2f, seed + 50);\n    var soilBright = (soilNoise - 0.5f) * 0.15f;\n    var baseR = Math.Clamp(sR + soilBright, 0f, 1f);\n    var baseG = Math.Clamp(sG + soilBright * 0.8f, 0f, 1f);\n    var baseB = Math.Clamp(sB + soilBright * 0.6f, 0f, 1f);\n\n    // --- Blade rendering ---\n    var maxBladeContrib = 0f;\n    var bladeColorR = 0f;\n    var bladeColorG = 0f;\n    var bladeColorB = 0f;\n\n    foreach (var (bx, by, bl, bw, bb, bh, _) in blades)\n    {\n        // Compute distance to this blade in wrapped UV space\n        var dx = u - bx;\n        var dy = v - by;\n        if (dx > 0.5f) dx -= 1f; else if (dx < -0.5f) dx += 1f;\n        if (dy > 0.5f) dy -= 1f; else if (dy < -0.5f) dy += 1f;\n\n        // Wind bends the blade tip in wind direction\n        var windBend = windStrength * bl * 0.15f;\n        var tipOffsetX = cosWind * windBend;\n        var tipOffsetY = sinWind * windBend;\n\n        // Blade grows upward from base (local Y = 0 at base, 1 at tip)\n        // The blade is a thin curved shape\n        var bladeLen = grassLength * (0.3f + bl * 0.7f);\n        var bladeW = grassWidth * (0.2f + bw * 0.8f) * 0.03f;\n\n        // Project pixel onto the blade axis\n        // Blade direction: from base (bx,by) upward, bent by wind\n        var axisX = tipOffsetX;\n        var axisY = -bladeLen + tipOffsetY; // negative Y = upward in screen space\n\n        // For simplicity, approximate blade as a thin tapered line\n        // Distance from pixel to blade center line\n        // Transform pixel to blade-local space\n        var toPixelX = dx;\n        var toPixelY = dy;\n\n        // Blade normalized direction\n        var bladeDirLen = MathF.Sqrt(axisX * axisX + axisY * axisY);\n        if (bladeDirLen < 0.001f) continue;\n\n        // Project onto blade axis\n        var dot = (toPixelX * axisX + toPixelY * axisY) / bladeDirLen;\n        var alongBlade = dot / bladeDirLen; // 0 at base, 1 at tip\n\n        if (alongBlade < -0.1f || alongBlade > 1.1f) continue;\n\n        // Perpendicular distance from blade center line\n        var perpX = toPixelX - (axisX / bladeDirLen) * dot;\n        var perpY = toPixelY - (axisY / bladeDirLen) * dot;\n        var perpDist = MathF.Sqrt(perpX * perpX + perpY * perpY);\n\n        // Blade tapers toward tip\n        var taper = 1f - alongBlade * 0.6f;\n\n        // Blade width (wider at base, narrow at tip)\n        var halfWidth = bladeW * taper * 0.5f;\n\n        if (perpDist > halfWidth) continue;\n\n        // Distance from blade center determines opacity\n        var bladeAlpha = 1f - (perpDist / halfWidth);\n        bladeAlpha = bladeAlpha * bladeAlpha * (3f - 2f * bladeAlpha); // smoothstep\n\n        // Height-based color: tip is lighter green, base is darker\n        var heightBlend = alongBlade;\n        var bladeR = Lerp(g1R, g2R, heightBlend);\n        var bladeG = Lerp(g1G, g2G, heightBlend);\n        var bladeB = Lerp(g1B, g2B, heightBlend);\n\n        // Per-blade color variation\n        var hShift = bh * colorVar;\n        bladeR = Math.Clamp(bladeR + hShift, 0f, 1f);\n        bladeG = Math.Clamp(bladeG + hShift * 0.7f, 0f, 1f);\n        bladeB = Math.Clamp(bladeB + hShift * 0.4f, 0f, 1f);\n\n        // Contrast with soil is stronger near base\n        var soilBlend = 1f - alongBlade * 0.3f;\n        bladeAlpha *= soilBlend;\n\n        // Clustering: blades in clumps are more visible\n        if (clumping > 0f)\n        {\n            // Check if this blade is near a clump center\n            foreach (var (cx, cy, _) in clumps)\n            {\n                var cdx = bx - cx;\n                var cdy = by - cy;\n                if (cdx > 0.5f) cdx -= 1f; else if (cdx < -0.5f) cdx += 1f;\n                if (cdy > 0.5f) cdy -= 1f; else if (cdy < -0.5f) cdy += 1f;\n                var cDist = MathF.Sqrt(cdx * cdx + cdy * cdy);\n                if (cDist < 0.15f)\n                {\n                    bladeAlpha *= 1f + clumping * 0.5f;\n                    break;\n                }\n            }\n        }\n\n        bladeAlpha = Math.Clamp(bladeAlpha, 0f, 1f);\n\n        if (bladeAlpha > maxBladeContrib)\n        {\n            maxBladeContrib = bladeAlpha;\n            bladeColorR = bladeR;\n            bladeColorG = bladeG;\n            bladeColorB = bladeB;\n        }\n    }\n\n    // --- Detail noise for fine grass texture ---\n    if (detail > 0f)\n    {\n        var detailNoise = TileableFractalNoise(\n            u * 8f, v * 8f,\n            8, 2, 0.5f, 2.5f, seed + 600);\n        var detailVal = (detailNoise - 0.5f) * detail * 0.1f;\n        baseR = Math.Clamp(baseR + detailVal, 0f, 1f);\n        baseG = Math.Clamp(baseG + detailVal * 0.7f, 0f, 1f);\n        baseB = Math.Clamp(baseB + detailVal * 0.5f, 0f, 1f);\n    }\n\n    // --- Compose: blend grass over soil ---\n    float finalR, finalG, finalB;\n    if (maxBladeContrib > 0.01f)\n    {\n        finalR = Lerp(baseR, bladeColorR, maxBladeContrib);\n        finalG = Lerp(baseG, bladeColorG, maxBladeContrib);\n        finalB = Lerp(baseB, bladeColorB, maxBladeContrib);\n    }\n    else\n    {\n        finalR = baseR;\n        finalG = baseG;\n        finalB = baseB;\n    }\n\n    // Brightness and contrast\n    finalR = Math.Clamp(finalR + brightness, 0f, 1f);\n    finalG = Math.Clamp(finalG + brightness, 0f, 1f);\n    finalB = Math.Clamp(finalB + brightness, 0f, 1f);\n\n    if (MathF.Abs(contrast) > 0.001f)\n    {\n        var factor = 1f + contrast;\n        finalR = (finalR - 0.5f) * factor + 0.5f;\n        finalG = (finalG - 0.5f) * factor + 0.5f;\n        finalB = (finalB - 0.5f) * factor + 0.5f;\n    }\n\n    if (invert) { finalR = 1f - finalR; finalG = 1f - finalG; finalB = 1f - finalB; }\n\n    buffer.SetPixel(x, y, Math.Clamp(finalR, 0f, 1f), Math.Clamp(finalG, 0f, 1f), Math.Clamp(finalB, 0f, 1f), 1f);\n});\n\nreturn buffer;\n}"
+  }
+}

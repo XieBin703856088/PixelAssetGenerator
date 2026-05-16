@@ -1,0 +1,195 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "Brick",
+    "displayName": {
+      "zh-Hans": "砖块",
+      "en": "Brick"
+    },
+    "category": "Material",
+    "description": {
+      "zh-Hans": "生成可平铺的砖块/瓷砖图案，支持半砖行偏移。",
+      "en": "Generates tileable brick/tile patterns with half-brick row offset."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "遮罩",
+          "en": "Mask"
+        },
+        "type": "Mask"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "种子",
+        "en": "Seed"
+      },
+      "kind": "Seed",
+      "default": 42,
+      "min": 0,
+      "max": 9999
+    },
+    {
+      "name": {
+        "zh-Hans": "砖块列数",
+        "en": "Brick Columns"
+      },
+      "kind": "Integer",
+      "default": 4,
+      "min": 2,
+      "max": 10,
+      "step": 2
+    },
+    {
+      "name": {
+        "zh-Hans": "砖块行数",
+        "en": "Brick Rows"
+      },
+      "kind": "Integer",
+      "default": 8,
+      "min": 2,
+      "max": 10,
+      "step": 2
+    },
+    {
+      "name": {
+        "zh-Hans": "缝隙宽度",
+        "en": "Gap Width"
+      },
+      "kind": "Integer",
+      "default": 2,
+      "min": 2,
+      "max": 8,
+      "step": 2
+    },
+    {
+      "name": {
+        "zh-Hans": "偏移",
+        "en": "Offset"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "砖块颜色",
+        "en": "Brick Color"
+      },
+      "kind": "Color",
+      "default": "#B86040FF",
+      "min": null,
+      "max": null,
+      "step": null
+    },
+    {
+      "name": {
+        "zh-Hans": "间隙颜色",
+        "en": "Gap Color"
+      },
+      "kind": "Color",
+      "default": "#4D4033FF"
+    },
+    {
+      "name": {
+        "zh-Hans": "颜色变化",
+        "en": "Color Variation"
+      },
+      "kind": "Number",
+      "default": 0.1,
+      "min": 0.0,
+      "max": 0.5,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "砖块细节",
+        "en": "Brick Detail"
+      },
+      "kind": "Number",
+      "default": 0.2,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "缝隙深度",
+        "en": "Gap Depth"
+      },
+      "kind": "Number",
+      "default": 0.3,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "边缘粗糙度",
+        "en": "Edge Roughness"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "磨损",
+        "en": "Wear"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "圆润度",
+        "en": "Roundness"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    }
+  ],
+  "ai": {
+    "capabilities": ["material", "procedural-texture", "stone", "tileable", "architectural"],
+    "triggers": {
+      "zh-Hans": "砖块, 砖墙, 砖瓦, 砌体, 建筑纹理",
+      "en": "brick, brick wall, brick pattern, masonry, wall texture"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "生成可平铺的砖墙纹理，用于建筑场景或角色扮演游戏中的墙壁材质。",
+      "en": "Generate a tileable brick wall texture for architectural scenes or RPG wall materials."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar seed = GetInt(parameters, \"seed\", context.Seed);\n        var colsParam = GetInt(parameters, \"brickColumns\", 4);\n        var rowsParam = GetInt(parameters, \"brickRows\", 8);\n        // Gap width provided in pixels (integer) for explicit control\n        var gapWidthPixels = GetInt(parameters, \"gapWidth\", 2);\n\n        // Enforce even-only semantics for columns, rows, and gap width.\n        colsParam = Math.Max(2, Math.Min(colsParam, 10));\n        if ((colsParam & 1) != 0) colsParam++;\n        rowsParam = Math.Max(2, Math.Min(rowsParam, 10));\n        if ((rowsParam & 1) != 0) rowsParam++;\n        gapWidthPixels = Math.Max(2, Math.Min(gapWidthPixels, 8));\n        if ((gapWidthPixels & 1) != 0) gapWidthPixels++;\n        var offset = GetFloat(parameters, \"offset\", 0.5f);\n        var brickColor = GetColor(parameters, \"brickColor\", Color.FromRgb(140, 89, 64));\n        var brickR = brickColor.R / 255f;\n        var brickG = brickColor.G / 255f;\n        var brickB = brickColor.B / 255f;\n        var gapColor = GetColor(parameters, \"gapColor\", Color.FromRgb(77, 64, 51));\n        var gapR = gapColor.R / 255f;\n        var gapG = gapColor.G / 255f;\n        var gapB = gapColor.B / 255f;\n        var colorVar = GetFloat(parameters, \"colorVariation\", 0.1f);\n        var gapDepth = GetFloat(parameters, \"gapDepth\", 0.3f);\n        var edgeRoughness = GetFloat(parameters, \"edgeRoughness\", 0f);\n        var wear = GetFloat(parameters, \"wear\", 0f);\n        var roundness = GetFloat(parameters, \"roundness\", 0f);\n        var brickDetail = GetFloat(parameters, \"brickDetail\", 0.2f);\n\n        var size = context.TileSize;\n        // Use explicit column/row counts provided by the user. Clamp to at\n        // least 2 because parameters are even-only and minimum is 2.\n        var cols = Math.Max(2, colsParam);\n        var rows = Math.Max(2, rowsParam);\n        var brickIndexCountU = cols;\n        var brickIndexCountV = rows;\n        var effBrickW = 1f / cols;\n        var effBrickH = 1f / rows;\n\n        var buffer = new PixelBuffer(size, size);\n\n            buffer.ParallelForEachPixel((x, y) =>\n            {\n                // Sample at pixel centers so CPU output matches GPU/preview sampling\n                var u = (x + 0.5f) / (float)size;\n                var v = (y + 0.5f) / (float)size;\n\n            float localU, localV;\n            int row, brickCol;\n            row = (int)MathF.Floor(v / effBrickH);\n            var rowOffset = (row % 2 == 1) ? offset * effBrickW : 0f;\n            localU = ((u + rowOffset) % effBrickW) / effBrickW;\n            localV = (v % effBrickH) / effBrickH;\n            brickCol = (int)MathF.Floor((u + rowOffset) / effBrickW);\n\n            // Edge roughness via noise perturbation\n            if (edgeRoughness > 0f)\n            {\n                var noiseVal = TileableFractalNoise(x * 0.3f, y * 0.3f, Math.Max(1, size / 3), 2, 0.5f, 2f, seed + 500);\n                localU += (noiseVal - 0.5f) * edgeRoughness * 0.15f;\n                localV += (noiseVal - 0.5f) * edgeRoughness * 0.15f;\n            }\n\n            // Gap with optional roundness\n            // `gapWidth` is now an integer pixel value. Distances are computed\n            // in pixel units and compared against this absolute pixel seam\n            // width so the seam appears the requested number of pixels wide\n            // regardless of the brick count.\n            float distU = MathF.Min(localU, 1f - localU);\n            float distV = MathF.Min(localV, 1f - localV);\n\n            var tileSizeU = effBrickW;\n            var tileSizeV = effBrickH;\n\n            // Convert local distances to pixel units along the local axes\n            var brickPixelU = tileSizeU * size;\n            var brickPixelV = tileSizeV * size;\n            var distUPixels = distU * brickPixelU;\n            var distVPixels = distV * brickPixelV;\n\n            // Desired seam width in pixels (absolute pixel units). The actual\n            // per-brick comparison uses half the seam so adjacent bricks don't\n            // each contribute the full seam width (avoids double-thick seams).\n            var gapPixels = gapWidthPixels;\n            var gapHalf = gapPixels * 0.5f;\n\n            if (roundness > 0f)\n            {\n                // Rounded corners: compute a corner radius in pixels based on\n                // the brick size so rounding scales with brick dimensions.\n                var radius = roundness * MathF.Min(brickPixelU, brickPixelV) * 0.5f;\n\n                // Distances from the inner rectangular seam boundary. If either\n                // distance is <= 0 we're already inside the rectangular seam.\n                var du = MathF.Max(0f, distUPixels - gapHalf);\n                var dv = MathF.Max(0f, distVPixels - gapHalf);\n\n                // Distance into the corner region\n                var cornerDist = MathF.Sqrt(du * du + dv * dv);\n\n                // Inside seam if within rectangular seam or within corner radius\n                var isGapRect = distUPixels <= gapHalf || distVPixels <= gapHalf;\n                if (isGapRect || cornerDist <= radius)\n                {\n                    var depthFactor = Math.Clamp(gapDepth, 0f, 1f);\n                    // t: 0 at the outer edge, 1 at the deepest interior of corner\n                    var t = Math.Clamp((radius - cornerDist) / Math.Max(radius, 0.001f), 0f, 1f);\n                    var gr = Lerp(gapR, gapR * (1f - depthFactor * 0.5f), t);\n                    var gg = Lerp(gapG, gapG * (1f - depthFactor * 0.5f), t);\n                    var gb = Lerp(gapB, gapB * (1f - depthFactor * 0.5f), t);\n                    buffer.SetPixel(x, y, gr, gg, gb, 1f);\n                    return;\n                }\n            }\n            else\n            {\n                // No rounding: simple pixel-space comparison so seam width in\n                // pixels is controlled directly by the integer pixel parameter.\n                // Use half-width per-brick so the seam between bricks equals\n                // the requested pixel count instead of doubling it.\n                var isGap = distUPixels <= gapHalf || distVPixels <= gapHalf;\n                if (isGap)\n                {\n                    // Textured seam for non-rounded case\n                    var depthFactor = Math.Clamp(gapDepth, 0f, 1f);\n                    var seamDist = MathF.Min(distUPixels, distVPixels) / MathF.Max(gapHalf, 0.001f);\n                    seamDist = Math.Clamp(seamDist, 0f, 1f);\n\n                    var seamNoise = TileableFractalNoise(x * 0.6f, y * 0.6f, Math.Max(1, size / 3), 3, 0.55f, 2f, seed + 12345 + brickCol * 97 + row * 193);\n                    var coreDarkFactor = 1f - depthFactor * 0.6f * (1f + (seamNoise - 0.5f) * 0.6f);\n                    coreDarkFactor = Math.Clamp(coreDarkFactor, 0.4f, 1f);\n\n                    var gr = Lerp(gapR * coreDarkFactor, gapR, seamDist);\n                    var gg = Lerp(gapG * coreDarkFactor, gapG, seamDist);\n                    var gb = Lerp(gapB * coreDarkFactor, gapB, seamDist);\n\n                    // Slight vertical/horizontal variation to break flatness\n                    var speck = TileableFractalNoise((x + 17) * 1.6f, (y + 11) * 1.9f, Math.Max(1, size / 3), 1, 0.5f, 2f, seed + 773);\n                    var speckAdj = (speck - 0.5f) * 0.08f * (1f - seamDist);\n                    gr = Math.Clamp(gr + speckAdj, 0f, 1f);\n                    gg = Math.Clamp(gg + speckAdj * 0.95f, 0f, 1f);\n                    gb = Math.Clamp(gb + speckAdj * 0.9f, 0f, 1f);\n\n                    buffer.SetPixel(x, y, gr, gg, gb, 1f);\n                    return;\n                }\n            }\n\n            // Per-brick color variation (use modulo indices so variation is\n            // tileable across the full tile). Use the precomputed index counts\n            // to support layouts that double the index grid (weave).\n            var ix = brickCol % brickIndexCountU;\n            var iy = row % brickIndexCountV;\n            var variation = (HashToUnit(ix, iy, seed) - 0.5f) * 2f * colorVar;\n            var r = Math.Clamp(brickR + variation, 0f, 1f);\n            var g = Math.Clamp(brickG + variation * 0.8f, 0f, 1f);\n            var b = Math.Clamp(brickB + variation * 0.6f, 0f, 1f);\n\n            // Add per-brick procedural detail inspired by StoneGenerator:\n            // - center lift, light bias, multi-frequency surface noise,\n            // - tonal push/pull and subtle speckle. All noise is tileable.\n            if (brickDetail > 0f)\n            {\n                var blockHash = HashToUnit(ix, iy, seed + 200);\n\n                // center-based lift (stronger toward the brick center)\n                var cdx = localU - 0.5f;\n                var cdy = localV - 0.5f;\n                var cdist = MathF.Sqrt(cdx * cdx + cdy * cdy);\n                var centerLift = Math.Clamp((0.72f - cdist) / Math.Max(0.001f, (0.72f - 0.12f)), 0f, 1f);\n\n                // lighting bias to give subtle directional shading\n                var lightBias = (1f - localU) * 0.38f + (1f - localV) * 0.62f;\n\n                // multi-frequency tileable surface noise\n                var freqA = 0.35f + blockHash * 0.25f;\n                var freqB = 0.9f + (1f - blockHash) * 1.1f;\n                var s1 = TileableFractalNoise(x * freqA, y * freqA, Math.Max(1, size / 3), 3, 0.55f, 2f, seed + 70 + ix * 17 + iy * 31);\n                var s2 = TileableFractalNoise(x * freqB, y * freqB, Math.Max(1, size / 3), 2, 0.5f, 2f, seed + 170 + ix * 13 + iy * 29);\n                var surfaceNoise = s1 * 0.62f + s2 * 0.38f;\n\n                // Compose a tone influence from the factors above\n                var tone = 0f;\n                tone += (blockHash - 0.5f) * 0.18f; // subtle per-brick bias\n                tone += centerLift * 0.34f;\n                tone += (lightBias - 0.5f) * 0.22f;\n                tone += (surfaceNoise - 0.5f) * 0.36f;\n\n                // Apply tonal push: positive -> lighter, negative -> darker\n                var toneClamp = Math.Clamp(tone, -0.5f, 0.8f);\n                if (toneClamp >= 0f)\n                {\n                    var lighterR = Math.Clamp(r + 0.12f, 0f, 1f);\n                    var lighterG = Math.Clamp(g + 0.12f, 0f, 1f);\n                    var lighterB = Math.Clamp(b + 0.09f, 0f, 1f);\n                    var t = toneClamp / 0.8f;\n                    r = Lerp(r, lighterR, t);\n                    g = Lerp(g, lighterG, t);\n                    b = Lerp(b, lighterB, t);\n                }\n                else\n                {\n                    var darkerR = Math.Clamp(r - 0.12f, 0f, 1f);\n                    var darkerG = Math.Clamp(g - 0.12f, 0f, 1f);\n                    var darkerB = Math.Clamp(b - 0.09f, 0f, 1f);\n                    var t = -toneClamp / 0.5f;\n                    r = Lerp(r, darkerR, t);\n                    g = Lerp(g, darkerG, t);\n                    b = Lerp(b, darkerB, t);\n                }\n\n                // Add fine-grained speckle/grit\n                var speck = TileableFractalNoise((x + 37) * 2.3f, (y + 19) * 2.7f, Math.Max(1, size / 3), 1, 0.5f, 2f, seed + 503);\n                var speckVal = (speck - 0.5f) * 0.18f * brickDetail;\n                r = Math.Clamp(r + speckVal, 0f, 1f);\n                g = Math.Clamp(g + speckVal * 0.85f, 0f, 1f);\n                b = Math.Clamp(b + speckVal * 0.7f, 0f, 1f);\n            }\n\n            // Wear/aging effect: blend toward lighter desaturated color near edges\n            if (wear > 0f)\n            {\n                var wearNoise = HashToUnit(brickCol + 17, row + 23, seed + 999);\n                var wearAmount = wearNoise * wear;\n                var edgeFactor = 1f - MathF.Min(distU / 0.3f, distV / 0.3f);\n                edgeFactor = Math.Clamp(edgeFactor, 0f, 1f);\n                var wearBlend = wearAmount * edgeFactor;\n                var wearR = (r + g + b) / 3f * 1.1f;\n                r = Lerp(r, Math.Clamp(wearR, 0f, 1f), wearBlend);\n                g = Lerp(g, Math.Clamp(wearR, 0f, 1f), wearBlend);\n                b = Lerp(b, Math.Clamp(wearR * 0.95f, 0f, 1f), wearBlend);\n            }\n\n            buffer.SetPixel(x, y, r, g, b, 1f);\n        });\n\n        return buffer;\n}"
+  }
+}

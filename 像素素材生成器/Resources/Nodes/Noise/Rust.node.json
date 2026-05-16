@@ -1,0 +1,214 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "Rust",
+    "displayName": {
+      "zh-Hans": "铁锈",
+      "en": "Rust"
+    },
+    "category": "Noise",
+    "description": {
+      "zh-Hans": "使用多频噪波生成铁锈/腐蚀图案。结合小坑点与大面积腐蚀斑块，强调边缘以沿裂纹和边界聚集铁锈。支持铁锈（橙/棕）、铜绿（绿/青）和混合模式。可选图像输入作为基础表面着色。",
+      "en": "Generates rust / corrosion patterns using multi-frequency noise. Combines small pits with large corrosion patches, with edge emphasis to concentrate rust along cracks and boundaries. Supports iron rust (orange/brown), copper patina (green/teal), and mixed. Optional Image input for base surface coloration."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [
+      {
+        "name": {
+          "zh-Hans": "基础表面",
+          "en": "BaseSurface"
+        },
+        "type": "Image"
+      }
+    ],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "遮罩",
+          "en": "Mask"
+        },
+        "type": "Mask"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "种子",
+        "en": "Seed"
+      },
+      "kind": "Seed",
+      "default": 42,
+      "min": 0,
+      "max": 9999
+    },
+    {
+      "name": {
+        "zh-Hans": "锈蚀程度",
+        "en": "Rust Amount"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "缩放",
+        "en": "Scale"
+      },
+      "kind": "Number",
+      "default": 3.0,
+      "min": 0.5,
+      "max": 10.0,
+      "step": 0.5
+    },
+    {
+      "name": {
+        "zh-Hans": "边缘腐蚀",
+        "en": "Edge Corrosion"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "腐蚀类型",
+        "en": "Corrosion Type"
+      },
+      "kind": "Choice",
+      "default": "ironRust",
+      "choices": [
+        {
+          "value": "ironRust",
+          "label": {
+            "zh-Hans": "铁锈",
+            "en": "ironRust"
+          }
+        },
+        {
+          "value": "patina",
+          "label": {
+            "zh-Hans": "铜绿",
+            "en": "patina"
+          }
+        },
+        {
+          "value": "mixed",
+          "label": {
+            "zh-Hans": "混合",
+            "en": "mixed"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "zh-Hans": "橙色锈迹",
+        "en": "Orange Rust"
+      },
+      "kind": "Color",
+      "default": "#B46428FF"
+    },
+    {
+      "name": {
+        "zh-Hans": "棕色锈迹",
+        "en": "Brown Rust"
+      },
+      "kind": "Color",
+      "default": "#783C1EFF"
+    },
+    {
+      "name": {
+        "zh-Hans": "铜绿颜色",
+        "en": "Patina Color"
+      },
+      "kind": "Color",
+      "default": "#468C6EFF"
+    },
+    {
+      "name": {
+        "zh-Hans": "锈片大小",
+        "en": "Flake Size"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "点蚀",
+        "en": "Pitting"
+      },
+      "kind": "Number",
+      "default": 0.3,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "亮度",
+        "en": "Brightness"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": -0.3,
+      "max": 0.3,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "对比度",
+        "en": "Contrast"
+      },
+      "kind": "Number",
+      "default": 0.2,
+      "min": -0.5,
+      "max": 0.5,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "反相",
+        "en": "Invert"
+      },
+      "kind": "Boolean",
+      "default": false
+    }
+  ],
+  "ai": {
+    "capabilities": ["generate-noise", "procedural-texture", "organic", "tileable", "weathering"],
+    "triggers": {
+      "zh-Hans": "铁锈, 锈蚀, 腐蚀, 斑驳, 铜绿, 旧化",
+      "en": "rust, corrosion, patina, weathering, aged, oxidized"
+    },
+    "suggestedInputs": ["Noise"],
+    "exampleUsage": {
+      "zh-Hans": "为金属表面生成铁锈或铜绿腐蚀效果，可用于旧化道具和环境纹理。",
+      "en": "Generates rust or patina corrosion effects on metal surfaces for weathered props and environment textures."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar seed = GetInt(parameters, \"seed\", context.Seed);\nvar rustAmount = GetFloat(parameters, \"rustAmount\", 0.5f);\nvar scale = GetFloat(parameters, \"scale\", 3f);\nvar edgeCorrosion = GetFloat(parameters, \"edgeCorrosion\", 0.5f);\nvar corrosionType = GetChoice(parameters, \"corrosionType\", \"ironRust\");\nvar orangeRust = GetColor(parameters, \"orangeRust\", Color.FromRgb(180, 100, 40));\nvar brownRust = GetColor(parameters, \"brownRust\", Color.FromRgb(120, 60, 30));\nvar patinaColor = GetColor(parameters, \"patinaColor\", Color.FromRgb(70, 140, 110));\nvar flakeSize = GetFloat(parameters, \"flakeSize\", 0.5f);\nvar pitting = GetFloat(parameters, \"pitting\", 0.3f);\nvar brightness = GetFloat(parameters, \"brightness\", 0f);\nvar contrast = GetFloat(parameters, \"contrast\", 0f);\nvar invert = GetBool(parameters, \"invert\", false);\n\nvar hasBase = inputs.Length > 0 && inputs[0] != null;\nvar input = hasBase ? inputs[0]! : null;\nvar size = context.TileSize;\nvar buffer = new PixelBuffer(size, size);\n\nvar oR = orangeRust.R / 255f; var oG = orangeRust.G / 255f; var oB = orangeRust.B / 255f;\nvar bR = brownRust.R / 255f; var bG = brownRust.G / 255f; var bB = brownRust.B / 255f;\nvar pR = patinaColor.R / 255f; var pG = patinaColor.G / 255f; var pB = patinaColor.B / 255f;\n\n// Pre-compute edge map for corrosion concentration\nvar edgeMap = new PixelBuffer(size, size);\nif (hasBase && edgeCorrosion > 0f)\n{\n    edgeMap.ParallelForEachPixel((x, y) =>\n    {\n        var (cr, cg, cb, _) = input!.GetPixel(x, y);\n        var (lr, lg, lb, _) = input.GetPixel(Math.Max(0, x - 1), y);\n        var (rr, rg, rb, _) = input.GetPixel(Math.Min(size - 1, x + 1), y);\n\n        var cLum = cr * 0.299f + cg * 0.587f + cb * 0.114f;\n        var lLum = lr * 0.299f + lg * 0.587f + lb * 0.114f;\n        var rLum = rr * 0.299f + rg * 0.587f + rb * 0.114f;\n\n        var edge = MathF.Abs(cLum - lLum) + MathF.Abs(cLum - rLum);\n        edgeMap.SetPixel(x, y, Math.Clamp(edge * 2f, 0f, 1f), 0, 0, 1f);\n    });\n}\n\nbuffer.ParallelForEachPixel((x, y) =>\n{\n    var u = (x + 0.5f) / size;\n    var v = (y + 0.5f) / size;\n\n    // Multi-frequency rust noise\n    var largeRust = TileableFractalNoise(u * scale * 0.5f, v * scale * 0.5f, Math.Max(1, (int)MathF.Round(scale * 0.5f)), 3, 0.6f, 2f, seed);\n    var smallRust = TileableFractalNoise(u * scale * 2f, v * scale * 2f + 50f, Math.Max(1, (int)MathF.Round(scale * 2f)), 2, 0.5f, 2f, seed + 100);\n    var pitNoise = TileableFractalNoise(u * scale * 4f, v * scale * 4f + 100f, Math.Max(1, (int)MathF.Round(scale * 4f)), 2, 0.4f, 2f, seed + 200);\n\n    // Edge corrosion amplification\n    var edgeFactor = 0f;\n    if (hasBase && edgeCorrosion > 0f)\n    {\n        var (e, _, _, _) = edgeMap.GetPixel(x, y);\n        edgeFactor = e * edgeCorrosion;\n    }\n\n    // Combine rust signals\n    var rustSignal = largeRust * 0.6f + smallRust * 0.3f + pitNoise * pitting * 0.2f + edgeFactor * 0.3f;\n    rustSignal = Math.Clamp(rustSignal, 0f, 1f);\n\n    // Threshold to create rust patches\n    var threshold = 1f - rustAmount;\n    var hasRust = rustSignal > threshold;\n\n    // Determine rust colors based on corrosion type\n    float r1R, r1G, r1B, r2R, r2G, r2B;\n    switch (corrosionType)\n    {\n        case \"patina\":\n            r1R = pR; r1G = pG; r1B = pB;\n            r2R = pR * 0.7f; r2G = pG * 1.2f; r2B = pB * 0.8f;\n            break;\n        case \"mixed\":\n            // Mix iron rust and copper patina based on noise\n            var mixFactor = TileableFractalNoise(u * scale + 300f, v * scale + 300f, Math.Max(1, (int)MathF.Round(scale)), 2, 0.5f, 2f, seed + 500);\n            r1R = Lerp(oR, pR, mixFactor);\n            r1G = Lerp(oG, pG, mixFactor);\n            r1B = Lerp(oB, pB, mixFactor);\n            r2R = Lerp(bR, pR * 0.7f, mixFactor);\n            r2G = Lerp(bG, pG * 1.2f, mixFactor);\n            r2B = Lerp(bB, pB * 0.8f, mixFactor);\n            break;\n        default: // ironRust\n            r1R = oR; r1G = oG; r1B = oB;\n            r2R = bR; r2G = bG; r2B = bB;\n            break;\n    }\n\n    float r, g, b;\n    if (hasRust && hasBase)\n    {\n        // Blend rust over base surface\n        var rustIntensity = (rustSignal - threshold) / (1f - threshold);\n        var (br, bg, bb, _) = input!.GetPixel(x, y);\n\n        // Mix bright and dark rust based on rust intensity\n        var rustR = Lerp(r2R, r1R, rustIntensity);\n        var rustG = Lerp(r2G, r1G, rustIntensity);\n        var rustB = Lerp(r2B, r1B, rustIntensity);\n\n        // Pitting darkens rust\n        var pitDarken = 1f - pitNoise * pitting * 0.5f;\n\n        r = Lerp(br, rustR * pitDarken, rustIntensity);\n        g = Lerp(bg, rustG * pitDarken, rustIntensity);\n        b = Lerp(bb, rustB * pitDarken, rustIntensity);\n    }\n    else if (hasRust)\n    {\n        // Pure rust (no base)\n        var rustIntensity = (rustSignal - threshold) / (1f - threshold);\n        var rustR = Lerp(r2R, r1R, rustIntensity);\n        var rustG = Lerp(r2G, r1G, rustIntensity);\n        var rustB = Lerp(r2B, r1B, rustIntensity);\n        var pitDarken = 1f - pitNoise * pitting * 0.5f;\n\n        r = rustR * pitDarken;\n        g = rustG * pitDarken;\n        b = rustB * pitDarken;\n    }\n    else if (hasBase)\n    {\n        // No rust — show base surface\n        var (br, bg, bb, _) = input!.GetPixel(x, y);\n        r = br; g = bg; b = bb;\n    }\n    else\n    {\n        // Default gray metal\n        var metal = 0.6f + (largeRust - 0.5f) * 0.2f;\n        r = metal; g = metal; b = metal;\n    }\n\n    // Flaking: dark spots\n    if (flakeSize > 0f)\n    {\n        var flakeNoise = TileableFractalNoise(u * scale * 3f + 200f, v * scale * 3f + 200f, Math.Max(1, (int)MathF.Round(scale * 3f)), 1, 0.5f, 2f, seed + 300);\n        if (flakeNoise > 1f - flakeSize * 0.5f)\n        {\n            var flakeDark = (flakeNoise - (1f - flakeSize * 0.5f)) / (flakeSize * 0.5f);\n            r *= 1f - flakeDark * 0.4f;\n            g *= 1f - flakeDark * 0.5f;\n            b *= 1f - flakeDark * 0.4f;\n        }\n    }\n\n    // Brightness and contrast\n    r = Math.Clamp(r + brightness, 0f, 1f);\n    g = Math.Clamp(g + brightness, 0f, 1f);\n    b = Math.Clamp(b + brightness, 0f, 1f);\n\n    if (MathF.Abs(contrast) > 0.001f)\n    {\n        var factor = 1f + contrast;\n        r = (r - 0.5f) * factor + 0.5f;\n        g = (g - 0.5f) * factor + 0.5f;\n        b = (b - 0.5f) * factor + 0.5f;\n    }\n\n    if (invert) { r = 1f - r; g = 1f - g; b = 1f - b; }\n\n    buffer.SetPixel(x, y, Math.Clamp(r, 0f, 1f), Math.Clamp(g, 0f, 1f), Math.Clamp(b, 0f, 1f), 1f);\n});\n\nreturn buffer;\n}"
+  }
+}

@@ -1,0 +1,153 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "TileCombine",
+    "displayName": {
+      "zh-Hans": "瓦片组合",
+      "en": "Tile Combine"
+    },
+    "category": "Pattern",
+    "description": {
+      "zh-Hans": "将多个输入图像组合成更大的马赛克/瓦片集合。适用于从单瓦片组件生成多瓦片建筑。",
+      "en": "Combines multiple input images into a larger mosaic/tile sheet. Useful for generating multi-tile buildings from single-tile components."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [
+      {
+        "name": {
+          "zh-Hans": "左上",
+          "en": "TopLeft"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "右上",
+          "en": "TopRight"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "左下",
+          "en": "BottomLeft"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "右下",
+          "en": "BottomRight"
+        },
+        "type": "Image"
+      }
+    ],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "X 方向数量",
+        "en": "Tiles X"
+      },
+      "kind": "Integer",
+      "default": 2,
+      "min": 1,
+      "max": 4,
+      "step": 1
+    },
+    {
+      "name": {
+        "zh-Hans": "Y 方向数量",
+        "en": "Tiles Y"
+      },
+      "kind": "Integer",
+      "default": 2,
+      "min": 1,
+      "max": 4,
+      "step": 1
+    },
+    {
+      "name": {
+        "zh-Hans": "布局",
+        "en": "Layout"
+      },
+      "kind": "Choice",
+      "default": "grid",
+      "choices": [
+        {
+          "value": "grid",
+          "label": {
+            "zh-Hans": "网格",
+            "en": "grid"
+          }
+        },
+        {
+          "value": "horizontalStrip",
+          "label": {
+            "zh-Hans": "水平条",
+            "en": "horizontalStrip"
+          }
+        },
+        {
+          "value": "verticalStrip",
+          "label": {
+            "zh-Hans": "垂直条",
+            "en": "verticalStrip"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "zh-Hans": "重叠",
+        "en": "Overlap"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "间隙",
+        "en": "Gap"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 0.1,
+      "step": 0.01
+    }
+  ],
+  "ai": {
+    "capabilities": ["pattern", "tiling", "sprite-sheet", "grid"],
+    "triggers": {
+      "zh-Hans": "瓦片组合, 瓦片拼接, 马赛克拼接, 多瓦片组合",
+      "en": "tile combine, tile mosaic, tile拼接, multi-tile"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "将4个单瓦片输入组合成一个2x2的大建筑图块。",
+      "en": "Combine 4 single-tile inputs into a 2x2 building tile sheet."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar tilesX = Math.Clamp(GetInt(parameters, \"tilesX\", 2), 1, 4);\nvar tilesY = Math.Clamp(GetInt(parameters, \"tilesY\", 2), 1, 4);\nvar layout = GetChoice(parameters, \"layout\", \"grid\");\nvar overlap = GetFloat(parameters, \"overlap\", 0f);\nvar gap = GetFloat(parameters, \"gap\", 0f);\n\nvar tileSize = context.TileSize;\nvar gapPixels = (int)(gap * tileSize);\n\nint outputW, outputH;\n\nswitch (layout)\n{\n    case \"horizontalStrip\":\n        outputW = tileSize * tilesX + gapPixels * (tilesX - 1);\n        outputH = tileSize;\n        break;\n    case \"verticalStrip\":\n        outputW = tileSize;\n        outputH = tileSize * tilesY + gapPixels * (tilesY - 1);\n        break;\n    default: // grid\n        outputW = tileSize * tilesX + gapPixels * (tilesX - 1);\n        outputH = tileSize * tilesY + gapPixels * (tilesY - 1);\n        break;\n}\n\nvar buffer = new PixelBuffer(outputW, outputH);\n\n// Initialize to transparent\nbuffer.ParallelForEachPixel((x, y) => buffer.SetPixel(x, y, 0f, 0f, 0f, 0f));\n\nfor (var ty = 0; ty < tilesY; ty++)\n{\n    for (var tx = 0; tx < tilesX; tx++)\n    {\n        var inputIndex = ty * tilesX + tx;\n        var input = inputIndex < inputs.Length ? inputs[inputIndex] : null;\n        if (input == null) continue;\n\n        var destX = tx * (tileSize + gapPixels);\n        var destY = ty * (tileSize + gapPixels);\n\n        for (var y = 0; y < tileSize; y++)\n        {\n            for (var x = 0; x < tileSize; x++)\n            {\n                var bx = destX + x;\n                var by = destY + y;\n                if (bx >= outputW || by >= outputH) continue;\n\n                var (r, g, b, a) = input.GetPixel(x, y);\n\n                // Blend at overlap seams\n                var isOverlapX = overlap > 0f && tx > 0 && x < (int)(overlap * tileSize);\n                var isOverlapY = overlap > 0f && ty > 0 && y < (int)(overlap * tileSize);\n\n                if (isOverlapX || isOverlapY)\n                {\n                    var (er, eg, eb, ea) = buffer.GetPixel(bx, by);\n                    var blendT = 0.5f;\n                    r = Lerp(er, r, blendT);\n                    g = Lerp(eg, g, blendT);\n                    b = Lerp(eb, b, blendT);\n                    a = Math.Max(ea, a);\n                }\n\n                buffer.SetPixel(bx, by, r, g, b, a);\n            }\n        }\n    }\n}\n\nreturn buffer;\n}"
+  }
+}

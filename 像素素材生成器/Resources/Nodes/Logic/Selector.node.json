@@ -1,0 +1,155 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "Selector",
+    "displayName": {
+      "zh-Hans": "选择器",
+      "en": "Selector"
+    },
+    "category": "Logic",
+    "description": {
+      "zh-Hans": "根据选择模式将多张输入图像之一路由到输出。支持基于索引、阈值和噪声的选择方式。",
+      "en": "Routes one of several input images to output based on selection mode. Supports index-based, threshold, and noise-based selection."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [
+      {
+        "name": {
+          "zh-Hans": "控制值",
+          "en": "ControlValue"
+        },
+        "type": "Float"
+      },
+      {
+        "name": {
+          "zh-Hans": "输入A",
+          "en": "InputA"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "输入B",
+          "en": "InputB"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "输入C",
+          "en": "InputC"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "输入D",
+          "en": "InputD"
+        },
+        "type": "Image"
+      }
+    ],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "输出",
+          "en": "Output"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "索引遮罩",
+          "en": "IndexMask"
+        },
+        "type": "Mask"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "选择模式",
+        "en": "Selection Mode"
+      },
+      "kind": "Choice",
+      "default": "index",
+      "choices": [
+        {
+          "value": "index",
+          "label": {
+            "zh-Hans": "索引",
+            "en": "index"
+          }
+        },
+        {
+          "value": "threshold",
+          "label": {
+            "zh-Hans": "阈值",
+            "en": "threshold"
+          }
+        },
+        {
+          "value": "noise",
+          "label": {
+            "zh-Hans": "噪波",
+            "en": "noise"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "zh-Hans": "索引",
+        "en": "Index"
+      },
+      "kind": "Integer",
+      "default": 0,
+      "min": 0,
+      "max": 3,
+      "step": 1
+    },
+    {
+      "name": {
+        "zh-Hans": "阈值",
+        "en": "Threshold"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "种子",
+        "en": "Seed"
+      },
+      "kind": "Seed",
+      "default": 42,
+      "min": 0,
+      "max": 9999
+    }
+  ],
+  "ai": {
+    "capabilities": ["logic", "control-flow", "condition"],
+    "triggers": {
+      "zh-Hans": "选择器, 输入选择, 多路选择, 索引选择, 阈值选择, 噪声选择",
+      "en": "selector, input select, multiplexer, index select, threshold select, noise select"
+    },
+    "suggestedInputs": ["ImageAnalysis"],
+    "exampleUsage": {
+      "zh-Hans": "根据索引值从A/B/C/D四路输入中选择一路输出。",
+      "en": "Select one output from A/B/C/D inputs based on an index value."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar mode = GetChoice(parameters, \"selectionMode\", \"index\");\nvar index = Math.Clamp(GetInt(parameters, \"index\", 0), 0, 3);\nvar threshold = GetFloat(parameters, \"threshold\", 0.5f);\nvar seed = GetInt(parameters, \"seed\", context.Seed);\n\nvar size = context.TileSize;\n\n// Determine selection\nvar selected = 0;\n\nswitch (mode)\n{\n    case \"threshold\":\n    {\n        // Use control value from input 0\n        var controlVal = threshold;\n        if (inputs.Length > 0 && inputs[0] != null)\n        {\n            var (r, _, _, _) = inputs[0]!.GetPixel(0, 0);\n            controlVal = r;\n        }\n        selected = controlVal > threshold ? 1 : 0;\n        break;\n    }\n    case \"noise\":\n    {\n        // Random selection based on seed\n        var hash = HashToUnit(seed, context.Seed * 7, 12345);\n        selected = (int)(hash * 4f) % 4;\n        break;\n    }\n    default: // index\n        selected = Math.Clamp(index, 0, 3);\n        break;\n}\n\n// Select input (offset by 1 since input 0 is control)\nvar inputIdx = selected + 1;\nvar input = inputIdx < inputs.Length && inputs[inputIdx] != null\n    ? inputs[inputIdx]!\n    : new PixelBuffer(size, size);\n\n// If no specific input connected, fall back to first available image input\nif (input == null || (inputIdx < inputs.Length && inputs[inputIdx] == null))\n{\n    for (var i = 1; i < inputs.Length; i++)\n    {\n        if (inputs[i] != null)\n        {\n            input = inputs[i]!;\n            break;\n        }\n    }\n}\n\nreturn input.Clone();\n}"
+  }
+}

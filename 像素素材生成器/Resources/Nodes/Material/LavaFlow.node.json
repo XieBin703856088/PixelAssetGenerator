@@ -1,0 +1,175 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "LavaFlow",
+    "displayName": {
+      "zh-Hans": "熔岩流",
+      "en": "Lava Flow"
+    },
+    "category": "Material",
+    "description": {
+      "zh-Hans": "生成流动熔岩纹理，带有发光裂缝、冷却地壳、余烬条纹和湍流图案。完全可平铺。",
+      "en": "Generates flowing lava textures with glowing fissures, cooling crust, ember streaks, and turbulent flow patterns. Fully tileable."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "遮罩",
+          "en": "Mask"
+        },
+        "type": "Mask"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "种子",
+        "en": "Seed"
+      },
+      "kind": "Seed",
+      "default": 42,
+      "min": 0,
+      "max": 9999
+    },
+    {
+      "name": {
+        "zh-Hans": "缩放",
+        "en": "Scale"
+      },
+      "kind": "Number",
+      "default": 2.5,
+      "min": 0.5,
+      "max": 8.0,
+      "step": 0.5
+    },
+    {
+      "name": {
+        "zh-Hans": "流速",
+        "en": "Flow Speed"
+      },
+      "kind": "Number",
+      "default": 0.4,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "流动角度",
+        "en": "Flow Angle"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 360.0,
+      "step": 1.0
+    },
+    {
+      "name": {
+        "zh-Hans": "发光强度",
+        "en": "Glow Intensity"
+      },
+      "kind": "Number",
+      "default": 0.7,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "纹理密度",
+        "en": "Vein Density"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "熔岩颜色",
+        "en": "Lava Color"
+      },
+      "kind": "Color",
+      "default": "#FF7814FF"
+    },
+    {
+      "name": {
+        "zh-Hans": "炽热颜色",
+        "en": "Hot Color"
+      },
+      "kind": "Color",
+      "default": "#FFDC50FF"
+    },
+    {
+      "name": {
+        "zh-Hans": "地壳颜色",
+        "en": "Crust Color"
+      },
+      "kind": "Color",
+      "default": "#231914FF"
+    },
+    {
+      "name": {
+        "zh-Hans": "余烬数量",
+        "en": "Ember Amount"
+      },
+      "kind": "Number",
+      "default": 0.3,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "八度",
+        "en": "Octaves"
+      },
+      "kind": "Number",
+      "default": 3.0,
+      "min": 1.0,
+      "max": 6.0,
+      "step": 1.0
+    },
+    {
+      "name": {
+        "zh-Hans": "反相",
+        "en": "Invert"
+      },
+      "kind": "Boolean",
+      "default": false
+    }
+  ],
+  "ai": {
+    "capabilities": ["material", "procedural-texture", "liquid", "tileable", "nature"],
+    "triggers": {
+      "zh-Hans": "熔岩, 岩浆, 火山, 流动岩浆, 炽热, 地狱",
+      "en": "lava, magma, molten, volcanic, flow, fiery"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "生成流动熔岩纹理，用于火山场景、地牢或地狱风格的地面材质。",
+      "en": "Generate flowing lava textures for volcanic scenes, dungeons, or hell-themed ground materials."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar seed = GetInt(parameters, \"seed\", context.Seed);\nvar scale = GetFloat(parameters, \"scale\", 2.5f);\nvar flowSpeed = GetFloat(parameters, \"flowSpeed\", 0.4f);\nvar flowAngle = GetFloat(parameters, \"flowAngle\", 0f);\nvar glowIntensity = GetFloat(parameters, \"glowIntensity\", 0.7f);\nvar veinDensity = GetFloat(parameters, \"veinDensity\", 0.5f);\nvar lavaColor = GetColor(parameters, \"lavaColor\", Color.FromRgb(255, 120, 20));\nvar hotColor = GetColor(parameters, \"hotColor\", Color.FromRgb(255, 220, 80));\nvar crustColor = GetColor(parameters, \"crustColor\", Color.FromRgb(35, 25, 20));\nvar emberAmount = GetFloat(parameters, \"emberAmount\", 0.3f);\nvar octaves = Math.Max(1, GetInt(parameters, \"octaves\", 3));\nvar invert = GetBool(parameters, \"invert\", false);\n\nvar size = context.TileSize;\nvar buffer = new PixelBuffer(size, size);\n\nvar lR = lavaColor.R / 255f; var lG = lavaColor.G / 255f; var lB = lavaColor.B / 255f;\nvar hR = hotColor.R / 255f; var hG = hotColor.G / 255f; var hB = hotColor.B / 255f;\nvar cR = crustColor.R / 255f; var cG = crustColor.G / 255f; var cB = crustColor.B / 255f;\n\nvar angleRad = flowAngle * MathF.PI / 180f;\nvar cosA = MathF.Cos(angleRad);\nvar sinA = MathF.Sin(angleRad);\n\nbuffer.ParallelForEachPixel((x, y) =>\n{\n    var u = (x + 0.5f) / size;\n    var v = (y + 0.5f) / size;\n\n    // Flow-aligned coordinates\n    var flowU = u * cosA - v * sinA;\n    var flowV = u * sinA + v * cosA;\n\n    // Flow distortion\n    var distort = TileableFractalNoise(u * scale * 0.5f, v * scale * 0.5f,\n        Math.Max(1, (int)MathF.Round(scale * 0.5f)), 2, 0.5f, 2f, seed);\n    var du = flowU + distort * flowSpeed * 0.2f;\n    var dv = flowV + distort * flowSpeed * 0.15f;\n\n    // Multi-octave lava noise\n    var lavaNoise = TileableFractalNoise(du * scale, dv * scale,\n        Math.Max(1, (int)MathF.Round(scale)), octaves, 0.55f, 2.2f, seed + 100);\n\n    // Streak noise (elongated along flow direction)\n    var streakNoise = TileableFractalNoise(\n        du * scale * 1.2f, dv * scale * 3f,\n        Math.Max(1, (int)MathF.Round(scale * 3f)), octaves - 1, 0.5f, 2f, seed + 200);\n\n    // Combine for flow texture\n    var flowTex = lavaNoise * 0.7f + streakNoise * 0.3f;\n\n    // Crack pattern (high-frequency detail)\n    var crackNoise = TileableFractalNoise(\n        u * scale * 4f, v * scale * 4f,\n        Math.Max(1, (int)MathF.Round(scale * 4f)), 2, 0.5f, 2.5f, seed + 300);\n\n    // Detect cracks: sharp transitions\n    var crackEdge = MathF.Abs(crackNoise - 0.5f) * 2f;\n    crackEdge = MathF.Pow(crackEdge, 2f);\n\n    // Glowing fissures where noise crosses threshold\n    var fissure = MathF.Max(0f, crackEdge - (1f - veinDensity * 0.8f));\n    fissure = MathF.Pow(fissure, 1.5f) * glowIntensity;\n\n    // Embers — small bright spots\n    var emberNoise = TileableFractalNoise(\n        u * scale * 8f + 100f, v * scale * 8f + 100f,\n        Math.Max(1, (int)MathF.Round(scale * 8f)), 1, 0.5f, 2f, seed + 400);\n    var ember = MathF.Max(0f, (emberNoise - 0.85f) / 0.15f) * emberAmount;\n\n    // Cooling crust: areas of low flowTex\n    var crustAmount = 1f - flowTex;\n    var isCrust = crustAmount > 0.5f + veinDensity * 0.2f;\n\n    float r, g, b;\n\n    if (isCrust)\n    {\n        // Dark crust with subtle glow from underneath\n        var crustStrength = (crustAmount - 0.5f - veinDensity * 0.2f) / (0.5f - veinDensity * 0.2f);\n        crustStrength = Math.Clamp(crustStrength, 0f, 1f);\n\n        // Crack glow showing through crust\n        var crackGlow = fissure * (1f - crustStrength * 0.7f);\n\n        r = Lerp(lR, cR, crustStrength) + crackGlow * 0.5f;\n        g = Lerp(lG * 0.6f, cG, crustStrength) + crackGlow * 0.3f;\n        b = Lerp(lB * 0.2f, cB, crustStrength);\n    }\n    else\n    {\n        // Exposed lava\n        var hotFactor = flowTex;\n\n        // Core glow: brightest in center, fading at edges\n        var coreGlow = (1f - crustAmount * 2f) * glowIntensity;\n        coreGlow = Math.Clamp(coreGlow, 0f, 1f);\n\n        r = Lerp(lR, hR, hotFactor * 0.8f + coreGlow * 0.2f);\n        g = Lerp(lG * 0.7f, hG, hotFactor * 0.6f + coreGlow * 0.4f);\n        b = Lerp(lB * 0.3f, hB * 0.5f, hotFactor * 0.4f + coreGlow * 0.6f);\n    }\n\n    // Add fissure glow on top\n    if (fissure > 0.05f)\n    {\n        var fissureGlow = fissure * glowIntensity;\n        r = Lerp(r, hR, fissureGlow * 0.7f);\n        g = Lerp(g, hG, fissureGlow * 0.8f);\n        b = Lerp(b, hB * 0.7f, fissureGlow);\n    }\n\n    // Add ember sparks\n    if (ember > 0.01f)\n    {\n        r = Math.Clamp(r + ember * 0.8f, 0f, 1f);\n        g = Math.Clamp(g + ember * 0.6f, 0f, 1f);\n        b = Math.Clamp(b + ember * 0.3f, 0f, 1f);\n    }\n\n    if (invert) { r = 1f - r; g = 1f - g; b = 1f - b; }\n\n    buffer.SetPixel(x, y, Math.Clamp(r, 0f, 1f), Math.Clamp(g, 0f, 1f), Math.Clamp(b, 0f, 1f), 1f);\n});\n\nreturn buffer;\n}"
+  }
+}

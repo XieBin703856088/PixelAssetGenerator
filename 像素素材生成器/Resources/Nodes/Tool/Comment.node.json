@@ -1,0 +1,88 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "Comment",
+    "displayName": {
+      "zh-Hans": "注释",
+      "en": "Comment"
+    },
+    "category": "Tool",
+    "description": {
+      "zh-Hans": "注释节点，不参与计算。在图形画布上渲染为便签卡片。提供可选的直通功能以支持图形流程。",
+      "en": "Annotation node with no computation. Renders as a note card on the graph canvas. Provides optional passthrough for graph flow."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [
+      {
+        "name": {
+          "zh-Hans": "输入",
+          "en": "Input"
+        },
+        "type": "Any"
+      }
+    ],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "输出",
+          "en": "Output"
+        },
+        "type": "Any"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "字号",
+        "en": "Font Size"
+      },
+      "kind": "Choice",
+      "default": "medium",
+      "choices": [
+        {
+          "value": "small",
+          "label": {
+            "zh-Hans": "小",
+            "en": "small"
+          }
+        },
+        {
+          "value": "medium",
+          "label": {
+            "zh-Hans": "中",
+            "en": "medium"
+          }
+        },
+        {
+          "value": "large",
+          "label": {
+            "zh-Hans": "大",
+            "en": "large"
+          }
+        }
+      ]
+    }
+  ],
+  "ai": {
+    "capabilities": ["tool", "utility", "comment"],
+    "triggers": {
+      "zh-Hans": "注释, 备注, 说明, 便签, 标注",
+      "en": "comment, note, annotation, label, sticky note"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "在图表面布上添加注释说明某一区域的用途。",
+      "en": "Add a comment note on the graph canvas explaining an area's purpose."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "// Passthrough: if an input is connected, forward it unchanged.\nif (inputs.Length > 0 && inputs[0] != null)\n    return inputs[0]!;\n\n// No input: return a transparent buffer.\nvar size = context.TileSize;\nvar buffer = new PixelBuffer(size, size);\nbuffer.ParallelForEachPixel((x, y) => buffer.SetPixel(x, y, 0f, 0f, 0f, 0f));\nreturn buffer;"
+  }
+}

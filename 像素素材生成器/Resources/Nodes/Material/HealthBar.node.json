@@ -1,0 +1,189 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "HealthBar",
+    "displayName": {
+      "zh-Hans": "血条",
+      "en": "Health Bar"
+    },
+    "category": "Material",
+    "description": {
+      "zh-Hans": "生成像素艺术血条/魔法条UI元素，支持可配置的填充等级、边框样式和背景。适用于游戏HUD原型设计。",
+      "en": "Generates pixel art health/mana bar UI elements with configurable fill level, border style, and background. Useful for game HUD mockups."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [
+      {
+        "name": {
+          "zh-Hans": "背景",
+          "en": "Background"
+        },
+        "type": "Image"
+      }
+    ],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "遮罩",
+          "en": "Mask"
+        },
+        "type": "Mask"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "生命值",
+        "en": "Health"
+      },
+      "kind": "Number",
+      "default": 0.7,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "宽度",
+        "en": "Width"
+      },
+      "kind": "Number",
+      "default": 0.8,
+      "min": 0.2,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "高度",
+        "en": "Height"
+      },
+      "kind": "Number",
+      "default": 0.1,
+      "min": 0.04,
+      "max": 0.3,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "颜色模式",
+        "en": "Color Mode"
+      },
+      "kind": "Choice",
+      "default": "health",
+      "choices": [
+        {
+          "value": "health",
+          "label": {
+            "zh-Hans": "生命",
+            "en": "health"
+          }
+        },
+        {
+          "value": "mana",
+          "label": {
+            "zh-Hans": "魔法",
+            "en": "mana"
+          }
+        },
+        {
+          "value": "stamina",
+          "label": {
+            "zh-Hans": "耐力",
+            "en": "stamina"
+          }
+        },
+        {
+          "value": "custom",
+          "label": {
+            "zh-Hans": "自定义",
+            "en": "custom"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "zh-Hans": "自定义颜色",
+        "en": "Custom Color"
+      },
+      "kind": "Color",
+      "default": "#3CC850FF"
+    },
+    {
+      "name": {
+        "zh-Hans": "边框颜色",
+        "en": "Border Color"
+      },
+      "kind": "Color",
+      "default": "#B4A08CFF"
+    },
+    {
+      "name": {
+        "zh-Hans": "背景颜色",
+        "en": "Bg Color"
+      },
+      "kind": "Color",
+      "default": "#3C322DFF"
+    },
+    {
+      "name": {
+        "zh-Hans": "X偏移",
+        "en": "Offset X"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": -0.5,
+      "max": 0.5,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "Y偏移",
+        "en": "Offset Y"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": -0.5,
+      "max": 0.5,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "显示边框",
+        "en": "Show Border"
+      },
+      "kind": "Boolean",
+      "default": true
+    }
+  ],
+  "ai": {
+    "capabilities": ["material", "procedural-texture", "ui-element", "hud", "game-ui"],
+    "triggers": {
+      "zh-Hans": "血条, 生命条, 魔法条, 耐力条, HUD, UI元素, 游戏界面",
+      "en": "health bar, life bar, mana bar, stamina bar, HUD, game UI"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "生成像素艺术血条UI元素，用于游戏HUD原型和界面设计。",
+      "en": "Generate pixel-art health bar UI elements for game HUD mockups and interface design."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar bgInput = inputs.Length > 0 ? inputs[0] : null;\nvar health = GetFloat(parameters, \"health\", 0.7f);\nvar width = GetFloat(parameters, \"width\", 0.8f);\nvar height = GetFloat(parameters, \"height\", 0.1f);\nvar colorMode = GetChoice(parameters, \"colorMode\", \"health\");\nvar customColor = GetColor(parameters, \"customColor\", Color.FromRgb(60, 200, 80));\nvar borderColor = GetColor(parameters, \"borderColor\", Color.FromRgb(180, 160, 140));\nvar bgColor = GetColor(parameters, \"bgColor\", Color.FromRgb(60, 50, 45));\nvar offsetX = GetFloat(parameters, \"offsetX\", 0f);\nvar offsetY = GetFloat(parameters, \"offsetY\", 0f);\nvar showBorder = GetBool(parameters, \"showBorder\", true);\n\nvar tileSize = context.TileSize;\nvar buffer = bgInput != null ? bgInput.Clone() : new PixelBuffer(tileSize, tileSize);\n\n// Pick fill color based on mode and health level\nvar (fillR, fillG, fillB) = colorMode switch\n{\n    \"mana\" => (0.3f, 0.4f, 1f),\n    \"stamina\" => (1f, 0.8f, 0.2f),\n    \"custom\" => (customColor.R / 255f, customColor.G / 255f, customColor.B / 255f),\n    _ => health switch\n    {\n        <= 0.25f => (1f, 0.2f, 0.2f),      // Red when low\n        <= 0.5f => (1f, 0.6f, 0.2f),        // Orange when mid\n        _ => (0.3f, 0.8f, 0.25f)             // Green when healthy\n    }\n};\n\nvar bR = borderColor.R / 255f; var bG = borderColor.G / 255f; var bB = borderColor.B / 255f;\nvar bgR = bgColor.R / 255f; var bgG = bgColor.G / 255f; var bgB = bgColor.B / 255f;\n\nvar halfSize = tileSize * 0.5f;\nvar barWidth = tileSize * width;\nvar barHeight = tileSize * height;\nvar barLeft = halfSize - barWidth * 0.5f + offsetX * tileSize;\nvar barTop = halfSize - barHeight * 0.5f + offsetY * tileSize;\nvar borderPx = showBorder ? Math.Max(1f, barHeight * 0.1f) : 0f;\n\nbuffer.ParallelForEachPixel((x, y) =>\n{\n    // Check if pixel is in bar area\n    if (x < barLeft || x > barLeft + barWidth || y < barTop || y > barTop + barHeight)\n        return;\n\n    // Border\n    if (showBorder)\n    {\n        var dx = MathF.Min(x - barLeft, barLeft + barWidth - x);\n        var dy = MathF.Min(y - barTop, barTop + barHeight - y);\n        if (dx < borderPx || dy < borderPx)\n        {\n            // Border highlight on top/left, shadow on bottom/right\n            var isTopLeft = (x - barLeft < borderPx && y - barTop < borderPx) ||\n                            x - barLeft < borderPx || y - barTop < borderPx;\n            var hl = isTopLeft ? 0.3f : -0.2f;\n            buffer.SetPixel(x, y,\n                Math.Clamp(bR + hl, 0f, 1f),\n                Math.Clamp(bG + hl, 0f, 1f),\n                Math.Clamp(bB + hl, 0f, 1f), 1f);\n            return;\n        }\n    }\n\n    var innerLeft = barLeft + borderPx;\n    var innerWidth = barWidth - borderPx * 2;\n    var fillEdge = innerLeft + innerWidth * health;\n\n    if (x < fillEdge)\n    {\n        // Fill area with subtle gradient\n        var relX = (x - innerLeft) / innerWidth;\n        var gradient = 0.9f + (1f - relX) * 0.1f;\n\n        // Subtle inner highlight at top\n        var innerTop = barTop + borderPx;\n        var innerHeight = barHeight - borderPx * 2;\n        var topHL = Math.Clamp(1f - (y - innerTop) / (innerHeight * 0.5f), 0f, 1f) * 0.15f;\n\n        buffer.SetPixel(x, y,\n            Math.Clamp(fillR * gradient + topHL, 0f, 1f),\n            Math.Clamp(fillG * gradient + topHL, 0f, 1f),\n            Math.Clamp(fillB * gradient + topHL, 0f, 1f), 1f);\n    }\n    else\n    {\n        // Background (empty) area with slight darkening\n        var darken = 0.7f;\n        buffer.SetPixel(x, y,\n            bgR * darken, bgG * darken, bgB * darken, 1f);\n    }\n});\n\nreturn buffer;\n}"
+  }
+}

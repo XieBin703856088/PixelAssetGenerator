@@ -1,0 +1,60 @@
+{
+  "formatVersion": 2,
+  "processorType": "AudioReactive",
+  "identity": {
+    "typeName": "AudioReactive",
+    "displayName": {
+      "zh-Hans": "音频反应",
+      "en": "Audio Reactive"
+    },
+    "category": "Animation",
+    "description": {
+      "zh-Hans": "模拟音频反应值（振幅、频谱能量），基于时间驱动伪随机信号，用于驱动动画参数产生类音乐节奏运动",
+      "en": "Simulates audio-reactive values (amplitude, spectrum bands) using time-based pseudo-random signals for driving animation parameters with music-like rhythmic motion"
+    },
+    "tags": ["animation", "audio", "reactive", "spectrum"],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [],
+    "outputs": [
+      {
+        "name": { "zh-Hans": "振幅", "en": "Amplitude" },
+        "type": "Float"
+      },
+      {
+        "name": { "zh-Hans": "低频频谱", "en": "Spectrum Low" },
+        "type": "Float"
+      },
+      {
+        "name": { "zh-Hans": "高频频谱", "en": "Spectrum High" },
+        "type": "Float"
+      }
+    ]
+  },
+  "parameters": [
+    { "name": { "zh-Hans": "平滑度", "en": "Smoothing" }, "kind": "Number", "default": 0.5, "min": 0, "max": 1, "step": 0.01 },
+    { "name": { "zh-Hans": "阈值", "en": "Threshold" }, "kind": "Number", "default": 0.1, "min": 0, "max": 1, "step": 0.01 },
+    { "name": { "zh-Hans": "灵敏度", "en": "Sensitivity" }, "kind": "Number", "default": 1.0, "min": 0.1, "max": 5.0, "step": 0.1 },
+    {
+      "name": { "zh-Hans": "频段选择", "en": "Channel" },
+      "kind": "Choice",
+      "default": "combined",
+      "choices": ["combined", "low", "high"],
+      "displayChoices": ["全频段", "低频", "高频"]
+    }
+  ],
+  "ai": {
+    "capabilities": ["animation", "audio-reactive"],
+    "triggers": {
+      "zh-Hans": "音频反应, 音乐驱动动画, 频谱动画, 节拍同步",
+      "en": "audio reactive, music-driven animation, spectrum animation, beat sync"
+    },
+    "suggestedInputs": ["Wave", "NoiseAnimation"],
+    "exampleUsage": {
+      "zh-Hans": "用音频振幅驱动粒子大小变化，灵敏度设为2.0以增强反应效果",
+      "en": "Drive particle size with audio amplitude, set sensitivity to 2.0 for stronger reaction"
+    }
+  }
+}

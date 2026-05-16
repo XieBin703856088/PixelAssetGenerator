@@ -1,0 +1,150 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "Wall",
+    "displayName": {
+      "zh-Hans": "墙壁",
+      "en": "Wall"
+    },
+    "category": "Material",
+    "description": {
+      "zh-Hans": "渲染矩形墙壁截面，支持多种材质图案（石头、灰泥、木板、土坯）。完全可平铺。",
+      "en": "Renders a rectangular wall section with various material patterns (stone, plaster, wood planks, adobe). Fully tileable."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [
+      {
+        "name": {
+          "zh-Hans": "背景",
+          "en": "Background"
+        },
+        "type": "Image"
+      }
+    ],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "遮罩",
+          "en": "Mask"
+        },
+        "type": "Mask"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "种子",
+        "en": "Seed"
+      },
+      "kind": "Seed",
+      "default": 42,
+      "min": 0,
+      "max": 9999
+    },
+    {
+      "name": {
+        "zh-Hans": "墙壁类型",
+        "en": "Wall Type"
+      },
+      "kind": "Choice",
+      "default": "stone",
+      "choices": [
+        {
+          "value": "stone",
+          "label": {
+            "zh-Hans": "石头",
+            "en": "stone"
+          }
+        },
+        {
+          "value": "plaster",
+          "label": {
+            "zh-Hans": "灰泥",
+            "en": "plaster"
+          }
+        },
+        {
+          "value": "planks",
+          "label": {
+            "zh-Hans": "木板",
+            "en": "planks"
+          }
+        },
+        {
+          "value": "adobe",
+          "label": {
+            "zh-Hans": "土坯",
+            "en": "adobe"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "zh-Hans": "主色",
+        "en": "Main Color"
+      },
+      "kind": "Color",
+      "default": "#B4AA9BFF"
+    },
+    {
+      "name": {
+        "zh-Hans": "灰浆颜色",
+        "en": "Mortar Color"
+      },
+      "kind": "Color",
+      "default": "#8C8273FF"
+    },
+    {
+      "name": {
+        "zh-Hans": "宽度",
+        "en": "Width"
+      },
+      "kind": "Number",
+      "default": 0.9,
+      "min": 0.3,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "高度",
+        "en": "Height"
+      },
+      "kind": "Number",
+      "default": 0.8,
+      "min": 0.3,
+      "max": 1.0,
+      "step": 0.01
+    }
+  ],
+  "ai": {
+    "capabilities": ["material", "procedural-texture", "stone", "wood", "architectural", "tileable"],
+    "triggers": {
+      "zh-Hans": "墙壁, 墙面, 石墙, 灰泥墙, 木板墙, 土坯墙, 建筑",
+      "en": "wall, stone wall, plaster, wood planks, adobe, architectural"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "渲染不同风格墙壁截面（石头、灰泥、木板、土坯），用于建筑或室内场景。",
+      "en": "Render various wall sections (stone, plaster, wood planks, adobe) for architectural or interior scenes."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar seed = GetInt(parameters, \"seed\", context.Seed);\n    var wallType = GetChoice(parameters, \"wallType\", \"stone\");\n    var mainColor = GetColor(parameters, \"mainColor\", Color.FromRgb(180, 170, 155));\n    var mortarColor = GetColor(parameters, \"mortarColor\", Color.FromRgb(140, 130, 115));\n    var width = GetFloat(parameters, \"width\", 0.9f);\n    var height = GetFloat(parameters, \"height\", 0.8f);\n\n    var size = context.TileSize;\n    var buffer = new PixelBuffer(size, size);\n    var bg = inputs.Length > 0 ? inputs[0] : null;\n\n    var mR = mainColor.R / 255f;\n    var mG = mainColor.G / 255f;\n    var mB = mainColor.B / 255f;\n    var morR = mortarColor.R / 255f;\n    var morG = mortarColor.G / 255f;\n    var morB = mortarColor.B / 255f;\n\n    var period = Math.Max(1, size / 3);\n\n    buffer.ParallelForEachPixel((x, y) =>\n    {\n        var u = (x + 0.5f) / size;\n        var v = (y + 0.5f) / size;\n\n        // Wall rectangle\n        var left = (1f - width) * 0.5f;\n        var right = left + width;\n        var top = (1f - height) * 0.5f;\n        var bottom = top + height;\n        var edgeW = 0.004f;\n\n        var mask = SmoothStep(left - edgeW, left + edgeW, u)\n                 * (1f - SmoothStep(right - edgeW, right + edgeW, u))\n                 * SmoothStep(top - edgeW, top + edgeW, v)\n                 * (1f - SmoothStep(bottom - edgeW, bottom + edgeW, v));\n\n        if (mask < 0.01f)\n        {\n            if (bg != null) { var (br, bgc, bb, ba) = bg.GetPixel(x, y); buffer.SetPixel(x, y, br, bgc, bb, 0f); }\n            else { buffer.SetPixel(x, y, 0f, 0f, 0f, 0f); }\n            return;\n        }\n\n        // UV within wall region\n        var wallU = (u - left) / width;\n        var wallV = (v - top) / height;\n\n        float r, g, b;\n        switch (wallType)\n        {\n            case \"stone\": (r, g, b) = RenderStone(wallU, wallV, mR, mG, mB, morR, morG, morB, size, period, seed); break;\n            case \"plaster\": (r, g, b) = RenderPlaster(wallU, wallV, mR, mG, mB, morR, morG, morB, size, period, seed); break;\n            case \"planks\": (r, g, b) = RenderPlanks(wallU, wallV, mR, mG, mB, morR, morG, morB, size, period, seed); break;\n            case \"adobe\": (r, g, b) = RenderAdobe(wallU, wallV, mR, mG, mB, morR, morG, morB, size, period, seed); break;\n            default: r = mR; g = mG; b = mB; break;\n        }\n\n        // Edge shadow for 3D panel effect\n        var edgeDist = MathF.Min(MathF.Min(u - left, right - u), MathF.Min(v - top, bottom - v));\n        if (edgeDist < 0.025f)\n        {\n            var s = (0.025f - edgeDist) / 0.025f * 0.12f;\n            r -= s; g -= s * 0.9f; b -= s * 0.85f;\n        }\n\n        r = Math.Clamp(r, 0f, 1f);\n        g = Math.Clamp(g, 0f, 1f);\n        b = Math.Clamp(b, 0f, 1f);\n\n        if (bg != null)\n        {\n            var (br, bgc, bb, ba) = bg.GetPixel(x, y);\n            r = r * mask + br * (1f - mask);\n            g = g * mask + bgc * (1f - mask);\n            b = b * mask + bb * (1f - mask);\n        }\n\n        buffer.SetPixel(x, y, r, g, b, mask);\n    });\n\n    return buffer;\n\nprivate static (float r, float g, float b) RenderStone(float u, float v, float mR, float mG, float mB, float morR, float morG, float morB, int size, int period, int seed)\n{\n    // Irregular stone blocks using hash-based cell subdivision\n    var gridW = 5f;\n    var gridH = 4f;\n    var cellW = 1f / gridW;\n    var cellH = 1f / gridH;\n    var col = (int)(u * gridW);\n    var row = (int)(v * gridH);\n    var cellU = (u - col * cellW) / cellW;\n    var cellV = (v - row * cellH) / cellH;\n\n    // Perturb cell boundaries with hash\n    var hx = HashToUnit(col, row, seed + 100);\n    var hy = HashToUnit(col + 7, row + 13, seed + 200);\n    var ox = (hx - 0.5f) * 0.2f;\n    var oy = (hy - 0.5f) * 0.2f;\n\n    // Occasional merged blocks (larger stones)\n    var merged = HashToUnit(col, row, seed) > 0.7f && col > 0;\n    if (merged)\n    {\n        cellU = (u - (col - 1) * cellW) / (cellW * 2f);\n        cellV = (v - row * cellH) / cellH;\n    }\n\n    var localU = cellU - 0.5f - ox;\n    var localV = cellV - 0.5f - oy;\n    var dist = MathF.Sqrt(localU * localU + localV * localV);\n\n    // Cut stone with slight bevel\n    var stoneShape = MathF.Max(MathF.Abs(localU * 1.1f), MathF.Abs(localV * 1.1f));\n    var edge = 0.45f;\n    var bevel = 0.03f;\n\n    if (stoneShape > edge)\n    {\n        // Mortar\n        var mortarDepth = 1f - MathF.Min(1f, (stoneShape - edge) / bevel);\n        var r = Lerp(morR, morR * 0.7f, mortarDepth);\n        var g = Lerp(morG, morG * 0.7f, mortarDepth);\n        var b = Lerp(morB, morB * 0.7f, mortarDepth);\n        return (r, g, b);\n    }\n\n    // Stone surface with hash-based variation\n    var stoneHash = HashToUnit(col * 7 + row, row * 13 + col, seed + 300);\n    var shade = 0.7f + 0.3f * stoneHash;\n    var r2 = Math.Clamp(mR * shade + (stoneHash - 0.5f) * 0.08f, 0f, 1f);\n    var g2 = Math.Clamp(mG * shade * 0.95f + (stoneHash - 0.5f) * 0.06f, 0f, 1f);\n    var b2 = Math.Clamp(mB * shade * 0.9f + (stoneHash - 0.5f) * 0.05f, 0f, 1f);\n\n    // Surface noise\n    var noise = TileableFractalNoise(u * 5f, v * 5f, period, 2, 0.5f, 2f, seed + 400);\n    var n = (noise - 0.5f) * 0.05f;\n    r2 += n; g2 += n * 0.9f; b2 += n * 0.85f;\n\n    // Bevel highlight\n    var bevelDist = (edge - stoneShape) / bevel;\n    if (bevelDist < 1f)\n    {\n        var bevelLight = (1f - bevelDist) * 0.12f;\n        r2 += bevelLight; g2 += bevelLight * 0.9f; b2 += bevelLight * 0.85f;\n    }\n\n    return (Math.Clamp(r2, 0f, 1f), Math.Clamp(g2, 0f, 1f), Math.Clamp(b2, 0f, 1f));\n}\n\nprivate static (float r, float g, float b) RenderPlaster(float u, float v, float mR, float mG, float mB, float morR, float morG, float morB, int size, int period, int seed)\n{\n    // Smooth plaster with gentle noise\n    var noise = TileableFractalNoise(u * 2f, v * 2f, period, 3, 0.55f, 2f, seed + 50);\n    var fineNoise = TileableFractalNoise(u * 8f, v * 8f, period, 2, 0.5f, 2f, seed + 150);\n\n    var r = Math.Clamp(mR + (noise - 0.5f) * 0.04f + (fineNoise - 0.5f) * 0.02f, 0f, 1f);\n    var g = Math.Clamp(mG + (noise - 0.5f) * 0.035f + (fineNoise - 0.5f) * 0.015f, 0f, 1f);\n    var b = Math.Clamp(mB + (noise - 0.5f) * 0.03f + (fineNoise - 0.5f) * 0.01f, 0f, 1f);\n\n    // Subtle horizontal trowel marks\n    var trowel = MathF.Sin(v * 40f + noise * 3f) * 0.015f;\n    r += trowel; g += trowel * 0.9f; b += trowel * 0.85f;\n\n    return (Math.Clamp(r, 0f, 1f), Math.Clamp(g, 0f, 1f), Math.Clamp(b, 0f, 1f));\n}\n\nprivate static (float r, float g, float b) RenderPlanks(float u, float v, float mR, float mG, float mB, float morR, float morG, float morB, int size, int period, int seed)\n{\n    // Vertical wooden planks with gaps\n    var plankCount = 6f;\n    var plankW = 1f / plankCount;\n    var col = (int)(u * plankCount);\n    var cellU = (u - col * plankW) / plankW;\n    var gap = 0.04f;\n\n    if (cellU < gap || cellU > 1f - gap)\n    {\n        // Gap/dark line between planks\n        return (morR * 0.4f, morG * 0.35f, morB * 0.3f);\n    }\n\n    var plankHash = HashToUnit(col, 0, seed + 60);\n    var shade = 0.8f + 0.2f * plankHash;\n    var r = mR * shade;\n    var g = mG * shade * 0.95f;\n    var b = mB * shade * 0.9f;\n\n    // Vertical wood grain\n    var grainFreq = 15f + plankHash * 5f;\n    var grain = MathF.Sin(u * grainFreq * MathF.PI * 2f + plankHash * 3f) * 0.04f;\n    var grainNoise = TileableFractalNoise(u * 3f, v * 4f + col * 2f, period, 2, 0.5f, 2.5f, seed + 80);\n    grain += (grainNoise - 0.5f) * 0.04f;\n\n    r += grain; g += grain * 0.7f; b += grain * 0.4f;\n\n    // Knots\n    var knotNoise = TileableFractalNoise(u * 10f + col * 2f, v * 6f, period, 1, 0.5f, 2f, seed + 200);\n    if (knotNoise > 0.82f)\n    {\n        var knot = (knotNoise - 0.82f) / 0.18f;\n        r -= knot * 0.15f; g -= knot * 0.15f; b -= knot * 0.12f;\n    }\n\n    return (Math.Clamp(r, 0f, 1f), Math.Clamp(g, 0f, 1f), Math.Clamp(b, 0f, 1f));\n}\n\nprivate static (float r, float g, float b) RenderAdobe(float u, float v, float mR, float mG, float mB, float morR, float morG, float morB, int size, int period, int seed)\n{\n    // Horizontal mud brick pattern\n    var rowCount = 5f;\n    var colCount = 4f;\n    var cellH = 1f / rowCount;\n    var cellW = 1f / colCount;\n    var row = (int)(v * rowCount);\n    var col = (int)(u * colCount);\n    var rowOffset = (row % 2 == 0) ? 0f : cellW * 0.5f;\n\n    var cellU = ((u + rowOffset) % cellW) / cellW;\n    var cellV = (v * rowCount) % 1f;\n    var gap = 0.03f;\n\n    if (cellV < gap || cellV > 1f - gap || cellU < gap || cellU > 1f - gap)\n    {\n        // Mortar\n        var mShade = (cellV < gap || cellV > 1f - gap) ? 0.6f : 0.8f;\n        return (morR * mShade, morG * mShade * 0.95f, morB * mShade * 0.9f);\n    }\n\n    // Brick surface with variation\n    var brickHash = HashToUnit(col, row, seed + 80);\n    var shade = 0.7f + 0.3f * brickHash;\n    var r = Math.Clamp(mR * shade + (brickHash - 0.5f) * 0.06f, 0f, 1f);\n    var g = Math.Clamp(mG * shade * 0.95f + (brickHash - 0.5f) * 0.04f, 0f, 1f);\n    var b = Math.Clamp(mB * shade * 0.9f + (brickHash - 0.5f) * 0.03f, 0f, 1f);\n\n    // Horizontal striations\n    var streak = MathF.Sin(v * 30f + brickHash * 5f) * 0.02f;\n    r += streak; g += streak * 0.9f; b += streak * 0.85f;\n\n    // Surface roughness\n    var rough = TileableFractalNoise(u * 6f, v * 6f, period, 2, 0.5f, 2f, seed + 300);\n    var roughVal = (rough - 0.5f) * 0.04f;\n    r += roughVal; g += roughVal * 0.9f; b += roughVal * 0.85f;\n\n    return (Math.Clamp(r, 0f, 1f), Math.Clamp(g, 0f, 1f), Math.Clamp(b, 0f, 1f));\n    }\n}"
+  }
+}

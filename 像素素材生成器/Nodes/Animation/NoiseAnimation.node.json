@@ -1,0 +1,61 @@
+{
+  "formatVersion": 2,
+  "processorType": "NoiseAnimation",
+  "identity": {
+    "typeName": "NoiseAnimation",
+    "displayName": {
+      "zh-Hans": "噪声动画",
+      "en": "Noise Animation"
+    },
+    "category": "Animation",
+    "description": {
+      "zh-Hans": "生成基于噪声的动画值（Perlin噪声/值噪声/纯随机），产生有机自然的飘动运动，双输出通道",
+      "en": "Generates noise-driven animated values (Perlin/value/random noise) for organic natural motion, dual output channels"
+    },
+    "tags": ["animation", "noise", "oscillator"],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [],
+    "outputs": [
+      {
+        "name": { "zh-Hans": "值1", "en": "Value" },
+        "type": "Float"
+      },
+      {
+        "name": { "zh-Hans": "值2", "en": "Value2" },
+        "type": "Float"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": { "zh-Hans": "噪声类型", "en": "Noise Type" },
+      "kind": "Choice",
+      "default": "perlin",
+      "choices": ["perlin", "value", "random"],
+      "displayChoices": ["Perlin噪声", "值噪声", "纯随机"]
+    },
+    { "name": { "zh-Hans": "频率", "en": "Frequency" }, "kind": "Number", "default": 0.5, "min": 0.01, "max": 10.0, "step": 0.1 },
+    { "name": { "zh-Hans": "振幅", "en": "Amplitude" }, "kind": "Number", "default": 1.0, "min": 0.0, "max": 10.0, "step": 0.1 },
+    { "name": { "zh-Hans": "偏移", "en": "Offset" }, "kind": "Number", "default": 0.0, "min": -5.0, "max": 5.0, "step": 0.01 },
+    { "name": { "zh-Hans": "频率倍增", "en": "Lacunarity" }, "kind": "Number", "default": 2.0, "min": 1.0, "max": 4.0, "step": 0.1 },
+    { "name": { "zh-Hans": "振幅衰减", "en": "Persistence" }, "kind": "Number", "default": 0.5, "min": 0.0, "max": 1.0, "step": 0.05 },
+    { "name": { "zh-Hans": "八度", "en": "Octaves" }, "kind": "Integer", "default": 3, "min": 1, "max": 6, "step": 1 },
+    { "name": { "zh-Hans": "种子", "en": "Seed" }, "kind": "Seed", "default": 42, "min": 0, "max": 9999 },
+    { "name": { "zh-Hans": "双极性输出", "en": "Bipolar" }, "kind": "Boolean", "default": true }
+  ],
+  "ai": {
+    "capabilities": ["animation", "parameter-animation", "time"],
+    "triggers": {
+      "zh-Hans": "噪声动画, Perlin噪声, 有机运动, 飘动效果, 随机波动",
+      "en": "noise animation, Perlin noise, organic motion, drift effect, random fluctuation"
+    },
+    "suggestedInputs": ["Time"],
+    "exampleUsage": {
+      "zh-Hans": "用Perlin噪声生成飘动效果，频率设为0.3制造缓慢有机运动",
+      "en": "Use Perlin noise to generate a drifting effect with frequency 0.3 for slow organic motion"
+    }
+  }
+}

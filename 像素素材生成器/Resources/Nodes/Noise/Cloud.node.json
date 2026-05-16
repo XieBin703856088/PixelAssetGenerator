@@ -1,0 +1,226 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "Cloud",
+    "displayName": {
+      "zh-Hans": "云朵",
+      "en": "Cloud"
+    },
+    "category": "Noise",
+    "description": {
+      "zh-Hans": "使用阈值分形噪波和双频细节生成云/天空图案。支持多种云类型（积云、层云、卷云）和渐变过渡。",
+      "en": "Generates cloud/sky patterns using thresholded fractal noise with dual-band detail. Supports multiple cloud types (cumulus, stratus, cirrus) and gradient ramps."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "遮罩",
+          "en": "Mask"
+        },
+        "type": "Mask"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "种子",
+        "en": "Seed"
+      },
+      "kind": "Seed",
+      "default": 42,
+      "min": 0,
+      "max": 9999
+    },
+    {
+      "name": {
+        "zh-Hans": "缩放",
+        "en": "Scale"
+      },
+      "kind": "Number",
+      "default": 1.0,
+      "min": 0.1,
+      "max": 10.0,
+      "step": 0.1
+    },
+    {
+      "name": {
+        "zh-Hans": "密度",
+        "en": "Density"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "锐度",
+        "en": "Sharpness"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "覆盖",
+        "en": "Coverage"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "云彩类型",
+        "en": "Cloud Type"
+      },
+      "kind": "Choice",
+      "default": "cumulus",
+      "choices": [
+        {
+          "value": "cumulus",
+          "label": {
+            "zh-Hans": "积云",
+            "en": "cumulus"
+          }
+        },
+        {
+          "value": "stratus",
+          "label": {
+            "zh-Hans": "层云",
+            "en": "stratus"
+          }
+        },
+        {
+          "value": "cirrus",
+          "label": {
+            "zh-Hans": "卷云",
+            "en": "cirrus"
+          }
+        },
+        {
+          "value": "mixed",
+          "label": {
+            "zh-Hans": "混合",
+            "en": "mixed"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "zh-Hans": "拉伸",
+        "en": "Stretch"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "八度",
+        "en": "Octaves"
+      },
+      "kind": "Integer",
+      "default": 4,
+      "min": 1,
+      "max": 8,
+      "step": 1
+    },
+    {
+      "name": {
+        "zh-Hans": "渐变模式",
+        "en": "Gradient Mode"
+      },
+      "kind": "Choice",
+      "default": "dualColor",
+      "choices": [
+        {
+          "value": "dualColor",
+          "label": {
+            "zh-Hans": "双色",
+            "en": "dualColor"
+          }
+        },
+        {
+          "value": "gradientRamp",
+          "label": {
+            "zh-Hans": "渐变",
+            "en": "gradientRamp"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "zh-Hans": "天空颜色",
+        "en": "Sky Color"
+      },
+      "kind": "Color",
+      "default": "#6496FFFF"
+    },
+    {
+      "name": {
+        "zh-Hans": "云彩颜色",
+        "en": "Cloud Color"
+      },
+      "kind": "Color",
+      "default": "#FFFFFFFF"
+    },
+    {
+      "name": {
+        "zh-Hans": "高光颜色",
+        "en": "Highlight Color"
+      },
+      "kind": "Color",
+      "default": "#FFFFFFFF"
+    },
+    {
+      "name": {
+        "zh-Hans": "反相",
+        "en": "Invert"
+      },
+      "kind": "Boolean",
+      "default": false
+    }
+  ],
+  "ai": {
+    "capabilities": ["generate-noise", "procedural-texture", "organic", "atmospheric-effect", "tileable"],
+    "triggers": {
+      "zh-Hans": "云朵, 云彩, 天空, 积云, 层云, 卷云",
+      "en": "cloud, sky, atmosphere, cumulus, stratus, cirrus"
+    },
+    "suggestedInputs": ["Noise"],
+    "exampleUsage": {
+      "zh-Hans": "生成带有积云或层云的天空背景纹理，适合游戏场景的远景贴图。",
+      "en": "Generates a sky background with cumulus or stratus clouds for game scene backgrounds."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar seed = GetInt(parameters, \"seed\", context.Seed);\nvar scale = GetFloat(parameters, \"scale\", 1f);\nvar density = GetFloat(parameters, \"density\", 0.5f);\nvar sharpness = GetFloat(parameters, \"sharpness\", 0.5f);\nvar coverage = GetFloat(parameters, \"coverage\", 0.5f);\nvar cloudType = GetChoice(parameters, \"cloudType\", \"cumulus\");\nvar stretch = GetFloat(parameters, \"stretch\", 0f);\nvar octaves = Math.Max(1, GetInt(parameters, \"octaves\", 4));\nvar gradientMode = GetChoice(parameters, \"gradientMode\", \"dualColor\");\nvar skyColor = GetColor(parameters, \"skyColor\", Color.FromRgb(100, 150, 255));\nvar cloudColor = GetColor(parameters, \"cloudColor\", Color.FromRgb(255, 255, 255));\nvar highlightColor = GetColor(parameters, \"highlightColor\", Color.FromRgb(255, 255, 255));\nvar invert = GetBool(parameters, \"invert\", false);\n\nvar size = context.TileSize;\nvar buffer = new PixelBuffer(size, size);\n\nvar skyR = skyColor.R / 255f; var skyG = skyColor.G / 255f; var skyB = skyColor.B / 255f;\nvar cR = cloudColor.R / 255f; var cG = cloudColor.G / 255f; var cB = cloudColor.B / 255f;\nvar hR = highlightColor.R / 255f; var hG = highlightColor.G / 255f; var hB = highlightColor.B / 255f;\nvar period = Math.Max(1, (int)MathF.Round(scale * 2f));\n\n// Cloud-type-specific noise tuning\nvar persistence = cloudType switch\n{\n    \"stratus\" => 0.7f,   // Smoother, more merged\n    \"cirrus\" => 0.45f,  // Finer, more fragile\n    \"mixed\" => 0.6f,\n    _ => 0.6f          // cumulus: default\n};\n\nvar lacunarity = cloudType switch\n{\n    \"cirrus\" => 2.8f,   // Higher frequency detail for wisps\n    \"mixed\" => 2.3f,\n    _ => 2f            // cumulus/stratus: standard\n};\n\n// Stretch: apply anisotropic UV scaling (stretch > 0 elongates horizontally for stratus)\nvar stretchFactor = 1f + stretch * 3f;\n\nbuffer.ParallelForEachPixel((x, y) =>\n{\n    var u = x / (float)size;\n    var v = y / (float)size;\n\n    // Apply stretching: horizontal stretch for stratus, can also do vertical\n    var nu = u * scale;\n    var nv = v * scale * (1f / stretchFactor);\n\n    // Base cloud shape from low-frequency noise\n    var baseNoise = TileableFractalNoise(\n        nu * 2f * stretchFactor, nv * 2f,\n        Math.Max(1, (int)(period * stretchFactor)), octaves, persistence, lacunarity, seed);\n\n    // Apply coverage: shift the noise baseline\n    var shifted = baseNoise - (1f - coverage);\n\n    // Apply density: scale the noise\n    shifted *= density * 2f;\n\n    // Detail: high-frequency octaves for fluffy edges (scale detail with cloud type)\n    var detailScales = cloudType switch\n    {\n        \"stratus\" => 0.3f,  // Less detail for smooth stratus\n        \"cirrus\" => 0.8f,  // More detail for wispy cirrus\n        _ => 0.5f\n    };\n\n    var detailVal = 0f;\n    var detailOctaves = cloudType == \"cirrus\" ? 3 : 2;\n    for (var d = 0; d < detailOctaves; d++)\n    {\n        var f = MathF.Pow(3f, d + 1);\n        var amp = MathF.Pow(0.5f, d + 1);\n        detailVal += TileableFractalNoise(\n            nu * f * stretchFactor, nv * f,\n            Math.Max(1, (int)(period / (f / stretchFactor))), 1, 0.5f, 2f, seed + 1000 + d * 137) * amp;\n    }\n\n    // Combine base and detail\n    var cloud = shifted + detailVal * detailScales * (1f - sharpness * 0.5f);\n\n    // Soft threshold\n    var cloudiness = (cloud + 0.3f) / Math.Max(0.001f, 0.6f + sharpness * 0.4f);\n    cloudiness = Math.Clamp(cloudiness, 0f, 1f);\n\n    // Smoothstep for softer cloud edges\n    cloudiness = cloudiness * cloudiness * (3f - 2f * cloudiness);\n\n    if (invert) cloudiness = 1f - cloudiness;\n\n    float r, g, b;\n\n    if (gradientMode == \"gradientRamp\" && (hR != cR || hG != cG || hB != cB))\n    {\n        // Three-color gradient: sky -> cloud -> highlight based on density\n        // cloudiness 0-0.5: sky to cloud, 0.5-1.0: cloud to highlight\n        var t = cloudiness;\n        if (t < 0.5f)\n        {\n            var t2 = t * 2f;\n            r = Lerp(skyR, cR, t2);\n            g = Lerp(skyG, cG, t2);\n            b = Lerp(skyB, cB, t2);\n        }\n        else\n        {\n            var t2 = (t - 0.5f) * 2f;\n            r = Lerp(cR, hR, t2);\n            g = Lerp(cG, hG, t2);\n            b = Lerp(cB, hB, t2);\n        }\n    }\n    else\n    {\n        // Dual-color: sky -> cloud\n        r = Lerp(skyR, cR, cloudiness);\n        g = Lerp(skyG, cG, cloudiness);\n        b = Lerp(skyB, cB, cloudiness);\n    }\n\n    buffer.SetPixel(x, y, r, g, b, 1f);\n});\n\nreturn buffer;\n}"
+  }
+}

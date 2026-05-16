@@ -1,0 +1,209 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "Mosaic",
+    "displayName": {
+      "zh-Hans": "马赛克",
+      "en": "Mosaic"
+    },
+    "category": "Material",
+    "description": {
+      "zh-Hans": "生成马赛克/镶嵌瓷砖图案，带有彩色方形单元格、可配置的填缝宽度、逐块颜色变化和可选表面着色。支持网格、砖砌和菱形布局。所有噪波均可平铺以实现无缝输出。",
+      "en": "Generates mosaic / tessellated tile patterns with colored square cells, configurable grout/gap width, per-tile color variation, and optional surface shading. Supports grid, brick-bond, and diamond layouts. All noise is tileable for seamless output."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "遮罩",
+          "en": "Mask"
+        },
+        "type": "Mask"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "种子",
+        "en": "Seed"
+      },
+      "kind": "Seed",
+      "default": 42,
+      "min": 0,
+      "max": 9999
+    },
+    {
+      "name": {
+        "zh-Hans": "列数",
+        "en": "Cols"
+      },
+      "kind": "Integer",
+      "default": 8,
+      "min": 2,
+      "max": 20,
+      "step": 1
+    },
+    {
+      "name": {
+        "zh-Hans": "行数",
+        "en": "Rows"
+      },
+      "kind": "Integer",
+      "default": 8,
+      "min": 2,
+      "max": 20,
+      "step": 1
+    },
+    {
+      "name": {
+        "zh-Hans": "缝隙宽度",
+        "en": "Gap Width"
+      },
+      "kind": "Number",
+      "default": 0.08,
+      "min": 0.01,
+      "max": 0.2,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "布局",
+        "en": "Layout"
+      },
+      "kind": "Choice",
+      "default": "grid",
+      "choices": [
+        {
+          "value": "grid",
+          "label": {
+            "zh-Hans": "网格",
+            "en": "grid"
+          }
+        },
+        {
+          "value": "brick",
+          "label": {
+            "zh-Hans": "砖块",
+            "en": "brick"
+          }
+        },
+        {
+          "value": "diamond",
+          "label": {
+            "zh-Hans": "菱形",
+            "en": "diamond"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "zh-Hans": "基色",
+        "en": "Base Color"
+      },
+      "kind": "Color",
+      "default": "#DCD2C8FF"
+    },
+    {
+      "name": {
+        "zh-Hans": "间隙颜色",
+        "en": "Gap Color"
+      },
+      "kind": "Color",
+      "default": "#3C3732FF"
+    },
+    {
+      "name": {
+        "zh-Hans": "颜色变化",
+        "en": "Color Variation"
+      },
+      "kind": "Number",
+      "default": 0.4,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "光泽度",
+        "en": "Glossiness"
+      },
+      "kind": "Number",
+      "default": 0.2,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "圆润度",
+        "en": "Roundness"
+      },
+      "kind": "Number",
+      "default": 0.2,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "亮度",
+        "en": "Brightness"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": -0.3,
+      "max": 0.3,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "对比度",
+        "en": "Contrast"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": -0.5,
+      "max": 0.5,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "反相",
+        "en": "Invert"
+      },
+      "kind": "Boolean",
+      "default": false
+    }
+  ],
+  "ai": {
+    "capabilities": ["material", "procedural-texture", "tileable", "architectural", "decorative"],
+    "triggers": {
+      "zh-Hans": "马赛克, 镶嵌, 瓷砖, 拼花, 装饰, 墙面装饰",
+      "en": "mosaic, tessellation, tile, inlay, decorative, wall art"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "生成彩色马赛克瓷砖纹理，用于装饰性墙面或地面铺装。",
+      "en": "Generate colorful mosaic tile textures for decorative walls or floor tiling."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar seed = GetInt(parameters, \"seed\", context.Seed);\n    var cols = Math.Max(2, GetInt(parameters, \"cols\", 8));\n    var rows = Math.Max(2, GetInt(parameters, \"rows\", 8));\n    var gapWidth = GetFloat(parameters, \"gapWidth\", 0.08f);\n    var layout = GetChoice(parameters, \"layout\", \"grid\");\n    var baseColor = GetColor(parameters, \"baseColor\", Color.FromRgb(220, 210, 200));\n    var gapColor = GetColor(parameters, \"gapColor\", Color.FromRgb(60, 55, 50));\n    var colorVar = GetFloat(parameters, \"colorVariation\", 0.4f);\n    var glossiness = GetFloat(parameters, \"glossiness\", 0.2f);\n    var roundness = GetFloat(parameters, \"roundness\", 0.2f);\n    var brightness = GetFloat(parameters, \"brightness\", 0f);\n    var contrast = GetFloat(parameters, \"contrast\", 0f);\n    var invert = GetBool(parameters, \"invert\", false);\n\n    var size = context.TileSize;\n    var buffer = new PixelBuffer(size, size);\n\n    var bR = baseColor.R / 255f; var bG = baseColor.G / 255f; var bB = baseColor.B / 255f;\n    var gR = gapColor.R / 255f; var gG = gapColor.G / 255f; var gB = gapColor.B / 255f;\n\n    // Pre-compute per-tile colors\n    var tileColors = new (float r, float g, float b)[cols, rows];\n    for (var r = 0; r < rows; r++)\n    {\n        for (var c = 0; c < cols; c++)\n        {\n            var hash = HashToUnit(c * 13 + r * 17, seed, 111);\n            var hueShift = (hash - 0.5f) * colorVar;\n            // Generate a random vibrant color based on seed + position\n            var hueAngle = HashToUnit(c * 7 + r * 11, seed + 50, 222) * MathF.PI * 2f;\n            var sat = 0.5f + HashToUnit(c * 5 + r * 23, seed + 100, 333) * 0.5f;\n            var light = 0.4f + HashToUnit(c * 19 + r * 29, seed + 150, 444) * 0.4f;\n\n            // Simplified HSL to RGB\n            var h = hueAngle / (MathF.PI * 2f);\n            var (tr, tg, tb) = HslToRgb(h, sat, light);\n            // Blend with base color\n            tileColors[c, r] = (\n                Lerp(bR, tr, colorVar),\n                Lerp(bG, tg, colorVar * 0.9f),\n                Lerp(bB, tb, colorVar * 0.8f)\n            );\n        }\n    }\n\n    buffer.ParallelForEachPixel((x, y) =>\n    {\n        var u = (x + 0.5f) / size;\n        var v = (y + 0.5f) / size;\n\n        // Determine tile position based on layout\n        float tileU, tileV;\n        int tileCol, tileRow;\n\n        switch (layout)\n        {\n            case \"brick\":\n            {\n                var brickW = 1f / cols;\n                var brickH = 1f / rows;\n                var row = (int)(v / brickH);\n                var rowOffset = (row % 2) * 0.5f * brickW;\n                tileU = ((u + rowOffset) % 1f);\n                tileV = v;\n                tileCol = (int)((u + rowOffset) / brickW);\n                tileRow = (int)(v / brickH);\n                // Normalize to 0..1 within tile\n                tileU = (tileU - tileCol * brickW) / brickW;\n                tileV = (tileV - tileRow * brickH) / brickH;\n                tileCol = ((tileCol % cols) + cols) % cols;\n                tileRow = ((tileRow % rows) + rows) % rows;\n                break;\n            }\n            case \"diamond\":\n            {\n                // Diamond layout: 45° rotated grid\n                var ru = u * 0.707f - v * 0.707f;\n                var rv = u * 0.707f + v * 0.707f;\n                var diamondW = 1f / cols;\n                var diamondH = 1f / rows;\n                tileCol = (int)((ru + 0.5f) / diamondW);\n                tileRow = (int)((rv + 0.5f) / diamondH);\n                tileU = ((ru + 0.5f) - tileCol * diamondW) / diamondW;\n                tileV = ((rv + 0.5f) - tileRow * diamondH) / diamondH;\n                tileCol = ((tileCol % cols) + cols) % cols;\n                tileRow = ((tileRow % rows) + rows) % rows;\n                break;\n            }\n            default: // grid\n            {\n                var cellW = 1f / cols;\n                var cellH = 1f / rows;\n                tileCol = (int)(u / cellW);\n                tileRow = (int)(v / cellH);\n                tileU = (u - tileCol * cellW) / cellW;\n                tileV = (v - tileRow * cellH) / cellH;\n                tileCol = ((tileCol % cols) + cols) % cols;\n                tileRow = ((tileRow % rows) + rows) % rows;\n                break;\n            }\n        }\n\n        // Distance to nearest edge (for gap detection)\n        var distU = MathF.Min(tileU, 1f - tileU);\n        var distV = MathF.Min(tileV, 1f - tileV);\n\n        // Rounded corners\n        float edgeDist;\n        if (roundness > 0f)\n        {\n            var cornerDist = MathF.Sqrt(distU * distU + distV * distV);\n            var linearDist = MathF.Max(distU, distV);\n            edgeDist = Lerp(linearDist, cornerDist, roundness);\n        }\n        else\n        {\n            edgeDist = MathF.Min(distU, distV);\n        }\n\n        var gapThreshold = gapWidth * 0.5f;\n        var isGap = edgeDist < gapThreshold;\n\n        float r, g, b;\n\n        if (isGap)\n        {\n            // Grout/mortar\n            var gapNoise = TileableFractalNoise(\n                u * 5f + 50f, v * 5f + 50f,\n                Math.Max(1, size / 3), 1, 0.5f, 2f, seed + 200);\n            var gapVar = (gapNoise - 0.5f) * 0.06f;\n            r = Math.Clamp(gR + gapVar, 0f, 1f);\n            g = Math.Clamp(gG + gapVar * 0.9f, 0f, 1f);\n            b = Math.Clamp(gB + gapVar * 0.8f, 0f, 1f);\n\n            // Depth shading in gap\n            var depthT = 1f - edgeDist / Math.Max(gapThreshold, 0.001f);\n            var depth = depthT * 0.2f;\n            r = Math.Clamp(r - depth, 0f, 1f);\n            g = Math.Clamp(g - depth * 0.9f, 0f, 1f);\n            b = Math.Clamp(b - depth * 0.8f, 0f, 1f);\n        }\n        else\n        {\n            // Tile interior\n            var tc = tileColors[tileCol, tileRow];\n            r = tc.r;\n            g = tc.g;\n            b = tc.b;\n\n            // Subtle highlight at tile edge\n            var edgeHighlight = 1f - (edgeDist - gapThreshold) / (0.5f - gapThreshold);\n            edgeHighlight = MathF.Max(0f, edgeHighlight);\n            edgeHighlight = edgeHighlight * edgeHighlight * 0.15f;\n\n            // Light direction (top-left)\n            var lightDir = ((-(tileU - 0.5f) * 0.7f + -(tileV - 0.5f) * 0.7f) + 0.7f) / 1.4f;\n            var shade = 0.85f + lightDir * 0.15f;\n\n            r *= shade + edgeHighlight;\n            g *= shade + edgeHighlight * 0.9f;\n            b *= shade + edgeHighlight * 0.8f;\n\n            // Gloss\n            if (glossiness > 0f)\n            {\n                var gloss = MathF.Pow(MathF.Max(0f, lightDir), 4f) * glossiness * 0.2f;\n                r = Math.Clamp(r + gloss, 0f, 1f);\n                g = Math.Clamp(g + gloss * 0.95f, 0f, 1f);\n                b = Math.Clamp(b + gloss * 0.9f, 0f, 1f);\n            }\n        }\n\n        // Brightness and contrast\n        r = Math.Clamp(r + brightness, 0f, 1f);\n        g = Math.Clamp(g + brightness, 0f, 1f);\n        b = Math.Clamp(b + brightness, 0f, 1f);\n\n        if (MathF.Abs(contrast) > 0.001f)\n        {\n            var factor = 1f + contrast;\n            r = (r - 0.5f) * factor + 0.5f;\n            g = (g - 0.5f) * factor + 0.5f;\n            b = (b - 0.5f) * factor + 0.5f;\n        }\n\n        if (invert) { r = 1f - r; g = 1f - g; b = 1f - b; }\n\n        buffer.SetPixel(x, y, Math.Clamp(r, 0f, 1f), Math.Clamp(g, 0f, 1f), Math.Clamp(b, 0f, 1f), 1f);\n    });\n\n    return buffer;\n\n/// <summary>\n/// Converts HSL color to RGB (all values in 0..1 range).\n/// </summary>\nprivate static (float r, float g, float b) HslToRgb(float h, float s, float l)\n{\n    if (s < 0.001f) return (l, l, l);\n\n    h = h - MathF.Floor(h);\n    var q = l < 0.5f ? l * (1f + s) : l + s - l * s;\n    var p = 2f * l - q;\n\n    float HueToRgb(float t)\n    {\n        if (t < 0f) t += 1f;\n        if (t > 1f) t -= 1f;\n        if (t < 1f / 6f) return p + (q - p) * 6f * t;\n        if (t < 1f / 2f) return q;\n        if (t < 2f / 3f) return p + (q - p) * (2f / 3f - t) * 6f;\n        return p;\n    }\n\n    return (HueToRgb(h + 1f / 3f), HueToRgb(h), HueToRgb(h - 1f / 3f));\n    }\n}"
+  }
+}

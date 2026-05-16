@@ -1,0 +1,167 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "Rune",
+    "displayName": {
+      "zh-Hans": "符文",
+      "en": "Rune"
+    },
+    "category": "Material",
+    "description": {
+      "zh-Hans": "使用基于SDF的字形渲染生成像素艺术符文符号，支持多种神话风格和外发光效果。实现IMultiOutputNode以提供独立的图像和遮罩输出端口。",
+      "en": "Generates pixel-art rune symbols using SDF-based glyph rendering with multiple mythological styles and outer glow effects. Implements IMultiOutputNode for separate image and mask ports."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "遮罩",
+          "en": "Mask"
+        },
+        "type": "Mask"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "种子",
+        "en": "Seed"
+      },
+      "kind": "Seed",
+      "default": 42,
+      "min": 0,
+      "max": 9999
+    },
+    {
+      "name": {
+        "zh-Hans": "符文样式",
+        "en": "Rune Style"
+      },
+      "kind": "Choice",
+      "default": "norse",
+      "choices": [
+        {
+          "value": "norse",
+          "label": {
+            "zh-Hans": "北欧",
+            "en": "norse"
+          }
+        },
+        {
+          "value": "magic",
+          "label": {
+            "zh-Hans": "魔法",
+            "en": "magic"
+          }
+        },
+        {
+          "value": "ancient",
+          "label": {
+            "zh-Hans": "远古",
+            "en": "ancient"
+          }
+        },
+        {
+          "value": "holy",
+          "label": {
+            "zh-Hans": "神圣",
+            "en": "holy"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "zh-Hans": "发光强度",
+        "en": "Glow Strength"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "颜色",
+        "en": "Color"
+      },
+      "kind": "Color",
+      "default": "#3C64DCFF"
+    },
+    {
+      "name": {
+        "zh-Hans": "不透明度",
+        "en": "Opacity"
+      },
+      "kind": "Number",
+      "default": 0.9,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "大小",
+        "en": "Size"
+      },
+      "kind": "Number",
+      "default": 0.9,
+      "min": 0.1,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "线宽",
+        "en": "Thickness"
+      },
+      "kind": "Number",
+      "default": 0.12,
+      "min": 0.02,
+      "max": 0.5,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "旋转",
+        "en": "Rotation"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 360.0,
+      "step": 1.0
+    }
+  ],
+  "ai": {
+    "capabilities": ["material", "procedural-texture", "ui-element", "magical", "icon"],
+    "triggers": {
+      "zh-Hans": "符文, 古文字, 魔法符号, 北欧符文, 神秘文字, 法阵",
+      "en": "rune, glyph, magic symbol, norse rune, sigil, mystical"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "生成像素艺术符文符号，用于魔法道具、UI图标或法术特效。",
+      "en": "Generate pixel-art rune symbols for magical items, UI icons, or spell effects."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar seed = GetInt(parameters, \"seed\", context.Seed);\nvar runeStyle = GetChoice(parameters, \"runeStyle\", \"norse\");\nvar glowStrength = GetFloat(parameters, \"glowStrength\", 0.5f);\nvar runeColor = GetColor(parameters, \"color\", System.Windows.Media.Color.FromRgb(60, 100, 220));\nvar opacity = GetFloat(parameters, \"opacity\", 0.9f);\nvar sizeParam = GetFloat(parameters, \"size\", 0.9f);\nvar thickness = GetFloat(parameters, \"thickness\", 0.12f);\nvar rotation = GetFloat(parameters, \"rotation\", 0f) * MathF.PI / 180f;\n\nvar size = context.TileSize;\nvar half = size * 0.5f;\nvar maxR = half * sizeParam * 1.414f;\nvar thickPx = Math.Max(1f, thickness * size);\nvar cosR = MathF.Cos(rotation);\nvar sinR = MathF.Sin(rotation);\n\nvar rng = new System.Random(seed);\nvar r2 = rng.NextDouble();\nvar r3 = rng.NextDouble();\n\n// Style parameters (may be overridden by runeStyle switch)\nvar pts = 5 + (int)(r2 * 4);\nvar twist = (float)(r3 * 0.3 + 0.1);\nvar innerRatio = (float)(0.3 + rng.NextDouble() * 0.4);\nvar spike = (float)(0.5 + rng.NextDouble() * 1.5);\nvar morph = (float)(0.3 + rng.NextDouble() * 0.7);\nvar jx = 0.0f; var jy = 0.0f;\n\nswitch (runeStyle)\n{\n    case \"magic\":\n        jx = 0.7885f * (float)(rng.NextDouble() * 0.3 - 0.15);\n        jy = 0.7885f * (float)(rng.NextDouble() * 0.3 - 0.15);\n        pts = 7; spike = 1.8f; morph = 0.8f;\n        break;\n    case \"ancient\":\n        jx = 0.35f; jy = 0.35f;\n        pts = 4; spike = 0.6f; morph = 0.3f;\n        break;\n    case \"holy\":\n        jx = 0.0f; jy = 0.8f;\n        pts = 8; spike = 1.2f; morph = 0.5f;\n        break;\n    default: // norse\n        jx = 0.4f; jy = 0.6f;\n        pts = 3; spike = 1.0f; morph = 0.4f;\n        break;\n}\n\nvar result = new PixelBuffer(size, size);\n\nvar cR = runeColor.R / 255f;\nvar cG = runeColor.G / 255f;\nvar cB = runeColor.B / 255f;\n\nfloat SuperShape(float theta, float n1, float n2, float n3, float m)\n{\n    var t = theta * m / 4f;\n    var p1 = MathF.Pow(MathF.Abs(MathF.Cos(t)), n2);\n    var p2 = MathF.Pow(MathF.Abs(MathF.Sin(t)), n3);\n    var rVal = MathF.Pow(p1 + p2, -1f / n1);\n    return float.IsFinite(rVal) ? rVal : 0f;\n}\n\nresult.ParallelForEachPixel((x, y) =>\n{\n    var nx = (x + 0.5f) / size * 2f - 1f;\n    var ny = (y + 0.5f) / size * 2f - 1f;\n    \n    // Apply rotation\n    if (MathF.Abs(rotation) > 0.001f)\n    {\n        var rnx = nx * cosR - ny * sinR;\n        var rny = nx * sinR + ny * cosR;\n        nx = rnx; ny = rny;\n    }\n    \n    var r = MathF.Sqrt(nx * nx + ny * ny);\n    var theta = MathF.Atan2(ny, nx);\n    \n    // Supershape outer boundary\n    var ss = SuperShape(theta, 1f + morph * 2f, 0.5f + spike * 0.5f, 0.5f + spike * 0.5f, pts);\n    var ssR = ss * maxR;\n    \n    // Supershape inner hole\n    var ssInner = SuperShape(theta + twist, 0.8f + morph, 0.8f, 0.8f, pts + 1);\n    var innerR = ssInner * maxR * innerRatio;\n    \n    // Radial harmonic waves (organic detail)\n    var waves = MathF.Sin(r * 20f + theta * 3f) * 0.3f +\n                MathF.Sin(r * 13f - theta * 5f) * 0.2f +\n                MathF.Sin(r * 7f * (1f + morph)) * 0.2f;\n    \n    // Angular spike ornamentation\n    var spikesVal = MathF.Pow(MathF.Abs(MathF.Cos(theta * pts * 0.5f)), 0.3f + spike * 0.5f);\n    var spikeField = MathF.Max(0f, spikesVal - r / maxR * 0.5f);\n    \n    // Core glyph: subtractive synthesis\n    var outerDist = r / (ssR + 0.001f);\n    var innerDist = r / (innerR + 0.001f);\n    var field = MathF.Max(0f, 1f - outerDist);\n    field = MathF.Max(0f, field - MathF.Max(0f, 1f - innerDist) * 0.8f);\n    field = MathF.Max(field, spikeField * 0.6f);\n    \n    // Julia detail for magic/holy\n    if (runeStyle == \"magic\" || runeStyle == \"holy\")\n    {\n        var zx = nx * 0.5f; var zy = ny * 0.5f;\n        float julia = 0f;\n        for (var i = 0; i < 32; i++)\n        {\n            var zx2 = zx * zx - zy * zy + jx;\n            var zy2 = 2f * zx * zy + jy;\n            zx = zx2; zy = zy2;\n            if (zx * zx + zy * zy > 4f) { julia = i / 32f; break; }\n        }\n        field += julia * 0.2f * MathF.Max(0f, 1f - r);\n    }\n    \n    // Wave detail\n    field += waves * 0.15f * MathF.Max(0f, 1f - r / maxR);\n    \n    // Edge fade\n    field *= Math.Clamp(1f - (r - maxR * 0.85f) / (maxR * 0.15f + 0.001f), 0f, 1f);\n    field = Math.Clamp(field, 0f, 1f);\n    \n    // Anti-aliased line rendering\n    var lineAA = Math.Clamp(1f - MathF.Abs(field - 0.45f) * 6f / thickPx, 0f, 1f);\n    var alpha = field > 0.01f ? lineAA * opacity : 0f;\n    \n    // Glow\n    var glow = 0f;\n    if (field < 0.45f && glowStrength > 0.01f)\n        glow = MathF.Max(0f, 1f - field / 0.45f) * glowStrength * (1f - lineAA) * 0.5f;\n    \n    var finalR = cR * lineAA + glow;\n    var finalG = cG * lineAA + glow * 0.8f;\n    var finalB = cB * lineAA + glow * 1.2f;\n    \n    result.SetPixel(x, y, Math.Clamp(finalR, 0, 1), Math.Clamp(finalG, 0, 1), Math.Clamp(finalB, 0, 1), Math.Clamp(alpha + glow * 0.5f, 0, 1));\n});\n\nreturn result;\n}"
+  }
+}

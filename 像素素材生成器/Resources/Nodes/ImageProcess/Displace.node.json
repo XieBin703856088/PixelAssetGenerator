@@ -1,0 +1,140 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "Displace",
+    "displayName": {
+      "zh-Hans": "置换",
+      "en": "Displace"
+    },
+    "category": "ImageProcess",
+    "description": {
+      "zh-Hans": "使用位移贴图对输入图像进行置换。以偏移坐标采样源图像，采用双线性插值。",
+      "en": "Displaces an input image using a displacement map. Samples the source image at offset coordinates with bilinear interpolation."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [
+      {
+        "name": {
+          "zh-Hans": "输入",
+          "en": "Input"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "位移贴图",
+          "en": "DisplacementMap"
+        },
+        "type": "Image"
+      }
+    ],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "输出",
+          "en": "Output"
+        },
+        "type": "Image"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "X偏移",
+        "en": "Offset X"
+      },
+      "kind": "Number",
+      "default": 0.1,
+      "min": -0.5,
+      "max": 0.5,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "Y偏移",
+        "en": "Offset Y"
+      },
+      "kind": "Number",
+      "default": 0.1,
+      "min": -0.5,
+      "max": 0.5,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "通道",
+        "en": "Channel"
+      },
+      "kind": "Choice",
+      "default": "luminance",
+      "choices": [
+        {
+          "value": "luminance",
+          "label": {
+            "zh-Hans": "亮度",
+            "en": "luminance"
+          }
+        },
+        {
+          "value": "red",
+          "label": {
+            "zh-Hans": "红色",
+            "en": "red"
+          }
+        },
+        {
+          "value": "green",
+          "label": {
+            "zh-Hans": "绿色",
+            "en": "green"
+          }
+        },
+        {
+          "value": "blue",
+          "label": {
+            "zh-Hans": "蓝色",
+            "en": "blue"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "zh-Hans": "环绕",
+        "en": "Wrap"
+      },
+      "kind": "Boolean",
+      "default": true
+    },
+    {
+      "name": {
+        "zh-Hans": "反相",
+        "en": "Invert"
+      },
+      "kind": "Boolean",
+      "default": false
+    }
+  ],
+  "ai": {
+    "capabilities": ["distort"],
+    "triggers": {
+      "zh-Hans": "置换, 位移贴图, 偏移, 坐标偏移",
+      "en": "displace, displacement map, offset, coordinate offset"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "使用噪波纹理作为位移贴图来扭曲图像。",
+      "en": "Displace an image using a noise texture as the displacement map."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar input = inputs.Length > 0 && inputs[0] != null ? inputs[0]! :\n        new PixelBuffer(context.TileSize, context.TileSize);\n\n    var displaceMap = inputs.Length > 1 && inputs[1] != null ? inputs[1]! : null;\n\n    var scaleX = GetFloat(parameters, \"offsetX\", 0.1f);\n    var scaleY = GetFloat(parameters, \"offsetY\", 0.1f);\n    var channel = GetChoice(parameters, \"channel\", \"luminance\");\n    var wrap = GetBool(parameters, \"wrap\", true);\n    var invert = GetBool(parameters, \"invert\", false);\n\n    var size = context.TileSize;\n    var output = new PixelBuffer(size, size);\n\n    output.ParallelForEachPixel((x, y) =>\n    {\n        var u = (float)x / size;\n        var v = (float)y / size;\n\n        // Sample displacement\n        var disp = 0f;\n        if (displaceMap != null)\n        {\n            var du = (float)x / size;\n            var dv = (float)y / size;\n            var dx = (int)(du * (displaceMap.Width - 1));\n            var dy = (int)(dv * (displaceMap.Height - 1));\n            dx = Math.Clamp(dx, 0, displaceMap.Width - 1);\n            dy = Math.Clamp(dy, 0, displaceMap.Height - 1);\n            var (rd, gd, bd, _) = displaceMap.GetPixel(dx, dy);\n\n            disp = channel switch\n            {\n                \"red\" => rd,\n                \"green\" => gd,\n                \"blue\" => bd,\n                _ => rd * 0.299f + gd * 0.587f + bd * 0.114f\n            };\n        }\n\n        if (invert) disp = 1f - disp;\n\n        // Offset coordinates\n        var offX = u + (disp - 0.5f) * scaleX;\n        var offY = v + (disp - 0.5f) * scaleY;\n\n        // Sample input with bilinear interpolation\n        float r, g, b, a;\n        if (wrap)\n        {\n            offX = offX - MathF.Floor(offX);\n            offY = offY - MathF.Floor(offY);\n        }\n\n        var sx = offX * (input.Width - 1);\n        var sy = offY * (input.Height - 1);\n\n        if (wrap)\n        {\n            (r, g, b, a) = SampleBilinearWrap(input, sx, sy);\n        }\n        else\n        {\n            (r, g, b, a) = SampleBilinearClamp(input, sx, sy);\n        }\n\n        output.SetPixel(x, y, r, g, b, a);\n    });\n\n    return output;\n\nprivate static (float, float, float, float) SampleBilinearWrap(PixelBuffer buffer, float sx, float sy)\n{\n    var w = buffer.Width;\n    var h = buffer.Height;\n\n    // Wrap coordinates\n    sx = Mod(sx, w - 1);\n    sy = Mod(sy, h - 1);\n\n    var x0 = (int)sx;\n    var y0 = (int)sy;\n    var x1 = (x0 + 1) % (w - 1);\n    var y1 = (y0 + 1) % (h - 1);\n    var fx = sx - x0;\n    var fy = sy - y0;\n\n    var (r00, g00, b00, a00) = buffer.GetPixel(x0, y0);\n    var (r10, g10, b10, a10) = buffer.GetPixel(x1, y0);\n    var (r01, g01, b01, a01) = buffer.GetPixel(x0, y1);\n    var (r11, g11, b11, a11) = buffer.GetPixel(x1, y1);\n\n    return (\n        Lerp(Lerp(r00, r10, fx), Lerp(r01, r11, fx), fy),\n        Lerp(Lerp(g00, g10, fx), Lerp(g01, g11, fx), fy),\n        Lerp(Lerp(b00, b10, fx), Lerp(b01, b11, fx), fy),\n        Lerp(Lerp(a00, a10, fx), Lerp(a01, a11, fx), fy)\n    );\n}\n\nprivate static (float, float, float, float) SampleBilinearClamp(PixelBuffer buffer, float sx, float sy)\n{\n    var w = buffer.Width - 1;\n    var h = buffer.Height - 1;\n    sx = Math.Clamp(sx, 0f, w);\n    sy = Math.Clamp(sy, 0f, h);\n\n    var x0 = (int)sx;\n    var y0 = (int)sy;\n    var x1 = Math.Min(x0 + 1, w);\n    var y1 = Math.Min(y0 + 1, h);\n    var fx = sx - x0;\n    var fy = sy - y0;\n\n    var (r00, g00, b00, a00) = buffer.GetPixel(x0, y0);\n    var (r10, g10, b10, a10) = buffer.GetPixel(x1, y0);\n    var (r01, g01, b01, a01) = buffer.GetPixel(x0, y1);\n    var (r11, g11, b11, a11) = buffer.GetPixel(x1, y1);\n\n    return (\n        Lerp(Lerp(r00, r10, fx), Lerp(r01, r11, fx), fy),\n        Lerp(Lerp(g00, g10, fx), Lerp(g01, g11, fx), fy),\n        Lerp(Lerp(b00, b10, fx), Lerp(b01, b11, fx), fy),\n        Lerp(Lerp(a00, a10, fx), Lerp(a01, a11, fx), fy)\n    );\n}\n\nprivate static float Mod(float a, float b) => ((a % b) + b) % b;\n}"
+  }
+}

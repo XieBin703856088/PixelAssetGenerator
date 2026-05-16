@@ -1,0 +1,91 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "Checkerboard",
+    "displayName": {
+      "zh-Hans": "棋盘",
+      "en": "Checkerboard"
+    },
+    "category": "Pattern",
+    "description": {
+      "zh-Hans": "生成可平铺的棋盘格图案。输出图像和遮罩。",
+      "en": "Generates a tileable checkerboard pattern. Outputs an image and a mask."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "遮罩",
+          "en": "Mask"
+        },
+        "type": "Mask"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "单元数量",
+        "en": "Cell Count"
+      },
+      "kind": "Integer",
+      "default": 8,
+      "min": 1,
+      "max": 128,
+      "step": 1
+    },
+    {
+      "name": {
+        "zh-Hans": "颜色 A",
+        "en": "Color A"
+      },
+      "kind": "Color",
+      "default": "#FFFFFFFF"
+    },
+    {
+      "name": {
+        "zh-Hans": "颜色 B",
+        "en": "Color B"
+      },
+      "kind": "Color",
+      "default": "#000000FF"
+    },
+    {
+      "name": {
+        "zh-Hans": "反相",
+        "en": "Invert"
+      },
+      "kind": "Boolean",
+      "default": false
+    }
+  ],
+  "ai": {
+    "capabilities": ["pattern", "geometric", "grid", "tiling"],
+    "triggers": {
+      "zh-Hans": "棋盘, 棋盘格, 格子图案",
+      "en": "checkerboard, checker board, checkered pattern"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "生成一个8x8的棋盘格图案，用于像素艺术地板或背景。",
+      "en": "Generate an 8x8 checkerboard pattern for a pixel-art floor or background."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar cells = GetInt(parameters, \"cellCount\", 8);\n        var colorA = GetColor(parameters, \"colorA\", Color.FromRgb(255,255,255));\n        var colorB = GetColor(parameters, \"colorB\", Color.FromRgb(0,0,0));\n            var invert = GetBool(parameters, \"invert\", false);\n            var aR = colorA.R / 255f;\n            var aG = colorA.G / 255f;\n            var aB = colorA.B / 255f;\n            var bR = colorB.R / 255f;\n            var bG = colorB.G / 255f;\n            var bB = colorB.B / 255f;\n\n            var size = context.TileSize;\n            var buffer = new PixelBuffer(size, size);\n\n            // Sample at pixel centers to avoid subtle asymmetric artifacts when changing\n            // the number of cells. This keeps cell proportions stable across different\n            // cell counts and tile sizes.\n            buffer.ParallelForEachPixel((x, y) =>\n            {\n                var u = (x + 0.5f) / (float)size;\n                var v = (y + 0.5f) / (float)size;\n\n                var sx = u * cells;\n                var sy = v * cells;\n                var cx = (int)MathF.Floor(sx);\n                var cy = (int)MathF.Floor(sy);\n\n                var parity = (cx + cy) & 1;\n                if (invert) parity = 1 - parity;\n\n                float baseR = parity == 0 ? aR : bR;\n                float baseG = parity == 0 ? aG : bG;\n                float baseB = parity == 0 ? aB : bB;\n\n                buffer.SetPixel(x, y, Math.Clamp(baseR, 0f, 1f), Math.Clamp(baseG, 0f, 1f), Math.Clamp(baseB, 0f, 1f), 1f);\n            });\n\n            return buffer;\n}"
+  }
+}

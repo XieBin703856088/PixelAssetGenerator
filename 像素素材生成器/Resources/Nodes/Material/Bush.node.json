@@ -1,0 +1,165 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "Bush",
+    "displayName": {
+      "zh-Hans": "灌木",
+      "en": "Bush"
+    },
+    "category": "Material",
+    "description": {
+      "zh-Hans": "生成风格化的像素艺术灌木和草丛，由聚集的圆形块组成，支持可配置大小、密度和季节性颜色变化。",
+      "en": "Generates stylized pixel art bushes and shrubs composed of clustered circular blobs with configurable size, density, and seasonal color variation."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "遮罩",
+          "en": "Mask"
+        },
+        "type": "Mask"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "种子",
+        "en": "Seed"
+      },
+      "kind": "Seed",
+      "default": 42,
+      "min": 0,
+      "max": 9999
+    },
+    {
+      "name": {
+        "zh-Hans": "形状",
+        "en": "Shape"
+      },
+      "kind": "Choice",
+      "default": "circle",
+      "choices": [
+        {
+          "value": "circle",
+          "label": {
+            "zh-Hans": "圆形",
+            "en": "circle"
+          }
+        },
+        {
+          "value": "ellipse",
+          "label": {
+            "zh-Hans": "椭圆",
+            "en": "ellipse"
+          }
+        },
+        {
+          "value": "irregular",
+          "label": {
+            "zh-Hans": "不规则",
+            "en": "irregular"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "zh-Hans": "大小",
+        "en": "Size"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.1,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "密度",
+        "en": "Density"
+      },
+      "kind": "Number",
+      "default": 0.6,
+      "min": 0.1,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "色块数量",
+        "en": "Blob Count"
+      },
+      "kind": "Integer",
+      "default": 5,
+      "min": 2,
+      "max": 16,
+      "step": 1
+    },
+    {
+      "name": {
+        "zh-Hans": "叶子颜色",
+        "en": "Leaf Color"
+      },
+      "kind": "Color",
+      "default": "#50A03CFF"
+    },
+    {
+      "name": {
+        "zh-Hans": "阴影颜色",
+        "en": "Shadow Color"
+      },
+      "kind": "Color",
+      "default": "#285A1EFF"
+    },
+    {
+      "name": {
+        "zh-Hans": "高光颜色",
+        "en": "Highlight Color"
+      },
+      "kind": "Color",
+      "default": "#82DC64FF"
+    },
+    {
+      "name": {
+        "zh-Hans": "亮度",
+        "en": "Brightness"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": -0.5,
+      "max": 0.5,
+      "step": 0.01
+    }
+  ],
+  "ai": {
+    "capabilities": ["material", "procedural-texture", "nature", "organic", "vegetation"],
+    "triggers": {
+      "zh-Hans": "灌木, 草丛, 植物, 树叶, 绿化",
+      "en": "bush, shrub, foliage, vegetation, plant"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "生成风格化的灌木丛图案，用于场景装饰或自然环境纹理。",
+      "en": "Generate stylized bush clusters for scene decoration or natural environment textures."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar seed = GetInt(parameters, \"seed\", context.Seed);\nvar shape = GetChoice(parameters, \"shape\", \"circle\");\nvar size = GetFloat(parameters, \"size\", 0.5f);\nvar density = GetFloat(parameters, \"density\", 0.6f);\nvar blobCount = Math.Max(2, GetInt(parameters, \"blobCount\", 5));\nvar leafColor = GetColor(parameters, \"leafColor\", Color.FromRgb(80, 160, 60));\nvar shadowColor = GetColor(parameters, \"shadowColor\", Color.FromRgb(40, 90, 30));\nvar highlightColor = GetColor(parameters, \"highlightColor\", Color.FromRgb(130, 220, 100));\nvar brightness = GetFloat(parameters, \"brightness\", 0f);\n\nvar tileSize = context.TileSize;\nvar buffer = new PixelBuffer(tileSize, tileSize);\n\nvar lR = leafColor.R / 255f; var lG = leafColor.G / 255f; var lB = leafColor.B / 255f;\nvar sR = shadowColor.R / 255f; var sG = shadowColor.G / 255f; var sB = shadowColor.B / 255f;\nvar hR = highlightColor.R / 255f; var hG = highlightColor.G / 255f; var hB = highlightColor.B / 255f;\n\nvar halfSize = tileSize * 0.5f;\nvar bushRadius = halfSize * size;\n\n// Generate blob positions and radii deterministically\nvar blobData = new (float cx, float cy, float radius)[blobCount];\nfor (var i = 0; i < blobCount; i++)\n{\n    var angle = (i / (float)blobCount) * MathF.Tau + HashToUnit(i, 0, seed) * 0.5f;\n    var distFactor = shape switch\n    {\n        \"ellipse\" => 0.6f + HashToUnit(i, 1, seed) * 0.3f,\n        \"irregular\" => 0.3f + HashToUnit(i, 2, seed) * 0.6f,\n        _ => 0.4f + HashToUnit(i, 3, seed) * 0.3f\n    };\n    var bx = MathF.Cos(angle) * bushRadius * distFactor;\n    var by = MathF.Sin(angle) * bushRadius * distFactor * (shape == \"ellipse\" ? 0.7f : 1f);\n    var br = bushRadius * (0.3f + HashToUnit(i, 4, seed) * 0.4f) * density;\n    blobData[i] = (bx, by, br);\n}\n\nbuffer.ParallelForEachPixel((x, y) =>\n{\n    var px = x + 0.5f - halfSize;\n    var py = y + 0.5f - halfSize;\n\n    // Compute distance to each blob\n    var maxContrib = 0f;\n    var nearestBlob = 0;\n    for (var i = 0; i < blobCount; i++)\n    {\n        var (bx, by, br) = blobData[i];\n        var dx = px - bx;\n        var dy = py - by;\n        var dist = MathF.Sqrt(dx * dx + dy * dy);\n\n        if (br <= 0.001f) continue;\n\n        // Soft falloff from blob center\n        var contrib = 1f - dist / br;\n        contrib = Math.Clamp(contrib, 0f, 1f);\n        contrib = contrib * contrib * (3f - 2f * contrib); // smoothstep\n\n        if (contrib > maxContrib)\n        {\n            maxContrib = contrib;\n            nearestBlob = i;\n        }\n    }\n\n    if (maxContrib <= 0.01f)\n    {\n        buffer.SetPixel(x, y, 0, 0, 0, 0);\n        return;\n    }\n\n    // Per-blob color variation\n    var blobHash = HashToUnit(nearestBlob, 0, seed + 200);\n    var variation = (blobHash - 0.5f) * 0.15f;\n\n    // Lighting: top-left directional\n    var light = (1f - px / halfSize) * 0.3f + (1f - py / halfSize) * 0.3f;\n    light = Math.Clamp(light * maxContrib + 0.2f, 0f, 1f);\n\n    // Blend leaf color with shadow/highlight based on light\n    float finalR, finalG, finalB;\n    if (light < 0.5f)\n    {\n        var lt = light * 2f;\n        finalR = Lerp(sR, lR, lt) + variation;\n        finalG = Lerp(sG, lG, lt) + variation;\n        finalB = Lerp(sB, lB, lt) + variation;\n    }\n    else\n    {\n        var lt = (light - 0.5f) * 2f;\n        finalR = Lerp(lR, hR, lt) + variation;\n        finalG = Lerp(lG, hG, lt) + variation;\n        finalB = Lerp(lB, hB, lt) + variation;\n    }\n\n    // Brightness\n    if (MathF.Abs(brightness) > 0.001f)\n    {\n        finalR += brightness;\n        finalG += brightness;\n        finalB += brightness;\n    }\n\n    // Internal edge: slightly darker at blob boundaries for depth\n    var internalEdge = Math.Abs(maxContrib - 0.5f) * 2f;\n    var darkening = 1f - (1f - internalEdge) * 0.15f;\n    finalR *= darkening;\n    finalG *= darkening;\n    finalB *= darkening;\n\n    buffer.SetPixel(x, y,\n        Math.Clamp(finalR, 0f, 1f),\n        Math.Clamp(finalG, 0f, 1f),\n        Math.Clamp(finalB, 0f, 1f),\n        Math.Clamp(maxContrib, 0f, 1f));\n});\n\nreturn buffer;\n}"
+  }
+}

@@ -1,0 +1,217 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "Crystal",
+    "displayName": {
+      "zh-Hans": "水晶",
+      "en": "Crystal"
+    },
+    "category": "Material",
+    "description": {
+      "zh-Hans": "使用改进的Voronoi算法生成水晶/宝石状图案，具有锐利的单元边界、随机切面光照、边缘辉光、棱镜折射和簇状效果。",
+      "en": "Generates crystalline / gem-like patterns using a modified Voronoi with sharp cell boundaries, random facet lighting, edge glow, prismatic refraction, and cluster effects."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "遮罩",
+          "en": "Mask"
+        },
+        "type": "Mask"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "种子",
+        "en": "Seed"
+      },
+      "kind": "Seed",
+      "default": 42,
+      "min": 0,
+      "max": 9999
+    },
+    {
+      "name": {
+        "zh-Hans": "缩放",
+        "en": "Scale"
+      },
+      "kind": "Number",
+      "default": 4.0,
+      "min": 1.0,
+      "max": 12.0,
+      "step": 0.5
+    },
+    {
+      "name": {
+        "zh-Hans": "锯齿感",
+        "en": "Jaggedness"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "水晶类型",
+        "en": "Crystal Type"
+      },
+      "kind": "Choice",
+      "default": "single",
+      "choices": [
+        {
+          "value": "single",
+          "label": {
+            "zh-Hans": "单晶",
+            "en": "single"
+          }
+        },
+        {
+          "value": "cluster",
+          "label": {
+            "zh-Hans": "簇晶",
+            "en": "cluster"
+          }
+        },
+        {
+          "value": "geode",
+          "label": {
+            "zh-Hans": "晶洞",
+            "en": "geode"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "zh-Hans": "颜色 A",
+        "en": "Color A"
+      },
+      "kind": "Color",
+      "default": "#64B4FFFF"
+    },
+    {
+      "name": {
+        "zh-Hans": "颜色 B",
+        "en": "Color B"
+      },
+      "kind": "Color",
+      "default": "#3C50DCFF"
+    },
+    {
+      "name": {
+        "zh-Hans": "颜色 C",
+        "en": "Color C"
+      },
+      "kind": "Color",
+      "default": "#B464FFFF"
+    },
+    {
+      "name": {
+        "zh-Hans": "切面光",
+        "en": "Facet Light"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "边缘发光",
+        "en": "Edge Glow"
+      },
+      "kind": "Number",
+      "default": 0.3,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "折射",
+        "en": "Refraction"
+      },
+      "kind": "Number",
+      "default": 0.3,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "不透明度",
+        "en": "Opacity"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "亮度",
+        "en": "Brightness"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": -0.3,
+      "max": 0.3,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "对比度",
+        "en": "Contrast"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": -0.5,
+      "max": 0.5,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "反相",
+        "en": "Invert"
+      },
+      "kind": "Boolean",
+      "default": false
+    }
+  ],
+  "ai": {
+    "capabilities": ["material", "procedural-texture", "gem", "crystal", "magical"],
+    "triggers": {
+      "zh-Hans": "水晶, 宝石, 矿物, 晶簇, 魔法矿石",
+      "en": "crystal, gemstone, mineral, crystalline, geode"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "生成水晶/宝石切面纹理，用于魔法物品、矿脉或奇幻场景。",
+      "en": "Generate crystalline facet textures for magical items, mineral veins, or fantasy scenes."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar seed = GetInt(parameters, \"seed\", context.Seed);\nvar scale = GetFloat(parameters, \"scale\", 4);\nvar jaggedness = GetFloat(parameters, \"jaggedness\", 0.5f);\nvar crystalType = GetChoice(parameters, \"crystalType\", \"single\");\nvar colorA = GetColor(parameters, \"colorA\", Color.FromRgb(100, 180, 255));\nvar colorB = GetColor(parameters, \"colorB\", Color.FromRgb(60, 80, 220));\nvar colorC = GetColor(parameters, \"colorC\", Color.FromRgb(180, 100, 255));\nvar facetLight = GetFloat(parameters, \"facetLight\", 0.5f);\nvar edgeGlow = GetFloat(parameters, \"edgeGlow\", 0.3f);\nvar refraction = GetFloat(parameters, \"refraction\", 0.3f);\nvar opacity = GetFloat(parameters, \"opacity\", 0.5f);\nvar brightness = GetFloat(parameters, \"brightness\", 0f);\nvar contrast = GetFloat(parameters, \"contrast\", 0f);\nvar invert = GetBool(parameters, \"invert\", false);\n\nvar size = context.TileSize;\nvar buffer = new PixelBuffer(size, size);\n\nvar aR = colorA.R / 255f; var aG = colorA.G / 255f; var aB = colorA.B / 255f;\nvar bR = colorB.R / 255f; var bG = colorB.G / 255f; var bB = colorB.B / 255f;\nvar cR = colorC.R / 255f; var cG = colorC.G / 255f; var cB = colorC.B / 255f;\n\n// Generate Voronoi points\nvar cellCount = (int)(scale * 3);\nvar points = new (float X, float Y, float Hash)[cellCount];\nfor (var i = 0; i < cellCount; i++)\n{\n    var px = HashToUnit(i * 7, seed, 111);\n    var py = HashToUnit(i * 13, seed * 3, 222);\n    var h = HashToUnit(i * 23, seed * 7, 333);\n    points[i] = (px, py, h);\n}\n\nvar period = Math.Max(1, (int)MathF.Round(scale * 2f));\n\nbuffer.ParallelForEachPixel((x, y) =>\n{\n    var u = (x + 0.5f) / size;\n    var v = (y + 0.5f) / size;\n\n    // Find nearest Voronoi point\n    var minDist = float.MaxValue;\n    var minDist2 = float.MaxValue;\n    var nearHash = 0f;\n\n    foreach (var (px, py, h) in points)\n    {\n        // Wrapped distance for tiling\n        var dx = MathF.Abs(u - px);\n        var dy = MathF.Abs(v - py);\n        if (dx > 0.5f) dx = 1f - dx;\n        if (dy > 0.5f) dy = 1f - dy;\n\n        var dist = MathF.Sqrt(dx * dx + dy * dy);\n        if (dist < minDist)\n        {\n            minDist2 = minDist;\n            minDist = dist;\n            nearHash = h;\n        }\n        else if (dist < minDist2)\n        {\n            minDist2 = dist;\n        }\n    }\n\n    // Edge detection\n    var edge = (minDist2 - minDist) * scale;\n\n    // Crystal type modifier\n    var typeMod = crystalType switch\n    {\n        \"cluster\" => TileableFractalNoise(u * 2f, v * 2f, period, 2, 0.5f, 2f, seed + 50),\n        \"geode\" => TileableFractalNoise(u * 1.5f, v * 1.5f, period, 3, 0.55f, 2f, seed + 50),\n        _ => 0.5f\n    };\n\n    // Facet shading: use hash as pseudo-normal direction\n    var facetAngle = nearHash * MathF.PI * 2f + typeMod * 2f;\n    var lightAngle = 0.5f;\n    var facetShade = 0.5f + MathF.Cos(facetAngle - lightAngle) * facetLight * 0.4f;\n\n    // Crystal interior color with facet variation\n    var colorMix = (nearHash + typeMod * 0.3f) % 1f;\n    float cRc, cGc, cBc;\n\n    if (colorMix < 0.5f)\n    {\n        var t = colorMix * 2f;\n        cRc = Lerp(aR, bR, t);\n        cGc = Lerp(aG, bG, t);\n        cBc = Lerp(aB, bB, t);\n    }\n    else\n    {\n        var t = (colorMix - 0.5f) * 2f;\n        cRc = Lerp(bR, cR, t);\n        cGc = Lerp(bG, cG, t);\n        cBc = Lerp(bB, cB, t);\n    }\n\n    cRc *= facetShade;\n    cGc *= facetShade;\n    cBc *= facetShade;\n\n    // Prismatic refraction: shift hue based on angle and position\n    if (refraction > 0f)\n    {\n        var prism = MathF.Sin(u * 10f + v * 8f + nearHash * 20f) * refraction * 0.15f;\n        cRc += prism;\n        cGc += prism * 0.5f;\n        cBc -= prism * 0.5f;\n    }\n\n    // Edge glow (bright at crystal boundaries)\n    var edgeVal = MathF.Max(0f, 1f - edge * 3f);\n    var glow = edgeVal * edgeGlow;\n\n    // Jaggedness: modify edge falloff\n    var noiseVal = TileableFractalNoise(u * scale * 2f, v * scale * 2f, period, 2, 0.5f, 2f, seed + 100);\n    var jitter = (noiseVal - 0.5f) * jaggedness * 0.3f;\n\n    var finalR = cRc + glow + jitter;\n    var finalG = cGc + glow * 0.8f + jitter * 0.8f;\n    var finalB = cBc + glow * 1.2f + jitter * 0.6f;\n\n    // Transparency / depth effect\n    if (opacity < 1f)\n    {\n        var bgNoise = TileableFractalNoise(u * 3f, v * 3f, period, 1, 0.5f, 2f, seed + 200);\n        var bg = bgNoise * 0.3f;\n        finalR = Lerp(bg, finalR, opacity);\n        finalG = Lerp(bg, finalG, opacity);\n        finalB = Lerp(bg + 0.2f, finalB, opacity);\n    }\n\n    // Brightness and contrast\n    finalR = Math.Clamp(finalR + brightness, 0f, 1f);\n    finalG = Math.Clamp(finalG + brightness, 0f, 1f);\n    finalB = Math.Clamp(finalB + brightness, 0f, 1f);\n\n    if (MathF.Abs(contrast) > 0.001f)\n    {\n        var factor = 1f + contrast;\n        finalR = (finalR - 0.5f) * factor + 0.5f;\n        finalG = (finalG - 0.5f) * factor + 0.5f;\n        finalB = (finalB - 0.5f) * factor + 0.5f;\n    }\n\n    if (invert) { finalR = 1f - finalR; finalG = 1f - finalG; finalB = 1f - finalB; }\n\n    buffer.SetPixel(x, y,\n        Math.Clamp(finalR, 0f, 1f),\n        Math.Clamp(finalG, 0f, 1f),\n        Math.Clamp(finalB, 0f, 1f), 1f);\n});\n\nreturn buffer;\n}"
+  }
+}

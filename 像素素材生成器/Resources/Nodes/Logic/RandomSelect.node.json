@@ -1,0 +1,120 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "RandomSelect",
+    "displayName": {
+      "zh-Hans": "随机选择",
+      "en": "Random Select"
+    },
+    "category": "Logic",
+    "description": {
+      "zh-Hans": "根据选择索引将最多六张输入图像之一路由到输出。如果所选插槽为空，则回退到第一个非空输入。",
+      "en": "Routes one of up to six input images to the output based on a selection index. Falls back to the first non-null input if the selected slot is empty."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [
+      {
+        "name": {
+          "zh-Hans": "输入1",
+          "en": "Input1"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "输入2",
+          "en": "Input2"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "输入3",
+          "en": "Input3"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "输入4",
+          "en": "Input4"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "输入5",
+          "en": "Input5"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "输入6",
+          "en": "Input6"
+        },
+        "type": "Image"
+      }
+    ],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "遮罩",
+          "en": "Mask"
+        },
+        "type": "Mask"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "种子",
+        "en": "Seed"
+      },
+      "kind": "Seed",
+      "default": 42,
+      "min": 0,
+      "max": 9999
+    },
+    {
+      "name": {
+        "zh-Hans": "选择",
+        "en": "Selection"
+      },
+      "kind": "Integer",
+      "default": -1,
+      "min": -1,
+      "max": 5,
+      "step": 1
+    }
+  ],
+  "ai": {
+    "capabilities": ["logic", "control-flow"],
+    "triggers": {
+      "zh-Hans": "随机选择, 随机选取, 路由选择",
+      "en": "random select, random pick, route select"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "随机从多个输入图像中选择一个输出，用于生成随机变体。",
+      "en": "Randomly select one output from multiple input images to generate random variations."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar size = context.TileSize;\nvar seed = GetInt(parameters, \"seed\", context.Seed);\nvar selectionParam = GetInt(parameters, \"selection\", -1);\n\nint choice;\nif (selectionParam >= 0 && selectionParam < inputs.Length)\n{\n    // Explicit selection: use the user-specified index\n    choice = selectionParam;\n}\nelse\n{\n    // Auto/random mode (-1 or out of range): pick a non-null input using seed\n    var validInputs = new System.Collections.Generic.List<int>();\n    for (var i = 0; i < inputs.Length; i++)\n        if (inputs[i] != null) validInputs.Add(i);\n\n    if (validInputs.Count == 0)\n        return new PixelBuffer(size, size);\n\n    var pick = (int)(HashToUnit(0, 0, seed) * validInputs.Count) % validInputs.Count;\n    choice = validInputs[pick];\n}\n\n// Try the selected input first\nif (choice >= 0 && choice < inputs.Length && inputs[choice] != null)\n    return inputs[choice]!.Clone();\n\n// Fallback to the first non-null input\nfor (var i = 0; i < inputs.Length; i++)\n{\n    if (inputs[i] != null)\n        return inputs[i]!.Clone();\n}\n\n// No valid input found\nreturn new PixelBuffer(size, size);\n}"
+  }
+}

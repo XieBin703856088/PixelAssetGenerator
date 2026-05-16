@@ -1,0 +1,171 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "TileRoad",
+    "displayName": {
+      "zh-Hans": "公路",
+      "en": "Road"
+    },
+    "category": "Generate",
+    "description": {
+      "zh-Hans": "公路图块",
+      "en": "Road tile"
+    },
+    "tags": [
+      "tile",
+      "road"
+    ],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "种子",
+        "en": "Seed"
+      },
+      "kind": "Integer",
+      "default": 42,
+      "min": 0,
+      "max": 9999
+    },
+    {
+      "name": {
+        "zh-Hans": "道路宽度",
+        "en": "Road Width"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.1,
+      "max": 1,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "路肩宽度",
+        "en": "Shoulder Width"
+      },
+      "kind": "Number",
+      "default": 0.3,
+      "min": 0,
+      "max": 1,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "边缘粗糙度",
+        "en": "Edge Roughness"
+      },
+      "kind": "Number",
+      "default": 0.3,
+      "min": 0,
+      "max": 1,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "车辙深度",
+        "en": "Rut Depth"
+      },
+      "kind": "Number",
+      "default": 0.2,
+      "min": 0,
+      "max": 1,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "碎石密度",
+        "en": "Gravel Density"
+      },
+      "kind": "Number",
+      "default": 0.3,
+      "min": 0,
+      "max": 1,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "道路布局",
+        "en": "Road Layout"
+      },
+      "kind": "Choice",
+      "default": "StraightVertical",
+      "choices": [
+        "StraightVertical",
+        "StraightHorizontal",
+        "CornerNE",
+        "CornerSE",
+        "CornerSW",
+        "CornerNW",
+        "TJunctionUp",
+        "TJunctionRight",
+        "TJunctionDown",
+        "TJunctionLeft",
+        "Cross"
+      ]
+    },
+    {
+      "name": {
+        "zh-Hans": "拐角圆度",
+        "en": "Corner Roundness"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0,
+      "max": 1,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "中心线",
+        "en": "Center Line"
+      },
+      "kind": "Number",
+      "default": 0.3,
+      "min": 0,
+      "max": 1,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "中心线粗糙度",
+        "en": "Center Line Roughness"
+      },
+      "kind": "Number",
+      "default": 0.3,
+      "min": 0,
+      "max": 1,
+      "step": 0.01
+    }
+  ],
+  "ai": {
+    "capabilities": ["generate-tile", "procedural-texture", "tileable", "structural"],
+    "triggers": {
+      "zh-Hans": "公路, 道路, 路面, 马路, 车道",
+      "en": "road, pavement, street, highway, lane"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "生成一块像素艺术公路图块，支持直线、拐角、T字路口和十字路口多种布局。",
+      "en": "Generates a pixel-art road tile supporting straight, corner, T-junction, and cross layouts."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar size = context.TileSize;\nvar seed = GetInt(parameters, \"seed\", context.Seed);\nvar roadWidth = GetFloat(parameters, \"roadWidth\", 0.5f);\nvar shoulderWidth = GetFloat(parameters, \"shoulderWidth\", 0.3f);\nvar edgeRoughness = GetFloat(parameters, \"edgeRoughness\", 0.3f);\nvar rutDepth = GetFloat(parameters, \"rutDepth\", 0.2f);\nvar gravelDensity = GetFloat(parameters, \"gravelDensity\", 0.3f);\nvar roadLayout = GetChoice(parameters, \"roadLayout\", \"StraightVertical\");\nvar cornerRoundness = GetFloat(parameters, \"cornerRoundness\", 0.5f);\nvar centerLine = GetFloat(parameters, \"centerLine\", 0.3f);\nvar centerLineRoughness = GetFloat(parameters, \"centerLineRoughness\", 0.3f);\n\n// Road palette (0..1 floats)\nvar asphaltDark   = (R: 0.176f, G: 0.176f, B: 0.196f);\nvar asphaltBase   = (R: 0.255f, G: 0.255f, B: 0.275f);\nvar asphaltLight  = (R: 0.333f, G: 0.333f, B: 0.353f);\nvar asphaltLine   = (R: 0.863f, G: 0.784f, B: 0.275f);\nvar asphaltLineWhite = (R: 0.824f, G: 0.824f, B: 0.843f);\nvar shoulderDark  = (R: 0.412f, G: 0.333f, B: 0.216f);\nvar shoulderLight = (R: 0.549f, G: 0.451f, B: 0.314f);\n\nvar roadHW = 0.05f + roadWidth * 0.25f;\nvar shoulderW = 0.02f + shoulderWidth * 0.08f;\n\nint pxSize = Math.Max(1, size / 32);\n\nvar result = new PixelBuffer(size, size);\nresult.ParallelForEachPixel((x, y) =>\n{\n    var wx = Mod(x, size);\n    var wy = Mod(y, size);\n    var normX = wx / (float)size;\n    var normY = wy / (float)size;\n\n    var pxX = MathF.Floor(wx / (float)pxSize) * pxSize;\n    var pxY = MathF.Floor(wy / (float)pxSize) * pxSize;\n\n    var roadSample = SampleRoad(normX, normY, roadLayout, roadHW, cornerRoundness);\n    var distToCenter = roadSample.Distance;\n    var pathPos = roadSample.PathPos;\n    var hasPathPos = roadSample.HasPath;\n\n    var whiteLineDist = distToCenter + GetRoadDistortion(pxX, pxY, size, seed + 50, edgeRoughness);\n    var centerLineDist = distToCenter + GetRoadDistortion(pxX, pxY, size, seed + 60, centerLineRoughness);\n    var shoulderDist = distToCenter + GetRoadDistortion(pxX, pxY, size, seed + 70, edgeRoughness);\n\n    float r, g, b;\n\n    if (distToCenter < roadHW)\n    {\n        if (whiteLineDist > roadHW - 0.02f)\n        {\n            r = asphaltLineWhite.R; g = asphaltLineWhite.G; b = asphaltLineWhite.B;\n        }\n        else\n        {\n            var gritNoise = TileableFractalNoise(wx * 2f, wy * 2f, size, 1, 1f, 1f, seed + 10);\n            float asR = asphaltBase.R, asG = asphaltBase.G, asB = asphaltBase.B;\n\n            if (gritNoise > 1f - gravelDensity * 0.2f)\n            {\n                asR = asphaltLight.R; asG = asphaltLight.G; asB = asphaltLight.B;\n            }\n            else if (gritNoise < gravelDensity * 0.2f)\n            {\n                asR = asphaltDark.R; asG = asphaltDark.G; asB = asphaltDark.B;\n            }\n\n            var rutN = GetRutNoise(distToCenter, roadHW, wx, wy, size, seed, rutDepth);\n            if (rutN > 0f)\n            {\n                var clampRut = Math.Clamp(rutN, 0f, 0.85f);\n                asR = Lerp(asR, asphaltDark.R, clampRut);\n                asG = Lerp(asG, asphaltDark.G, clampRut);\n                asB = Lerp(asB, asphaltDark.B, clampRut);\n            }\n\n            var clWidth = Math.Max(0.003f, centerLine * roadHW * 0.45f);\n            if (centerLine > 0f && hasPathPos)\n            {\n                if (centerLineDist < clWidth)\n                {\n                    float dashPhase = (pathPos * 8f) % 1f;\n                    if (dashPhase < 0.5f)\n                    {\n                        asR = asphaltLine.R; asG = asphaltLine.G; asB = asphaltLine.B;\n                    }\n                }\n            }\n\n            r = asR; g = asG; b = asB;\n        }\n    }\n    else if (shoulderDist < roadHW + shoulderW)\n    {\n        var shoulderTex = TileableFractalNoise(wx * 1.25f, wy * 1.25f, size, 1, 1f, 1f, seed + 20);\n        var sdR = shoulderTex > 0.5f ? shoulderLight.R : shoulderDark.R;\n        var sdG = shoulderTex > 0.5f ? shoulderLight.G : shoulderDark.G;\n        var sdB = shoulderTex > 0.5f ? shoulderLight.B : shoulderDark.B;\n\n        if (edgeRoughness <= 0f)\n        {\n            r = sdR; g = sdG; b = sdB;\n        }\n        else\n        {\n            var shoulderPos = (shoulderDist - roadHW) / shoulderW;\n            var shoulderEdgeNoise = TileableFractalNoise(wx * 0.875f, wy * 0.875f, size, 1, 1f, 1f, seed + 21);\n            if (shoulderPos > shoulderEdgeNoise * 0.8f + 0.2f)\n            {\n                r = 0f; g = 0f; b = 0f;\n            }\n            else\n            {\n                r = sdR; g = sdG; b = sdB;\n            }\n        }\n    }\n    else\n    {\n        r = 0f; g = 0f; b = 0f;\n    }\n\n    result.SetPixel(x, y, Math.Clamp(r, 0f, 1f), Math.Clamp(g, 0f, 1f), Math.Clamp(b, 0f, 1f), 1f);\n});\n\nreturn result;\n\n\n// ---- Helper functions ----\n\nstatic float GetRoadDistortion(float pxX, float pxY, int sz, int s, float rough)\n{\n    if (rough <= 0f) return 0f;\n    return (TileableFractalNoise(pxX * 0.5f, pxY * 0.5f, sz, 1, 1f, 1f, s) - 0.5f) * rough * 0.06f;\n}\n\nstatic float GetRutNoise(float dist, float halfW, float wxx, float wyy, int sz, int s, float rDepth)\n{\n    if (rDepth <= 0f || halfW <= 0f) return 0f;\n    var normDist = dist / halfW;\n    var rutBand = MathF.Abs(normDist - 0.42f);\n    if (rutBand >= 0.14f) return 0f;\n    var rutMask = (0.14f - rutBand) / 0.14f;\n    var rutVar = 0.75f + TileableFractalNoise(wxx * 1.5f, wyy * 1.5f, sz, 1, 1f, 1f, s + 30) * 0.25f;\n    return rutMask * rutVar * rDepth;\n}\n\nstatic (float Distance, float PathPos, bool HasPath) SampleRoad(float nX, float nY, string layout, float hw, float roundness)\n{\n    if (TryTransformToCanonical(layout, nX, nY, out var cx, out var cy))\n        return SampleCanonicalCorner(cx, cy, hw, roundness);\n\n    switch (layout)\n    {\n        case \"StraightVertical\": return (MathF.Abs(nX - 0.5f), nY, true);\n        case \"StraightHorizontal\": return (MathF.Abs(nY - 0.5f), nX, true);\n        default: return (GetRoadDistance(nX, nY, layout, hw, roundness), 0f, false);\n    }\n}\n\nstatic bool TryTransformToCanonical(string layout, float nX, float nY, out float cx, out float cy)\n{\n    switch (layout)\n    {\n        case \"CornerNE\": cx = nX; cy = nY; return true;\n        case \"CornerSE\": cx = nX; cy = 1f - nY; return true;\n        case \"CornerSW\": cx = 1f - nX; cy = 1f - nY; return true;\n        case \"CornerNW\": cx = 1f - nX; cy = nY; return true;\n        default: cx = 0f; cy = 0f; return false;\n    }\n}\n\nstatic (float Distance, float PathPos, bool HasPath) SampleCanonicalCorner(float nX, float nY, float hw, float roundness)\n{\n    var cr = Math.Clamp(roundness, 0f, 1f);\n    var curveR = Math.Max(0f, 0.5f - hw) * cr;\n    var vertEnd = 0.5f - curveR;\n    var horizStart = 0.5f + curveR;\n    var arcLen = MathF.PI * 0.5f * curveR;\n    var totalLen = Math.Max(0.0001f, vertEnd + arcLen + (1f - horizStart));\n\n    var bestDist = 1e10f;\n    var bestPath = 0f;\n\n    var seg1 = SampleSegment(nX, nY, 0.5f, 0f, 0.5f, vertEnd, 0f);\n    if (seg1.Distance < bestDist) { bestDist = seg1.Distance; bestPath = seg1.PathPos; }\n\n    var seg2 = SampleSegment(nX, nY, horizStart, 0.5f, 1f, 0.5f, vertEnd + arcLen);\n    if (seg2.Distance < bestDist) { bestDist = seg2.Distance; bestPath = seg2.PathPos; }\n\n    if (curveR > 0f)\n    {\n        var ctrX = 0.5f + curveR;\n        var ctrY = 0.5f - curveR;\n        var dx = nX - ctrX;\n        var dy = nY - ctrY;\n        var angle = MathF.Atan2(dy, dx);\n        if (angle >= MathF.PI * 0.5f && angle <= MathF.PI)\n        {\n            var radialDist = MathF.Abs(MathF.Sqrt(dx * dx + dy * dy) - curveR);\n            var arcProg = (MathF.PI - angle) / (MathF.PI * 0.5f);\n            var arcPath = vertEnd + arcProg * arcLen;\n            if (radialDist < bestDist) { bestDist = radialDist; bestPath = arcPath; }\n        }\n    }\n\n    return (bestDist, bestPath / totalLen, true);\n}\n\nstatic (float Distance, float PathPos, bool HasPath) SampleSegment(float px, float py, float ax, float ay, float bx, float by, float lenOff)\n{\n    var dx = bx - ax;\n    var dy = by - ay;\n    var lenSq = dx * dx + dy * dy;\n    if (lenSq <= 0f)\n    {\n        var ptDist = MathF.Sqrt((px - ax) * (px - ax) + (py - ay) * (py - ay));\n        return (ptDist, lenOff, true);\n    }\n    var t = Math.Clamp(((px - ax) * dx + (py - ay) * dy) / lenSq, 0f, 1f);\n    var cx = ax + dx * t;\n    var cy = ay + dy * t;\n    var dist = MathF.Sqrt((px - cx) * (px - cx) + (py - cy) * (py - cy));\n    var segLen = MathF.Sqrt(lenSq);\n    return (dist, lenOff + segLen * t, true);\n}\n\nstatic float GetRoadDistance(float nX, float nY, string layout, float roadW, float cRoundness)\n{\n    var center = 0.5f;\n    var dist = 1e10f;\n\n    GetConnections(layout, out var up, out var right, out var down, out var left);\n\n    if (up && nY <= center) dist = MathF.Min(dist, MathF.Abs(nX - center));\n    if (down && nY >= center) dist = MathF.Min(dist, MathF.Abs(nX - center));\n    if (left && nX <= center) dist = MathF.Min(dist, MathF.Abs(nY - center));\n    if (right && nX >= center) dist = MathF.Min(dist, MathF.Abs(nY - center));\n\n    if (IsIntersection(layout))\n    {\n        var cx = MathF.Abs(nX - center);\n        var cy = MathF.Abs(nY - center);\n        if (cx < roadW && cy < roadW)\n        {\n            if (cRoundness > 0f)\n            {\n                var maxR = roadW;\n                var rSq = cx * cx + cy * cy;\n                var mix = MathF.Max(cx, cy);\n                var rounded = MathF.Sqrt(rSq);\n                dist = MathF.Min(dist, Lerp(mix, rounded, cRoundness) * 0.5f);\n            }\n            else\n            {\n                dist = MathF.Min(dist, MathF.Max(cx, cy) * 0.5f);\n            }\n        }\n    }\n\n    return dist >= 1e9f ? 1f : dist;\n}\n\nstatic void GetConnections(string layout, out bool up, out bool right, out bool down, out bool left)\n{\n    up = false; right = false; down = false; left = false;\n    switch (layout)\n    {\n        case \"StraightVertical\": up = true; down = true; break;\n        case \"StraightHorizontal\": left = true; right = true; break;\n        case \"CornerNE\": up = true; right = true; break;\n        case \"CornerSE\": right = true; down = true; break;\n        case \"CornerSW\": down = true; left = true; break;\n        case \"CornerNW\": left = true; up = true; break;\n        case \"TJunctionUp\": left = true; right = true; down = true; break;\n        case \"TJunctionRight\": up = true; down = true; left = true; break;\n        case \"TJunctionDown\": left = true; right = true; up = true; break;\n        case \"TJunctionLeft\": up = true; down = true; right = true; break;\n        case \"Cross\": up = true; right = true; down = true; left = true; break;\n    }\n}\n\nstatic bool IsIntersection(string layout)\n{\n    return layout != \"StraightVertical\" && layout != \"StraightHorizontal\";\n}\n}"
+  }
+}

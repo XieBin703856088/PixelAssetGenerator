@@ -1,0 +1,54 @@
+{
+  "formatVersion": 2,
+  "processorType": "Time",
+  "identity": {
+    "typeName": "Time",
+    "displayName": {
+      "zh-Hans": "时间",
+      "en": "Time"
+    },
+    "category": "Animation",
+    "description": {
+      "zh-Hans": "输出时间、帧号和播放速度信息，驱动其他动画节点",
+      "en": "Outputs time, frame number and playback speed to drive other animation nodes"
+    },
+    "tags": ["animation", "time"],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [],
+    "outputs": [
+      {
+        "name": { "zh-Hans": "时间", "en": "Time" },
+        "type": "Float"
+      },
+      {
+        "name": { "zh-Hans": "帧", "en": "Frame" },
+        "type": "Float"
+      },
+      {
+        "name": { "zh-Hans": "速度", "en": "Speed" },
+        "type": "Float"
+      }
+    ]
+  },
+  "parameters": [
+    { "name": { "zh-Hans": "速度倍率", "en": "Speed Multiplier" }, "kind": "Number", "default": 1.0, "min": 0, "max": 10, "step": 0.1 },
+    { "name": { "zh-Hans": "时间偏移", "en": "Offset" }, "kind": "Number", "default": 0, "min": 0, "max": 1, "step": 0.01 },
+    { "name": { "zh-Hans": "循环", "en": "Loop" }, "kind": "Boolean", "default": true },
+    { "name": { "zh-Hans": "帧数", "en": "Frame Count" }, "kind": "Integer", "default": 8, "min": 1, "max": 256, "step": 1 }
+  ],
+  "ai": {
+    "capabilities": ["animation", "time"],
+    "triggers": {
+      "zh-Hans": "时间, 帧数, 播放速度, 动画驱动",
+      "en": "time, frame count, playback speed, animation driver"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "作为动画系统的根节点，输出时间值驱动其他动画参数节点",
+      "en": "Use as the root node of an animation system, outputting time to drive other animation parameter nodes"
+    }
+  }
+}

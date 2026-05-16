@@ -1,0 +1,184 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "Shield",
+    "displayName": {
+      "zh-Hans": "护盾",
+      "en": "Shield"
+    },
+    "category": "Material",
+    "description": {
+      "zh-Hans": "生成像素艺术盾牌，可配置形状、纹章配色和装饰元素。适用于角色装备和UI图标。",
+      "en": "Generates pixel art shields with configurable shape, heraldic colors, and decorative elements. Suitable for character equipment and UI icons."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "遮罩",
+          "en": "Mask"
+        },
+        "type": "Mask"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "种子",
+        "en": "Seed"
+      },
+      "kind": "Seed",
+      "default": 42,
+      "min": 0,
+      "max": 9999
+    },
+    {
+      "name": {
+        "zh-Hans": "盾牌类型",
+        "en": "Shield Type"
+      },
+      "kind": "Choice",
+      "default": "round",
+      "choices": [
+        {
+          "value": "round",
+          "label": {
+            "zh-Hans": "圆形",
+            "en": "round"
+          }
+        },
+        {
+          "value": "square",
+          "label": {
+            "zh-Hans": "正方形",
+            "en": "square"
+          }
+        },
+        {
+          "value": "kite",
+          "label": {
+            "zh-Hans": "鸢形",
+            "en": "kite"
+          }
+        },
+        {
+          "value": "tower",
+          "label": {
+            "zh-Hans": "塔形",
+            "en": "tower"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "zh-Hans": "大小",
+        "en": "Size"
+      },
+      "kind": "Number",
+      "default": 0.6,
+      "min": 0.1,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "基色",
+        "en": "Base Color"
+      },
+      "kind": "Color",
+      "default": "#B43232FF"
+    },
+    {
+      "name": {
+        "zh-Hans": "边框颜色",
+        "en": "Border Color"
+      },
+      "kind": "Color",
+      "default": "#C8AA64FF"
+    },
+    {
+      "name": {
+        "zh-Hans": "强调颜色",
+        "en": "Accent Color"
+      },
+      "kind": "Color",
+      "default": "#DCC896FF"
+    },
+    {
+      "name": {
+        "zh-Hans": "图案",
+        "en": "Pattern"
+      },
+      "kind": "Choice",
+      "default": "none",
+      "choices": [
+        {
+          "value": "none",
+          "label": {
+            "zh-Hans": "无",
+            "en": "none"
+          }
+        },
+        {
+          "value": "cross",
+          "label": {
+            "zh-Hans": "十字",
+            "en": "cross"
+          }
+        },
+        {
+          "value": "stripes",
+          "label": {
+            "zh-Hans": "条纹",
+            "en": "stripes"
+          }
+        },
+        {
+          "value": "diamond",
+          "label": {
+            "zh-Hans": "菱形",
+            "en": "diamond"
+          }
+        },
+        {
+          "value": "beast",
+          "label": {
+            "zh-Hans": "兽纹",
+            "en": "beast"
+          }
+        }
+      ]
+    }
+  ],
+  "ai": {
+    "capabilities": ["material", "procedural-texture", "ui-element", "icon", "armor"],
+    "triggers": {
+      "zh-Hans": "盾牌, 护盾, 纹章, 防具, 骑士盾, 装备图标",
+      "en": "shield, heraldry, crest, armor, knight, equipment icon"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "生成像素艺术盾牌，用于角色装备图标或UI界面展示。",
+      "en": "Generate pixel-art shields for character equipment icons or UI display."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar seed = GetInt(parameters, \"seed\", context.Seed);\n    var shieldType = GetChoice(parameters, \"shieldType\", \"round\");\n    var size = GetFloat(parameters, \"size\", 0.6f);\n    var baseColor = GetColor(parameters, \"baseColor\", Color.FromRgb(180, 50, 50));\n    var borderColor = GetColor(parameters, \"borderColor\", Color.FromRgb(200, 170, 100));\n    var accentColor = GetColor(parameters, \"accentColor\", Color.FromRgb(220, 200, 150));\n    var pattern = GetChoice(parameters, \"pattern\", \"none\");\n\n    var tileSize = context.TileSize;\n    var buffer = new PixelBuffer(tileSize, tileSize);\n\n    var bR = baseColor.R / 255f; var bG = baseColor.G / 255f; var bB = baseColor.B / 255f;\n    var oR = borderColor.R / 255f; var oG = borderColor.G / 255f; var oB = borderColor.B / 255f;\n    var aR = accentColor.R / 255f; var aG = accentColor.G / 255f; var aB = accentColor.B / 255f;\n\n    var halfSize = tileSize * 0.5f;\n    var radius = halfSize * size;\n\n    buffer.ParallelForEachPixel((x, y) =>\n    {\n        var px = (x + 0.5f - halfSize) / radius;\n        var py = (y + 0.5f - halfSize) / radius;\n\n        // Shield silhouette based on type\n        var dist = shieldType switch\n        {\n            \"square\" => MathF.Max(MathF.Abs(px), MathF.Abs(py)),\n            \"kite\" => KiteShieldSDF(px, py),\n            \"tower\" => TowerShieldSDF(px, py),\n            _ => MathF.Sqrt(px * px + py * py) // round\n        };\n\n        // Adding slight bottom point to kite/tower\n        var baseRadius = shieldType switch\n        {\n            \"tower\" => 1.2f,\n            _ => 1f\n        };\n\n        var alpha = 1f - SmoothStep(baseRadius * 0.85f, baseRadius, dist);\n        if (alpha <= 0.01f)\n        {\n            buffer.SetPixel(x, y, 0, 0, 0, 0);\n            return;\n        }\n\n        // Border zone\n        var borderWidth = 0.12f;\n        var isBorder = dist > baseRadius * (0.85f - borderWidth) && dist < baseRadius * 0.85f;\n\n        // Interior zone for patterns\n        var interiorDist = dist / (baseRadius * 0.75f);\n\n        // Determine color\n        float fr, fg, fb;\n\n        if (isBorder)\n        {\n            fr = oR; fg = oG; fb = oB;\n        }\n        else if (dist < baseRadius * 0.75f)\n        {\n            // Interior: apply pattern\n            var applyPattern = pattern switch\n            {\n                \"cross\" => MathF.Abs(px) < 0.2f || MathF.Abs(py) < 0.2f,\n                \"stripes\" => ((int)((py + 1f) * 4f) & 1) == 0,\n                \"diamond\" => (MathF.Abs(px) + MathF.Abs(py) * 0.7f) < 0.5f,\n                \"beast\" => SimulateBeastHead(px, py, seed),\n                _ => false\n            };\n\n            // Lighting: dome shading\n            var light = (1f - px) * 0.2f + (1f - py) * 0.2f + 0.4f;\n            light = Math.Clamp(light, 0f, 1f);\n            var lightColor = 0.7f + light * 0.3f;\n\n            if (applyPattern)\n            {\n                fr = aR * lightColor; fg = aG * lightColor; fb = aB * lightColor;\n            }\n            else\n            {\n                fr = bR * lightColor; fg = bG * lightColor; fb = bB * lightColor;\n            }\n\n            // Add subtle rivet dots\n            if (isBorder)\n            {\n                var rivetX = ((int)(px * 8 + 1000) % 3) == 0;\n                var rivetY = ((int)(py * 8 + 1000) % 3) == 0;\n                if (rivetX && rivetY) { fr = oR * 1.2f; fg = oG * 1.2f; fb = oB * 1.2f; }\n            }\n        }\n        else\n        {\n            // Gradient between border and center\n            var t = (dist - baseRadius * 0.75f) / (baseRadius * 0.1f);\n            var innerColor = (pattern != \"none\") ? aR : bR;\n            fr = Lerp(bR, oR, t); fg = Lerp(bG, oG, t); fb = Lerp(bB, oB, t);\n        }\n\n        // Edge highlight for 3D effect\n        var edgeHL = (1f - dist / baseRadius) * 0.3f;\n        fr += edgeHL; fg += edgeHL; fb += edgeHL;\n\n        buffer.SetPixel(x, y,\n            Math.Clamp(fr, 0f, 1f),\n            Math.Clamp(fg, 0f, 1f),\n            Math.Clamp(fb, 0f, 1f), alpha);\n    });\n\n    return buffer;\n\nprivate static float KiteShieldSDF(float px, float py)\n{\n    // Kite shield: rounded top, pointed bottom\n    var topPart = MathF.Sqrt(px * px + py * py * 1.5f);\n    var bottomPart = MathF.Abs(px) + (py + 0.3f) * 1.2f;\n    return py < 0f ? topPart : bottomPart;\n}\n\nprivate static float TowerShieldSDF(float px, float py)\n{\n    // tall rectangle with slightly rounded top\n    var rx = MathF.Abs(px);\n    var ry = MathF.Abs(py);\n    if (ry > rx)\n    {\n        // top corners rounded\n        if (py < 0f) return MathF.Sqrt(rx * rx + ry * ry) - 1f;\n        return ry - 1.2f;\n    }\n    return rx - 0.9f;\n}\n\nprivate static bool SimulateBeastHead(float px, float py, int seed)\n{\n    // Simple beast head silhouette using primitive shapes\n    // Head circle\n    var headDist = MathF.Sqrt(px * px + (py + 0.1f) * (py + 0.1f));\n    if (headDist > 0.5f) return false;\n\n    // Eyes: two small dots\n    var leftEye = MathF.Sqrt((px + 0.2f) * (px + 0.2f) + (py - 0.1f) * (py - 0.1f));\n    var rightEye = MathF.Sqrt((px - 0.2f) * (px - 0.2f) + (py - 0.1f) * (py - 0.1f));\n    if (leftEye < 0.08f || rightEye < 0.08f) return true;\n\n    // Mouth: horizontal line\n    if (MathF.Abs(py - 0.25f) < 0.04f && MathF.Abs(px) < 0.25f) return true;\n\n    // Horns\n    var leftHorn = MathF.Sqrt((px + 0.3f) * (px + 0.3f) + (py + 0.5f) * (py + 0.5f));\n    var rightHorn = MathF.Sqrt((px - 0.3f) * (px - 0.3f) + (py + 0.5f) * (py + 0.5f));\n    if (leftHorn < 0.15f || rightHorn < 0.15f) return true;\n\n    return false;\n    }\n}"
+  }
+}

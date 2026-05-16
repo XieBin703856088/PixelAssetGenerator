@@ -1,0 +1,137 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "ImageAnalysis",
+    "displayName": {
+      "zh-Hans": "图像分析",
+      "en": "Image Analysis"
+    },
+    "category": "Logic",
+    "description": {
+      "zh-Hans": "分析输入图像并提取统计属性：平均亮度、对比度、熵、边缘密度、主色调。通过IMultiOutputNode输出多个浮点端口。",
+      "en": "Analyzes an input image and extracts statistical properties: average luminance, contrast, entropy, edge density, dominant hue. Outputs multiple float ports via IMultiOutputNode."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      }
+    ],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "平均亮度",
+          "en": "AvgLuminance"
+        },
+        "type": "Float"
+      },
+      {
+        "name": {
+          "zh-Hans": "对比度",
+          "en": "Contrast"
+        },
+        "type": "Float"
+      },
+      {
+        "name": {
+          "zh-Hans": "熵",
+          "en": "Entropy"
+        },
+        "type": "Float"
+      },
+      {
+        "name": {
+          "zh-Hans": "边缘密度",
+          "en": "EdgeDensity"
+        },
+        "type": "Float"
+      },
+      {
+        "name": {
+          "zh-Hans": "主色调",
+          "en": "DominantHue"
+        },
+        "type": "Float"
+      },
+      {
+        "name": {
+          "zh-Hans": "饱和度",
+          "en": "Saturation"
+        },
+        "type": "Float"
+      },
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "分析模式",
+        "en": "Analysis Mode"
+      },
+      "kind": "Choice",
+      "default": "all",
+      "choices": [
+        {
+          "value": "all",
+          "label": {
+            "zh-Hans": "全部",
+            "en": "all"
+          }
+        },
+        {
+          "value": "basic",
+          "label": {
+            "zh-Hans": "基础",
+            "en": "basic"
+          }
+        },
+        {
+          "value": "color",
+          "label": {
+            "zh-Hans": "颜色",
+            "en": "color"
+          }
+        },
+        {
+          "value": "structure",
+          "label": {
+            "zh-Hans": "结构",
+            "en": "structure"
+          }
+        }
+      ]
+    }
+  ],
+  "ai": {
+    "capabilities": ["logic", "image-analysis", "analysis"],
+    "triggers": {
+      "zh-Hans": "图像分析, 图片分析, 亮度分析, 对比度分析, 熵分析, 边缘检测, 色调分析",
+      "en": "image analysis, picture analysis, luminance, contrast, entropy, edge detection, hue"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "分析输入图像提取平均亮度和对比度统计数据，用于条件分支判断。",
+      "en": "Analyze an input image to extract average luminance and contrast statistics for conditional branching."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "// Default Process returns a pass-through of the input\n    return inputs.Length > 0 && inputs[0] != null ? inputs[0]! :\n        new PixelBuffer(context.TileSize, context.TileSize);\n\npublic PixelBuffer[] ProcessMultiImpl(PixelBuffer?[] inputs, IReadOnlyDictionary<string, object> parameters, PixelGraphContext context)\n{\n    var input = inputs.Length > 0 && inputs[0] != null ? inputs[0]! :\n        new PixelBuffer(context.TileSize, context.TileSize);\n    var size = context.TileSize;\n\n    // Compute statistics\n    var analysis = Analyze(input, size);\n\n    // Encode each float as a 1x1 PixelBuffer (value stored in R channel)\n    var results = new PixelBuffer[7];\n    for (var i = 0; i < 6; i++)\n    {\n        results[i] = new PixelBuffer(1, 1);\n        results[i].SetPixel(0, 0, analysis[i], analysis[i], analysis[i], 1f);\n    }\n    results[6] = input; // Passthrough image\n\n    return results;\n}\n\nprivate static float[] Analyze(PixelBuffer buffer, int size)\n{\n    var pixels = size * size;\n    var sumLum = 0f;\n    var sumSat = 0f;\n    var histogram = new float[256];\n    var edgeCount = 0;\n    float dominantHue = 0f;\n    var hueHistogram = new float[360];\n\n    // Sobel kernels\n    var sobelX = new[,] { { -1, 0, 1 }, { -2, 0, 2 }, { -1, 0, 1 } };\n    var sobelY = new[,] { { -1, -2, -1 }, { 0, 0, 0 }, { 1, 2, 1 } };\n\n    for (var y = 0; y < size; y++)\n    {\n        for (var x = 0; x < size; x++)\n        {\n            var (r, g, b, _) = buffer.GetPixel(x, y);\n            var lum = r * 0.299f + g * 0.587f + b * 0.114f;\n            sumLum += lum;\n\n            // Saturation\n            var maxC = MathF.Max(r, MathF.Max(g, b));\n            var minC = MathF.Min(r, MathF.Min(g, b));\n            sumSat += maxC > 0f ? (maxC - minC) / maxC : 0f;\n\n            // Luminance histogram\n            var bin = (int)(lum * 255f);\n            bin = Math.Clamp(bin, 0, 255);\n            histogram[bin]++;\n\n            // Hue histogram\n            var hue = 0f;\n            if (maxC - minC > 0.01f)\n            {\n                var delta = maxC - minC;\n                if (maxC == r) hue = 60f * (((g - b) / delta) % 6f);\n                else if (maxC == g) hue = 60f * (((b - r) / delta) + 2f);\n                else hue = 60f * (((r - g) / delta) + 4f);\n                if (hue < 0) hue += 360f;\n            }\n            var hueBin = (int)(hue % 360);\n            hueHistogram[hueBin]++;\n        }\n    }\n\n    // Edge detection (sampled for performance)\n    var step = Math.Max(1, size / 32);\n    for (var y = step; y < size - step; y += step)\n    {\n        for (var x = step; x < size - step; x += step)\n        {\n            float gx = 0, gy = 0;\n            for (var ky = -1; ky <= 1; ky++)\n            {\n                for (var kx = -1; kx <= 1; kx++)\n                {\n                    var (r, g, b, _) = buffer.GetPixel(x + kx, y + ky);\n                    var val = r * 0.299f + g * 0.587f + b * 0.114f;\n                    gx += val * sobelX[ky + 1, kx + 1];\n                    gy += val * sobelY[ky + 1, kx + 1];\n                }\n            }\n            if (MathF.Sqrt(gx * gx + gy * gy) > 0.3f) edgeCount++;\n        }\n    }\n\n    var avgLum = sumLum / pixels;\n\n    // Contrast = standard deviation of luminance\n    var sumDiff = 0f;\n    for (var y = 0; y < size; y++)\n    {\n        for (var x = 0; x < size; x++)\n        {\n            var (r, g, b, _) = buffer.GetPixel(x, y);\n            var lum = r * 0.299f + g * 0.587f + b * 0.114f;\n            sumDiff += (lum - avgLum) * (lum - avgLum);\n        }\n    }\n    var contrast = MathF.Sqrt(sumDiff / pixels);\n\n    // Entropy from histogram\n    var entropy = 0f;\n    for (var i = 0; i < 256; i++)\n    {\n        if (histogram[i] > 0f)\n        {\n            var p = histogram[i] / pixels;\n            entropy -= p * MathF.Log(p, 2);\n        }\n    }\n    entropy /= 8f; // Normalize to [0,1]\n\n    // Dominant hue\n    var maxHueCount = 0;\n    for (var i = 0; i < 360; i++)\n    {\n        if (hueHistogram[i] > maxHueCount)\n        {\n            maxHueCount = (int)hueHistogram[i];\n            dominantHue = i / 360f;\n        }\n    }\n\n    // Edge density\n    var totalSamples = ((size - 2 * step) / step) * ((size - 2 * step) / step);\n    var edgeDensity = totalSamples > 0 ? edgeCount / (float)totalSamples : 0f;\n    var avgSat = sumSat / pixels;\n\n    return new[] { avgLum, contrast, entropy, edgeDensity, dominantHue, avgSat };\n    }"
+  }
+}

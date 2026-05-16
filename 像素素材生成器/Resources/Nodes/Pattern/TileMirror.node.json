@@ -1,0 +1,113 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "TileMirror",
+    "displayName": {
+      "zh-Hans": "瓦片镜像",
+      "en": "Tile Mirror"
+    },
+    "category": "Pattern",
+    "description": {
+      "zh-Hans": "通过镜像象限或八分区域创建完美可平铺的对称图案。适用于具有双边对称性的建筑立面。",
+      "en": "Creates perfectly tileable symmetric patterns by mirroring quadrants or eighths. Useful for building facades with bilateral symmetry."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      }
+    ],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "镜像模式",
+        "en": "Mirror Mode"
+      },
+      "kind": "Choice",
+      "default": "quadrant",
+      "choices": [
+        {
+          "value": "quadrant",
+          "label": {
+            "zh-Hans": "四分之一",
+            "en": "quadrant"
+          }
+        },
+        {
+          "value": "eighth",
+          "label": {
+            "zh-Hans": "八分之一",
+            "en": "eighth"
+          }
+        },
+        {
+          "value": "horizontal",
+          "label": {
+            "zh-Hans": "水平",
+            "en": "horizontal"
+          }
+        },
+        {
+          "value": "vertical",
+          "label": {
+            "zh-Hans": "垂直",
+            "en": "vertical"
+          }
+        },
+        {
+          "value": "checkerboard",
+          "label": {
+            "zh-Hans": "棋盘",
+            "en": "checkerboard"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "zh-Hans": "混合重叠",
+        "en": "Blend Overlap"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    }
+  ],
+  "ai": {
+    "capabilities": ["pattern", "mirror", "tiling", "geometric"],
+    "triggers": {
+      "zh-Hans": "瓦片镜像, 对称平铺, 镜像平铺, 四分镜像, 棋盘镜像",
+      "en": "tile mirror, symmetric tiling, mirror tile, quadrant mirror"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "应用四分之一镜像对称，从单个象限创建完美平铺的建筑立面。",
+      "en": "Apply quadrant mirror symmetry to create a perfectly tileable building facade from a single quadrant."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar input = inputs.Length > 0 && inputs[0] != null ? inputs[0]! :\n    new PixelBuffer(context.TileSize, context.TileSize);\nvar mode = GetChoice(parameters, \"mirrorMode\", \"quadrant\");\nvar blend = GetFloat(parameters, \"blendOverlap\", 0f);\n\nvar size = context.TileSize;\nvar buffer = new PixelBuffer(size, size);\n\nvar halfW = size / 2;\nvar halfH = size / 2;\nvar quarterW = size / 4;\nvar quarterH = size / 4;\n\nbuffer.ParallelForEachPixel((x, y) =>\n{\n    float sx, sy;\n\n    switch (mode)\n    {\n        case \"horizontal\":\n            sx = x < halfW ? x : size - 1 - x;\n            sy = y;\n            break;\n\n        case \"vertical\":\n            sx = x;\n            sy = y < halfH ? y : size - 1 - y;\n            break;\n\n        case \"eighth\":\n            // Mirror both axes then mirror the quadrant\n            sx = x < halfW ? x : size - 1 - x;\n            sy = y < halfH ? y : size - 1 - y;\n            // Mirror diagonal within the quadrant\n            if (sx < sy)\n            {\n                (sx, sy) = (sy, sx);\n            }\n            sx = Math.Clamp(sx, 0, size - 1);\n            sy = Math.Clamp(sy, 0, size - 1);\n            break;\n\n        case \"checkerboard\":\n        {\n            var cellX = x / quarterW;\n            var cellY = y / quarterH;\n            var localX = x % quarterW;\n            var localY = y % quarterH;\n            if ((cellX + cellY) % 2 == 1)\n            {\n                sx = (cellX % 2 == 0 ? quarterW - 1 - localX : localX);\n                sy = (cellY % 2 == 0 ? quarterH - 1 - localY : localY);\n                sx += cellX * quarterW;\n                sy += cellY * quarterH;\n            }\n            else\n            {\n                sx = x;\n                sy = y;\n            }\n            break;\n        }\n\n        default: // quadrant\n        {\n            // Mirror X and Y\n            var mx = x < halfW ? x : size - 1 - x;\n            var my = y < halfH ? y : size - 1 - y;\n            // Remap to the corresponding quadrant\n            var qx = x < halfW ? 0 : 1;\n            var qy = y < halfH ? 0 : 1;\n            sx = qx == 0 ? mx : size - 1 - mx;\n            sy = qy == 0 ? my : size - 1 - my;\n            break;\n        }\n    }\n\n    sx = Math.Clamp(sx, 0, size - 1);\n    sy = Math.Clamp(sy, 0, size - 1);\n\n    var (r, g, b, a) = input.GetPixel((int)sx, (int)sy);\n\n    // Blend at mirror seams for smoothness\n    if (blend > 0f)\n    {\n        var dx = MathF.Abs(x - sx) / (float)size;\n        var dy = MathF.Abs(y - sy) / (float)size;\n        var seamDist = MathF.Max(dx, dy);\n        if (seamDist < blend * 0.2f)\n        {\n            var (origR, origG, origB, origA) = input.GetPixel(x, y);\n            var t = seamDist / (blend * 0.2f);\n            r = Lerp(r, origR, t);\n            g = Lerp(g, origG, t);\n            b = Lerp(b, origB, t);\n            a = Lerp(a, origA, t);\n        }\n    }\n\n    buffer.SetPixel(x, y, r, g, b, a);\n});\n\nreturn buffer;\n}"
+  }
+}

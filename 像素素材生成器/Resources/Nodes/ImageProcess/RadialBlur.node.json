@@ -1,0 +1,101 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "RadialBlur",
+    "displayName": {
+      "zh-Hans": "径向模糊",
+      "en": "Radial Blur"
+    },
+    "category": "ImageProcess",
+    "description": {
+      "zh-Hans": "应用以可配置点为中心的径向模糊（缩放模糊）效果。对每个像素沿从中心向外的径向线进行采样。",
+      "en": "Applies radial blur (zoom blur) centered at a configurable point. Samples along radial lines from the center outward for each pixel."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [
+      {
+        "name": {
+          "zh-Hans": "输入",
+          "en": "Input"
+        },
+        "type": "Image"
+      }
+    ],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "输出",
+          "en": "Output"
+        },
+        "type": "Image"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "中心 X",
+        "en": "Center X"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "中心 Y",
+        "en": "Center Y"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "强度",
+        "en": "Intensity"
+      },
+      "kind": "Number",
+      "default": 0.1,
+      "min": 0.01,
+      "max": 0.5,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "质量",
+        "en": "Quality"
+      },
+      "kind": "Integer",
+      "default": 8,
+      "min": 4,
+      "max": 32,
+      "step": 1
+    }
+  ],
+  "ai": {
+    "capabilities": ["blur"],
+    "triggers": {
+      "zh-Hans": "径向模糊, 中心模糊, 缩放模糊, 放射模糊",
+      "en": "radial blur, center blur, zoom blur, radial motion blur"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "从图像中心向外应用径向模糊，创建速度感。",
+      "en": "Apply radial blur outward from the center of an image to create a sense of speed."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar src = inputs.Length > 0 ? inputs[0] : null;\nif (src == null)\n    return new PixelBuffer(context.TileSize, context.TileSize);\n\nvar centerX = GetFloat(parameters, \"centerX\", 0.5f);\nvar centerY = GetFloat(parameters, \"centerY\", 0.5f);\nvar strength = GetFloat(parameters, \"intensity\", 0.1f);\nvar quality = GetInt(parameters, \"quality\", 8);\n\nvar size = src.Width;\nvar cx = centerX * size;\nvar cy = centerY * size;\nvar result = new PixelBuffer(size, size);\nvar maxDist = MathF.Sqrt(cx * cx + cy * cy);\nif (maxDist < 1f) maxDist = 1f;\n\nresult.ParallelForEachPixel((x, y) =>\n{\n    var dx = x - cx;\n    var dy = y - cy;\n    var dist = MathF.Sqrt(dx * dx + dy * dy);\n    var blurAmount = (dist / maxDist) * strength * size;\n    var samples = Math.Clamp((int)blurAmount, 2, quality);\n\n    var sumR = 0f; var sumG = 0f; var sumB = 0f; var sumA = 0f;\n\n    for (var i = 0; i < samples; i++)\n    {\n        var t = (i / (float)(samples - 1)) * blurAmount;\n        var sx = cx + (x - cx) * (1f - t / Math.Max(dist, 1f));\n        var sy = cy + (y - cy) * (1f - t / Math.Max(dist, 1f));\n        var (pr, pg, pb, pa) = src.GetPixelWrapped((int)MathF.Round(sx), (int)MathF.Round(sy));\n        sumR += pr; sumG += pg; sumB += pb; sumA += pa;\n    }\n\n    var inv = 1f / samples;\n    result.SetPixel(x, y, sumR * inv, sumG * inv, sumB * inv, sumA * inv);\n});\n\nreturn result;\n}"
+  }
+}

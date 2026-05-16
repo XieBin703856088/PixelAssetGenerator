@@ -1,0 +1,63 @@
+{
+  "formatVersion": 2,
+  "processorType": "PhysicsSimulate",
+  "identity": {
+    "typeName": "PhysicsSimulate",
+    "displayName": {
+      "zh-Hans": "物理模拟",
+      "en": "Physics Simulate"
+    },
+    "category": "Physics",
+    "description": {
+      "zh-Hans": "对粒子系统应用物理模拟（重力、碰撞、阻尼）",
+      "en": "Applies physics simulation to particle systems (gravity, collision, damping)"
+    },
+    "tags": ["physics", "simulation"],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [
+      {
+        "name": { "zh-Hans": "粒子", "en": "Particles" },
+        "type": "Particle"
+      },
+      {
+        "name": { "zh-Hans": "遮罩", "en": "Mask" },
+        "type": "Mask"
+      }
+    ],
+    "outputs": [
+      {
+        "name": { "zh-Hans": "粒子", "en": "Particles" },
+        "type": "Particle"
+      }
+    ]
+  },
+  "parameters": [
+    { "name": { "zh-Hans": "重力X", "en": "Gravity X" }, "kind": "Number", "default": 0, "min": -1.0, "max": 1.0, "step": 0.01 },
+    { "name": { "zh-Hans": "重力Y", "en": "Gravity Y" }, "kind": "Number", "default": 0.5, "min": -1.0, "max": 1.0, "step": 0.01 },
+    { "name": { "zh-Hans": "阻尼", "en": "Damping" }, "kind": "Number", "default": 0.99, "min": 0.9, "max": 1.0, "step": 0.001 },
+    { "name": { "zh-Hans": "子步数", "en": "Substeps" }, "kind": "Integer", "default": 4, "min": 1, "max": 8, "step": 1 },
+    { "name": { "zh-Hans": "弹性", "en": "Restitution" }, "kind": "Number", "default": 0.5, "min": 0, "max": 1.0, "step": 0.05 },
+    { "name": { "zh-Hans": "摩擦力", "en": "Friction" }, "kind": "Number", "default": 0.3, "min": 0, "max": 1.0, "step": 0.05 },
+    { "name": { "zh-Hans": "边界碰撞", "en": "Collide Walls" }, "kind": "Boolean", "default": true },
+    { "name": { "zh-Hans": "平铺环绕", "en": "Wrap Edges" }, "kind": "Boolean", "default": false },
+    { "name": { "zh-Hans": "粒子半径", "en": "Particle Radius" }, "kind": "Number", "default": 0.02, "min": 0.001, "max": 0.1, "step": 0.001 },
+    { "name": { "zh-Hans": "地面Y位置", "en": "Ground Y" }, "kind": "Number", "default": 0.95, "min": 0.5, "max": 1.0, "step": 0.01 },
+    { "name": { "zh-Hans": "变形强度", "en": "Deform Strength" }, "kind": "Number", "default": 0.0, "min": 0, "max": 1.0, "step": 0.01 },
+    { "name": { "zh-Hans": "粒子间碰撞", "en": "Particle Collisions" }, "kind": "Boolean", "default": true }
+  ],
+  "ai": {
+    "capabilities": ["physics", "simulation"],
+    "triggers": {
+      "zh-Hans": "物理模拟, 重力模拟, 粒子物理, 碰撞模拟, 阻尼运动",
+      "en": "physics simulation, gravity simulation, particle physics, collision simulation, damping motion"
+    },
+    "suggestedInputs": ["ParticleEmitter"],
+    "exampleUsage": {
+      "zh-Hans": "对粒子系统应用带重力的物理模拟，Y方向重力0.5，阻尼0.99，启用边界碰撞",
+      "en": "Apply physics simulation to a particle system with gravity Y 0.5, damping 0.99, and boundary collision enabled"
+    }
+  }
+}

@@ -1,0 +1,140 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "Sharpen",
+    "displayName": {
+      "zh-Hans": "锐化",
+      "en": "Sharpen"
+    },
+    "category": "ImageProcess",
+    "description": {
+      "zh-Hans": "使用USM锐化或拉普拉斯增强来锐化图像。提供对边缘增强和噪声抑制的独立控制。",
+      "en": "Sharpens an image using unsharp mask or Laplacian enhancement. Provides independent control over edge enhancement and noise suppression."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      }
+    ],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "结果",
+          "en": "Result"
+        },
+        "type": "Image"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "锐化类型",
+        "en": "Sharpen Type"
+      },
+      "kind": "Choice",
+      "default": "unsharpMask",
+      "choices": [
+        {
+          "value": "unsharpMask",
+          "label": {
+            "zh-Hans": "USM锐化",
+            "en": "unsharpMask"
+          }
+        },
+        {
+          "value": "laplacian",
+          "label": {
+            "zh-Hans": "拉普拉斯",
+            "en": "laplacian"
+          }
+        },
+        {
+          "value": "edgeEnhance",
+          "label": {
+            "zh-Hans": "边缘增强",
+            "en": "edgeEnhance"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "zh-Hans": "强度",
+        "en": "Intensity"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.0,
+      "max": 2.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "半径",
+        "en": "Radius"
+      },
+      "kind": "Number",
+      "default": 1.0,
+      "min": 0.5,
+      "max": 5.0,
+      "step": 0.5
+    },
+    {
+      "name": {
+        "zh-Hans": "阈值",
+        "en": "Threshold"
+      },
+      "kind": "Number",
+      "default": 0.1,
+      "min": 0.0,
+      "max": 0.5,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "混合比例",
+        "en": "Mix Ratio"
+      },
+      "kind": "Number",
+      "default": 1.0,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "保留透明通道",
+        "en": "Preserve Alpha"
+      },
+      "kind": "Boolean",
+      "default": true
+    }
+  ],
+  "ai": {
+    "capabilities": ["sharpen"],
+    "triggers": {
+      "zh-Hans": "锐化, 反锐化掩模, 拉普拉斯锐化, 边缘增强",
+      "en": "sharpen, unsharp mask, laplacian sharpen, edge enhancement"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "使用反锐化掩模锐化模糊的纹理以恢复细节。",
+      "en": "Sharpen a blurry texture using unsharp mask to recover details."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar src = inputs.Length > 0 ? inputs[0] : null;\n    if (src == null)\n        return new PixelBuffer(context.TileSize, context.TileSize);\n\n    var type = GetChoice(parameters, \"sharpenType\", \"unsharpMask\");\n    var strength = GetFloat(parameters, \"intensity\", 0.5f);\n    var radius = GetFloat(parameters, \"radius\", 1f);\n    var threshold = GetFloat(parameters, \"threshold\", 0.1f);\n    var mixRatio = GetFloat(parameters, \"mixRatio\", 1f);\n    var preserveAlpha = GetBool(parameters, \"preserveAlpha\", true);\n\n    var size = context.TileSize;\n    var result = new PixelBuffer(size, size);\n\n    var rad = Math.Max(1, (int)MathF.Ceiling(radius));\n\n    // Create blurred version for unsharp mask\n    var blurred = new PixelBuffer(size, size);\n    if (type == \"unsharpMask\")\n    {\n        BoxBlur(src, blurred, rad, size);\n    }\n\n    result.ParallelForEachPixel((x, y) =>\n    {\n        var (r, g, b, a) = src.GetPixel(x, y);\n\n        float outR, outG, outB;\n\n        switch (type)\n        {\n            case \"laplacian\":\n            {\n                // Laplacian edge detection + add back to original\n                var sum = 0f;\n                var count = 0;\n                for (var dy = -1; dy <= 1; dy++)\n                {\n                    for (var dx = -1; dx <= 1; dx++)\n                    {\n                        if (dx == 0 && dy == 0) continue;\n                        var (pr, pg, pb, _) = src.GetPixelWrapped(x + dx, y + dy);\n                        sum += (pr + pg + pb) / 3f;\n                        count++;\n                    }\n                }\n                var center = (r + g + b) / 3f;\n                var laplacian = center - sum / count;\n                outR = r + laplacian * strength;\n                outG = g + laplacian * strength;\n                outB = b + laplacian * strength;\n                break;\n            }\n            case \"edgeEnhance\":\n            {\n                // Sobel-based edge enhancement\n                float gx = 0, gy = 0;\n                for (var dy = -1; dy <= 1; dy++)\n                {\n                    for (var dx = -1; dx <= 1; dx++)\n                    {\n                        var (pr, pg, pb, _) = src.GetPixelWrapped(x + dx, y + dy);\n                        var lum = 0.299f * pr + 0.587f * pg + 0.114f * pb;\n                        var sx = (dx == 0 ? 0f : dx > 0 ? 1f : -1f) * (dy == 0 ? 2f : 1f);\n                        var sy = (dy == 0 ? 0f : dy > 0 ? 1f : -1f) * (dx == 0 ? 2f : 1f);\n                        gx += lum * sx;\n                        gy += lum * sy;\n                    }\n                }\n                var edge = MathF.Sqrt(gx * gx + gy * gy);\n                if (edge > threshold)\n                {\n                    var enhance = (edge - threshold) / (1f - threshold) * strength;\n                    outR = r + enhance * r;\n                    outG = g + enhance * g;\n                    outB = b + enhance * b;\n                }\n                else\n                {\n                    outR = r; outG = g; outB = b;\n                }\n                break;\n            }\n            default: // unsharpMask\n            {\n                var (br, bg, bb, _) = blurred.GetPixel(x, y);\n                var diffR = r - br;\n                var diffG = g - bg;\n                var diffB = b - bb;\n                var diffLum = 0.299f * MathF.Abs(diffR) + 0.587f * MathF.Abs(diffG) + 0.114f * MathF.Abs(diffB);\n\n                if (diffLum > threshold)\n                {\n                    var amount = strength * ((diffLum - threshold) / (1f - threshold));\n                    outR = r + diffR * amount;\n                    outG = g + diffG * amount;\n                    outB = b + diffB * amount;\n                }\n                else\n                {\n                    outR = r; outG = g; outB = b;\n                }\n                break;\n            }\n        }\n\n        // Mix with original\n        if (mixRatio < 0.999f)\n        {\n            outR = r + (outR - r) * mixRatio;\n            outG = g + (outG - g) * mixRatio;\n            outB = b + (outB - b) * mixRatio;\n        }\n\n        result.SetPixel(x, y,\n            Math.Clamp(outR, 0f, 1f),\n            Math.Clamp(outG, 0f, 1f),\n            Math.Clamp(outB, 0f, 1f),\n            preserveAlpha ? a : 1f);\n    });\n\n    return result;\n\nprivate static void BoxBlur(PixelBuffer src, PixelBuffer dst, int radius, int size)\n{\n    var temp = new PixelBuffer(size, size);\n    temp.ParallelForEachPixel((x, y) =>\n    {\n        var sumR = 0f; var sumG = 0f; var sumB = 0f; var count = 0;\n        for (var dx = -radius; dx <= radius; dx++)\n        {\n            var (pr, pg, pb, _) = src.GetPixelWrapped(x + dx, y);\n            sumR += pr; sumG += pg; sumB += pb; count++;\n        }\n        var inv = 1f / count;\n        temp.SetPixel(x, y, sumR * inv, sumG * inv, sumB * inv, 1f);\n    });\n    dst.ParallelForEachPixel((x, y) =>\n    {\n        var sumR = 0f; var sumG = 0f; var sumB = 0f; var count = 0;\n        for (var dy = -radius; dy <= radius; dy++)\n        {\n            var (pr, pg, pb, _) = temp.GetPixelWrapped(x, y + dy);\n            sumR += pr; sumG += pg; sumB += pb; count++;\n        }\n        var inv = 1f / count;\n        dst.SetPixel(x, y, sumR * inv, sumG * inv, sumB * inv, 1f);\n    });\n    }\n}"
+  }
+}

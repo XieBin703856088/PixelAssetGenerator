@@ -1,0 +1,115 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "Slime",
+    "displayName": {
+      "zh-Hans": "史莱姆",
+      "en": "Slime"
+    },
+    "category": "Material",
+    "description": {
+      "zh-Hans": "使用SDF类元球渲染生成程序化史莱姆/有机粘液纹理，通过噪波扭曲半径和高光实现湿润效果。输出史莱姆图像和覆盖遮罩。",
+      "en": "Generates procedural slime/organic blob textures using SDF metaball-like rendering with noise-distorted radii and specular highlights for a wet look. Outputs both the slime image and a coverage mask."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "遮罩",
+          "en": "Mask"
+        },
+        "type": "Mask"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "种子",
+        "en": "Seed"
+      },
+      "kind": "Seed",
+      "default": 42,
+      "min": 0,
+      "max": 9999
+    },
+    {
+      "name": {
+        "zh-Hans": "颜色",
+        "en": "Color"
+      },
+      "kind": "Color",
+      "default": "#50C83CFF"
+    },
+    {
+      "name": {
+        "zh-Hans": "高光颜色",
+        "en": "Highlight Color"
+      },
+      "kind": "Color",
+      "default": "#C8FFA0FF"
+    },
+    {
+      "name": {
+        "zh-Hans": "粘稠度",
+        "en": "Viscosity"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "气泡",
+        "en": "Bubbles"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "缩放",
+        "en": "Scale"
+      },
+      "kind": "Number",
+      "default": 1.5,
+      "min": 0.5,
+      "max": 5.0,
+      "step": 0.1
+    }
+  ],
+  "ai": {
+    "capabilities": ["material", "procedural-texture", "organic", "liquid"],
+    "triggers": {
+      "zh-Hans": "史莱姆, 黏液, 有机体, 粘液怪, 软泥, 液体生物",
+      "en": "slime, goo, ooze, blob, organic liquid, creature"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "生成程序化史莱姆/有机粘液纹理，用于怪物或奇幻环境的生物材质。",
+      "en": "Generate procedural slime or organic blob textures for creatures or fantasy environment biomes."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar seed = GetInt(parameters, \"seed\", context.Seed);\nvar color = GetColor(parameters, \"color\", System.Windows.Media.Color.FromRgb(80, 200, 60));\nvar highlightColor = GetColor(parameters, \"highlightColor\", System.Windows.Media.Color.FromRgb(200, 255, 160));\nvar viscosity = GetFloat(parameters, \"viscosity\", 0.5f);\nvar bubbles = GetFloat(parameters, \"bubbles\", 0.5f);\nvar scale = GetFloat(parameters, \"scale\", 1.5f);\nvar size = context.TileSize;\nvar result = new PixelBuffer(size, size);\nvar cR=color.R/255f; var cG=color.G/255f; var cB=color.B/255f;\nvar hR=highlightColor.R/255f; var hG=highlightColor.G/255f; var hB=highlightColor.B/255f;\nvar period = Math.Max(1, (int)(size * scale));\nresult.ParallelForEachPixel((x, y) =>\n{\n    var u = x / (float)size * scale;\n    var v = y / (float)size * scale;\n    var (pu, pv) = PerturbUv(u, v, viscosity * 0.25f, period, seed);\n    TileableVoronoi(pu * size / scale, pv * size / scale, Math.Max(1,(int)(size/scale/4)), 4, seed, out var near, out _, out _, out _);\n    var bub = Math.Clamp(1f - near / (bubbles * 0.5f + 0.01f), 0f, 1f);\n    var base2 = TileableFractalNoise(pu, pv, period, 3, 0.5f, 2f, seed + 7) * 0.7f + 0.3f;\n    var t = bub * bub;\n    var r = Lerp(cR * base2, hR, t);\n    var g = Lerp(cG * base2, hG, t);\n    var b2 = Lerp(cB * base2, hB, t);\n    result.SetPixel(x, y, r, g, b2, 1f);\n});\nreturn result;\n}"
+  }
+}

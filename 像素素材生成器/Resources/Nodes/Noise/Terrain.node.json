@@ -1,0 +1,229 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "Terrain",
+    "displayName": {
+      "zh-Hans": "地形",
+      "en": "Terrain"
+    },
+    "category": "Noise",
+    "description": {
+      "zh-Hans": "使用脊状多重分形噪波生成地形高度图，并基于海拔进行颜色映射。",
+      "en": "Generates terrain heightmaps with ridged multifractal noise and altitude-based color mapping."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [
+      {
+        "name": {
+          "zh-Hans": "高度图",
+          "en": "Heightmap"
+        },
+        "type": "Mask"
+      }
+    ],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "遮罩",
+          "en": "Mask"
+        },
+        "type": "Mask"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "种子",
+        "en": "Seed"
+      },
+      "kind": "Seed",
+      "default": 42,
+      "min": 0,
+      "max": 9999
+    },
+    {
+      "name": {
+        "zh-Hans": "缩放",
+        "en": "Scale"
+      },
+      "kind": "Number",
+      "default": 1.0,
+      "min": 0.1,
+      "max": 5.0,
+      "step": 0.1
+    },
+    {
+      "name": {
+        "zh-Hans": "八度",
+        "en": "Octaves"
+      },
+      "kind": "Integer",
+      "default": 6,
+      "min": 1,
+      "max": 8,
+      "step": 1
+    },
+    {
+      "name": {
+        "zh-Hans": "持续度",
+        "en": "Persistence"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "空隙度",
+        "en": "Lacunarity"
+      },
+      "kind": "Number",
+      "default": 2.0,
+      "min": 1.0,
+      "max": 4.0,
+      "step": 0.1
+    },
+    {
+      "name": {
+        "zh-Hans": "侵蚀",
+        "en": "Erosion"
+      },
+      "kind": "Number",
+      "default": 0.3,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "陡峭度",
+        "en": "Steepness"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "颜色数量",
+        "en": "Color Count"
+      },
+      "kind": "Integer",
+      "default": 5,
+      "min": 3,
+      "max": 8,
+      "step": 1
+    },
+    {
+      "name": {
+        "zh-Hans": "颜色1（深海）",
+        "en": "Color1 (Deep Sea)"
+      },
+      "kind": "Color",
+      "default": "#142878FF"
+    },
+    {
+      "name": {
+        "zh-Hans": "颜色2（浅海）",
+        "en": "Color2 (Shallow Sea)"
+      },
+      "kind": "Color",
+      "default": "#3C78C8FF"
+    },
+    {
+      "name": {
+        "zh-Hans": "颜色3（沙滩）",
+        "en": "Color3 (Sand)"
+      },
+      "kind": "Color",
+      "default": "#DCC896FF"
+    },
+    {
+      "name": {
+        "zh-Hans": "颜色4（草地）",
+        "en": "Color4 (Grass)"
+      },
+      "kind": "Color",
+      "default": "#50A03CFF"
+    },
+    {
+      "name": {
+        "zh-Hans": "颜色5（岩石）",
+        "en": "Color5 (Rock)"
+      },
+      "kind": "Color",
+      "default": "#8C8278FF"
+    },
+    {
+      "name": {
+        "zh-Hans": "颜色6（雪地）",
+        "en": "Color6 (Snow)"
+      },
+      "kind": "Color",
+      "default": "#F0F5FAFF"
+    },
+    {
+      "name": {
+        "zh-Hans": "海平面",
+        "en": "Sea Level"
+      },
+      "kind": "Number",
+      "default": 0.35,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "雪线",
+        "en": "Snow Line"
+      },
+      "kind": "Number",
+      "default": 0.75,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "反相",
+        "en": "Invert"
+      },
+      "kind": "Boolean",
+      "default": false
+    }
+  ],
+  "ai": {
+    "capabilities": ["generate-noise", "procedural-texture", "organic", "tileable", "color-map", "heightmap"],
+    "triggers": {
+      "zh-Hans": "地形, 高度图, 地貌, 地图, 岛屿, 山脉, 陆地",
+      "en": "terrain, heightmap, landscape, map, island, mountain, continent"
+    },
+    "suggestedInputs": ["Noise"],
+    "exampleUsage": {
+      "zh-Hans": "生成地形高度图，基于海拔从深海到雪线进行颜色映射，可接受外部高度图输入。",
+      "en": "Generates terrain heightmaps with altitude-based color mapping from deep sea to snow line, accepting external heightmap input."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar seed = GetInt(parameters, \"seed\", context.Seed);\n    var scale = GetFloat(parameters, \"scale\", 1f);\n    var octaves = Math.Max(1, GetInt(parameters, \"octaves\", 6));\n    var persistence = GetFloat(parameters, \"persistence\", 0.5f);\n    var lacunarity = GetFloat(parameters, \"lacunarity\", 2f);\n    var erosion = GetFloat(parameters, \"erosion\", 0.3f);\n    var steepness = GetFloat(parameters, \"steepness\", 0.5f);\n    var colorCount = Math.Clamp(GetInt(parameters, \"colorCount\", 5), 3, 8);\n    var seaLevel = GetFloat(parameters, \"seaLevel\", 0.35f);\n    var snowLine = GetFloat(parameters, \"snowLine\", 0.75f);\n    var invert = GetBool(parameters, \"invert\", false);\n\n    // Read up to 6 colors\n    var colors = new[]\n    {\n        GetColor(parameters, \"color1(DeepSea)\", Color.FromRgb(20, 40, 120)),\n        GetColor(parameters, \"color2(ShallowSea)\", Color.FromRgb(60, 120, 200)),\n        GetColor(parameters, \"color3(Sand)\", Color.FromRgb(220, 200, 150)),\n        GetColor(parameters, \"color4(Grass)\", Color.FromRgb(80, 160, 60)),\n        GetColor(parameters, \"color5(Rock)\", Color.FromRgb(140, 130, 120)),\n        GetColor(parameters, \"color6(Snow)\", Color.FromRgb(240, 245, 250))\n    };\n\n    var size = context.TileSize;\n    var buffer = new PixelBuffer(size, size);\n\n    var hasInput = inputs.Length > 0 && inputs[0] != null;\n\n    // Seamless coordinate mapping: noise coordinates are set up so that\n    // pixel (0, y) and pixel (size-1, y) map to equivalent positions in\n    // the periodic noise function, producing tileable output.\n    var edge = Math.Max(1, size - 1);\n    var noiseCells = Math.Max(2, (int)(scale * 4 + 0.5f));\n\n    buffer.ParallelForEachPixel((x, y) =>\n    {\n        float height;\n\n        if (hasInput)\n        {\n            // Use input mask as heightmap\n            var (_, _, _, heightVal) = inputs[0]!.GetPixel(x, y);\n            height = heightVal;\n        }\n        else\n        {\n            // Map x,y in [0, size-1] to noise coords in [0, noiseCells]\n            // ensuring tileable wrapping at edges.\n            var nu = (float)x / edge * noiseCells;\n            var nv = (float)y / edge * noiseCells;\n\n            // Ridged multifractal noise\n            height = RidgedMultifractal(nu, nv, noiseCells, octaves, persistence, lacunarity, steepness, seed);\n\n            // Simple erosion simulation: blur high-slope areas\n            if (erosion > 0f)\n            {\n                var localSlope = ComputeLocalSlope(nu, nv, noiseCells, seed);\n                var erosionFactor = localSlope * erosion * 0.3f;\n                height = height - erosionFactor;\n            }\n\n            height = Math.Clamp(height, 0f, 1f);\n        }\n\n        if (invert) height = 1f - height;\n\n        // Color mapping using seaLevel and snowLine\n        float r, g, b;\n\n        // Remap height so seaLevel/snowLine control the color band boundaries:\n        //   [0, seaLevel]      → water bands (first 1/3 of color range)\n        //   [seaLevel, snowLine] → land bands (middle 1/3)\n        //   [snowLine, 1]       → snow band (last 1/3)\n        float remapped;\n        if (height <= seaLevel)\n            remapped = seaLevel > 0.001f ? height / seaLevel * 0.33f : 0f;\n        else if (height >= snowLine)\n            remapped = 0.66f + (snowLine < 0.999f ? (height - snowLine) / (1f - snowLine) * 0.34f : 0f);\n        else\n            remapped = 0.33f + (height - seaLevel) / (snowLine - seaLevel) * 0.33f;\n\n        remapped = Math.Clamp(remapped, 0f, 1f);\n\n        var bandPos = remapped * (colorCount - 1);\n        var bandIndex = (int)MathF.Floor(bandPos);\n        var bandT = bandPos - bandIndex;\n        bandIndex = Math.Clamp(bandIndex, 0, colorCount - 2);\n\n        var c0 = colors[bandIndex];\n        var c1 = colors[Math.Min(bandIndex + 1, colors.Length - 1)];\n\n        r = Lerp(c0.R / 255f, c1.R / 255f, bandT);\n        g = Lerp(c0.G / 255f, c1.G / 255f, bandT);\n        b = Lerp(c0.B / 255f, c1.B / 255f, bandT);\n\n        // Add fine terrain detail noise (not color-mapped, also seamless)\n        if (!hasInput)\n        {\n            var detailCells = Math.Max(2, edge / 4);\n            var detail = TileableFractalNoise(\n                (float)x / edge * detailCells,\n                (float)y / edge * detailCells,\n                detailCells, 2, 0.5f, 2f, seed + 999);\n            var detailAmt = (detail - 0.5f) * 0.06f;\n            r = Math.Clamp(r + detailAmt, 0f, 1f);\n            g = Math.Clamp(g + detailAmt * 0.9f, 0f, 1f);\n            b = Math.Clamp(b + detailAmt * 0.8f, 0f, 1f);\n        }\n\n        buffer.SetPixel(x, y, r, g, b, 1f);\n    });\n\n    return buffer;\n\nprivate static float RidgedMultifractal(float x, float y, int period, int octaves,\n    float persistence, float lacunarity, float steepness, int seed)\n{\n    var value = 0f;\n    var amplitude = 1f;\n    var frequency = 1f;\n    var maxVal = 0f;\n    var offset = 1f;\n\n    for (var o = 0; o < octaves; o++)\n    {\n        var octavePeriod = Math.Max(1, (int)(period * frequency));\n        var noise = TileableValueNoise(x * frequency, y * frequency, octavePeriod, seed + o * 1013);\n\n        // Ridge: 1 - |noise|, creates sharp valleys\n        var ridge = 1f - MathF.Abs(noise * 2f - 1f);\n        ridge = MathF.Pow(ridge, 1f + steepness);\n        ridge *= ridge; // Sharper ridges\n\n        value += ridge * amplitude * offset;\n        maxVal += amplitude;\n        amplitude *= persistence;\n        frequency *= lacunarity;\n        offset *= 0.9f; // Reduce offset per octave\n    }\n\n    return maxVal > 0f ? value / maxVal : 0f;\n}\n\nprivate static float ComputeLocalSlope(float x, float y, int period, int seed)\n{\n    var eps = 0.05f;\n    var h0 = TileableValueNoise(x - eps, y, period, seed);\n    var h1 = TileableValueNoise(x + eps, y, period, seed);\n    var h2 = TileableValueNoise(x, y - eps, period, seed);\n    var h3 = TileableValueNoise(x, y + eps, period, seed);\n\n    var dx = (h1 - h0) / (2f * eps);\n    var dy = (h3 - h2) / (2f * eps);\n    return MathF.Sqrt(dx * dx + dy * dy);\n    }\n}"
+  }
+}

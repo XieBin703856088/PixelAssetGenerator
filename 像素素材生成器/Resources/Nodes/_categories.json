@@ -1,0 +1,42 @@
+{
+  "Logic": {
+    "zh-Hans": "逻辑运算",
+    "en": "Logic"
+  },
+  "Pattern": {
+    "zh-Hans": "图案",
+    "en": "Pattern"
+  },
+  "Noise": {
+    "zh-Hans": "噪点",
+    "en": "Noise"
+  },
+  "Material": {
+    "zh-Hans": "材质",
+    "en": "Material"
+  },
+  "ImageProcess": {
+    "zh-Hans": "图像处理",
+    "en": "Image Process"
+  },
+  "Generate": {
+    "zh-Hans": "生成",
+    "en": "Generate"
+  },
+  "Tool": {
+    "zh-Hans": "工具",
+    "en": "Tool"
+  },
+  "Particle": {
+    "zh-Hans": "粒子",
+    "en": "Particle"
+  },
+  "Physics": {
+    "zh-Hans": "物理",
+    "en": "Physics"
+  },
+  "Animation": {
+    "zh-Hans": "动画",
+    "en": "Animation"
+  }
+}

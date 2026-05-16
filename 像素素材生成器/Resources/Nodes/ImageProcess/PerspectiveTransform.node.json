@@ -1,0 +1,97 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "PerspectiveTransform",
+    "displayName": {
+      "zh-Hans": "透视变换",
+      "en": "Perspective Transform"
+    },
+    "category": "ImageProcess",
+    "description": {
+      "zh-Hans": "应用简单的透视变换，模拟3D旋转。X轴旋转在顶部/底部水平压缩图像。Y轴旋转根据行位置应用水平倾斜。缩放控制整体缩放比例。",
+      "en": "Applies a simple perspective-like transform simulating 3D rotation. Rotation X compresses the image horizontally at top/bottom. Rotation Y applies a horizontal skew based on row position. Scale controls overall zoom."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [
+      {
+        "name": {
+          "zh-Hans": "源图像",
+          "en": "SourceImage"
+        },
+        "type": "Image"
+      }
+    ],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "遮罩",
+          "en": "Mask"
+        },
+        "type": "Mask"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "X 旋转",
+        "en": "Rotation X"
+      },
+      "kind": "Number",
+      "default": 20.0,
+      "min": -45.0,
+      "max": 45.0,
+      "step": 1.0
+    },
+    {
+      "name": {
+        "zh-Hans": "Y 旋转",
+        "en": "Rotation Y"
+      },
+      "kind": "Number",
+      "default": 10.0,
+      "min": -45.0,
+      "max": 45.0,
+      "step": 1.0
+    },
+    {
+      "name": {
+        "zh-Hans": "缩放",
+        "en": "Scale"
+      },
+      "kind": "Number",
+      "default": 1.0,
+      "min": 0.5,
+      "max": 2.0,
+      "step": 0.1
+    }
+  ],
+  "ai": {
+    "capabilities": ["transform"],
+    "triggers": {
+      "zh-Hans": "透视变换, 透视变形, 3D旋转, 透视投影",
+      "en": "perspective transform, perspective warp, 3D rotate, perspective projection"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "对图像应用透视旋转，模拟3D视角。",
+      "en": "Apply perspective rotation to an image to simulate a 3D viewpoint."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar src = inputs[0];\nvar rotX = GetFloat(parameters, \"rotationX\", 15f);\nvar rotY = GetFloat(parameters, \"rotationY\", 10f);\nvar scale = Math.Max(0.1f, GetFloat(parameters, \"scale\", 1.0f));\nvar size = context.TileSize;\nvar result = new PixelBuffer(size, size);\nif (src == null) return result;\nvar cx = size * 0.5f; var cy = size * 0.5f;\nvar rxRad = rotX * MathF.PI / 180f;\nvar ryRad = rotY * MathF.PI / 180f;\nresult.ParallelForEachPixel((x, y) =>\n{\n    var nx = (x - cx) / (size * scale);\n    var ny = (y - cy) / (size * scale);\n    // Rotation X: compress rows at top/bottom\n    var cosX = MathF.Cos(rxRad * ny);\n    var sx2 = nx / Math.Max(0.01f, cosX);\n    // Rotation Y: skew columns based on row\n    var sx3 = sx2 - ny * MathF.Sin(ryRad);\n    var srcX = (int)((sx3 + 0.5f) * size);\n    var srcY = (int)((ny + 0.5f) * size);\n    if (srcX < 0 || srcX >= size || srcY < 0 || srcY >= size)\n    {\n        result.SetPixel(x, y, 0, 0, 0, 0);\n    }\n    else\n    {\n        var (r, g, b, a) = src.GetPixel(srcX, srcY);\n        result.SetPixel(x, y, r, g, b, a);\n    }\n});\nreturn result;\n}"
+  }
+}

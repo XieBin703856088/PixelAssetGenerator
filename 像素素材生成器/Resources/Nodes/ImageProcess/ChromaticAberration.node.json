@@ -1,0 +1,136 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "ChromaticAberration",
+    "displayName": {
+      "zh-Hans": "色差",
+      "en": "Chromatic Aberration"
+    },
+    "category": "ImageProcess",
+    "description": {
+      "zh-Hans": "应用色差（RGB通道偏移）效果。通过径向或方向性通道分裂模拟镜头色散。",
+      "en": "Applies chromatic aberration (RGB channel offset) effect. Simulates lens dispersion with radial or directional channel splitting."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      }
+    ],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "结果",
+          "en": "Result"
+        },
+        "type": "Image"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "偏移强度",
+        "en": "Offset Strength"
+      },
+      "kind": "Number",
+      "default": 0.04,
+      "min": 0.0,
+      "max": 0.1,
+      "step": 0.001
+    },
+    {
+      "name": {
+        "zh-Hans": "模式",
+        "en": "Mode"
+      },
+      "kind": "Choice",
+      "default": "radial",
+      "choices": [
+        {
+          "value": "radial",
+          "label": {
+            "zh-Hans": "径向模糊",
+            "en": "radial"
+          }
+        },
+        {
+          "value": "horizontal",
+          "label": {
+            "zh-Hans": "水平",
+            "en": "horizontal"
+          }
+        },
+        {
+          "value": "vertical",
+          "label": {
+            "zh-Hans": "垂直",
+            "en": "vertical"
+          }
+        },
+        {
+          "value": "rotation",
+          "label": {
+            "zh-Hans": "旋转",
+            "en": "rotation"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "zh-Hans": "角度",
+        "en": "Angle"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 360.0,
+      "step": 1.0
+    },
+    {
+      "name": {
+        "zh-Hans": "混合比例",
+        "en": "Mix Ratio"
+      },
+      "kind": "Number",
+      "default": 1.0,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "保留透明通道",
+        "en": "Preserve Alpha"
+      },
+      "kind": "Boolean",
+      "default": true
+    }
+  ],
+  "ai": {
+    "capabilities": ["distort", "effect"],
+    "triggers": {
+      "zh-Hans": "色差, RGB偏移, 镜头色散, 通道分裂",
+      "en": "chromatic aberration, RGB shift, lens dispersion, channel split"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "为像素艺术添加色差效果，模拟镜头失真。",
+      "en": "Add chromatic aberration to pixel art to simulate lens distortion."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar src = inputs.Length > 0 ? inputs[0] : null;\nif (src == null)\n    return new PixelBuffer(context.TileSize, context.TileSize);\n\nvar strength = GetFloat(parameters, \"offsetStrength\", 0.02f);\nvar mode = GetChoice(parameters, \"mode\", \"radial\");\nvar angle = GetFloat(parameters, \"angle\", 0f) * MathF.PI / 180f;\nvar mixRatio = GetFloat(parameters, \"mixRatio\", 1f);\nvar preserveAlpha = GetBool(parameters, \"preserveAlpha\", true);\n\nvar size = context.TileSize;\nvar result = new PixelBuffer(size, size);\nvar cx = size * 0.5f;\nvar cy = size * 0.5f;\nvar maxOffset = strength * size;\n\nresult.ParallelForEachPixel((x, y) =>\n{\n    float offsetX, offsetY;\n\n    switch (mode)\n    {\n        case \"horizontal\":\n            offsetX = maxOffset;\n            offsetY = 0;\n            break;\n        case \"vertical\":\n            offsetX = 0;\n            offsetY = maxOffset;\n            break;\n        case \"rotation\":\n            offsetX = MathF.Cos(angle) * maxOffset;\n            offsetY = MathF.Sin(angle) * maxOffset;\n            break;\n        default: // radial\n            var dx = x - cx;\n            var dy = y - cy;\n            var dist = MathF.Sqrt(dx * dx + dy * dy);\n            if (dist > 0)\n            {\n                offsetX = dx / dist * maxOffset;\n                offsetY = dy / dist * maxOffset;\n            }\n            else\n            {\n                offsetX = maxOffset;\n                offsetY = 0;\n            }\n            break;\n    }\n\n    // Sample R, G, B at different offsets\n    var rx = (int)(x + offsetX);\n    var ry = (int)(y + offsetY);\n    var gx = x;\n    var gy = y;\n    var bx = (int)(x - offsetX);\n    var by = (int)(y - offsetY);\n\n    var (rR, rG, rB, _) = src.GetPixelWrapped(rx, ry);\n    var (_, gG, _, _) = src.GetPixelWrapped(gx, gy);\n    var (bR, bG, bB, _) = src.GetPixelWrapped(bx, by);\n\n    var (origR, origG, origB, origA) = src.GetPixel(x, y);\n\n    var outR = mixRatio >= 0.999f ? rR : origR + (rR - origR) * mixRatio;\n    var outG = mixRatio >= 0.999f ? gG : origG + (gG - origG) * mixRatio;\n    var outB = mixRatio >= 0.999f ? bB : origB + (bB - origB) * mixRatio;\n\n    result.SetPixel(x, y,\n        Math.Clamp(outR, 0f, 1f),\n        Math.Clamp(outG, 0f, 1f),\n        Math.Clamp(outB, 0f, 1f),\n        preserveAlpha ? origA : 1f);\n});\n\nreturn result;\n}"
+  }
+}

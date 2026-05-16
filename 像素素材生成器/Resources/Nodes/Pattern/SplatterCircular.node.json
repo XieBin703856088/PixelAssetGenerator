@@ -1,0 +1,245 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "SplatterCircular",
+    "displayName": {
+      "zh-Hans": "圆形泼溅",
+      "en": "Splatter Circular"
+    },
+    "category": "Pattern",
+    "description": {
+      "zh-Hans": "生成由均匀分布在圆环上的柔和圆形斑点组成的圆形泼溅图案。适用于装饰性环形图案或印章式泼溅效果。",
+      "en": "Generates a circular splatter composed of soft round blobs arranged evenly on a ring. Useful for decorative ring patterns or stamp-like splatter."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [
+      {
+        "name": {
+          "zh-Hans": "形状输入",
+          "en": "ShapeInput"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "背景",
+          "en": "Background"
+        },
+        "type": "Image"
+      }
+    ],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "遮罩",
+          "en": "Mask"
+        },
+        "type": "Mask"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "数量",
+        "en": "Count"
+      },
+      "kind": "Integer",
+      "default": 8,
+      "min": 1,
+      "max": 32,
+      "step": 1
+    },
+    {
+      "name": {
+        "zh-Hans": "半径",
+        "en": "Radius"
+      },
+      "kind": "Number",
+      "default": 0.35,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "形状类型",
+        "en": "Shape Type"
+      },
+      "kind": "Choice",
+      "default": "sphere",
+      "choices": [
+        {
+          "value": "sphere",
+          "label": {
+            "zh-Hans": "sphere",
+            "en": "sphere"
+          }
+        },
+        {
+          "value": "square",
+          "label": {
+            "zh-Hans": "正方形",
+            "en": "square"
+          }
+        },
+        {
+          "value": "diamond",
+          "label": {
+            "zh-Hans": "菱形",
+            "en": "diamond"
+          }
+        },
+        {
+          "value": "star",
+          "label": {
+            "zh-Hans": "星形",
+            "en": "star"
+          }
+        },
+        {
+          "value": "ring",
+          "label": {
+            "zh-Hans": "ring",
+            "en": "ring"
+          }
+        },
+        {
+          "value": "custom",
+          "label": {
+            "zh-Hans": "自定义",
+            "en": "custom"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "zh-Hans": "点大小",
+        "en": "Spot Size"
+      },
+      "kind": "Number",
+      "default": 0.1,
+      "min": 0.01,
+      "max": 0.5,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "环数",
+        "en": "Rings"
+      },
+      "kind": "Integer",
+      "default": 1,
+      "min": 1,
+      "max": 10,
+      "step": 1
+    },
+    {
+      "name": {
+        "zh-Hans": "大小变化",
+        "en": "Size Variation"
+      },
+      "kind": "Number",
+      "default": 0.3,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "旋转变化",
+        "en": "Rotation Variation"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "起始角度",
+        "en": "Start Angle"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 360.0,
+      "step": 1.0
+    },
+    {
+      "name": {
+        "zh-Hans": "柔化",
+        "en": "Softness"
+      },
+      "kind": "Number",
+      "default": 0.25,
+      "min": 0.0,
+      "max": 2.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "颜色 A",
+        "en": "Color A"
+      },
+      "kind": "Color",
+      "default": "#FFFFFFFF"
+    },
+    {
+      "name": {
+        "zh-Hans": "颜色 B",
+        "en": "Color B"
+      },
+      "kind": "Color",
+      "default": "#000000FF"
+    },
+    {
+      "name": {
+        "zh-Hans": "反相",
+        "en": "Invert"
+      },
+      "kind": "Boolean",
+      "default": false
+    },
+    {
+      "name": {
+        "zh-Hans": "种子",
+        "en": "Seed"
+      },
+      "kind": "Seed",
+      "default": 42,
+      "min": 0,
+      "max": 9999
+    }
+  ],
+  "ai": {
+    "capabilities": ["pattern", "geometric", "tiling"],
+    "triggers": {
+      "zh-Hans": "圆形泼溅, 泼溅, 环形装饰, 印章效果",
+      "en": "splatter circular, splatter, ring decoration, stamp effect"
+    },
+    "suggestedInputs": ["Shape"],
+    "exampleUsage": {
+      "zh-Hans": "生成圆形泼溅图案，用作像素艺术中的装饰性环形或印章效果。",
+      "en": "Generate a circular splatter pattern for decorative rings or stamp effects in pixel art."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar seed = GetInt(parameters, \"seed\", context.Seed);\n    var count = Math.Max(1, GetInt(parameters, \"count\", 8));\n    var radius = Math.Clamp(GetFloat(parameters, \"radius\", 0.35f), 0f, 1f);\n    var rings = Math.Max(1, GetInt(parameters, \"rings\", 1));\n    var spotSize = Math.Clamp(GetFloat(parameters, \"spotSize\", 0.10f), 0.001f, 1f);\n    var shapeType = GetChoice(parameters, \"shapeType\", \"sphere\");\n    var sizeVariation = GetFloat(parameters, \"sizeVariation\", 0.3f);\n    var rotationVariation = GetFloat(parameters, \"rotationVariation\", 0f);\n    var startAngle = GetFloat(parameters, \"startAngle\", 0f) * MathF.PI / 180f;\n    var softness = Math.Max(0f, GetFloat(parameters, \"softness\", 0.25f));\n    var colorA = GetColor(parameters, \"colorA\", Color.FromRgb(230,230,230));\n    var colorB = GetColor(parameters, \"colorB\", Color.FromRgb(0,0,0));\n    var invert = GetBool(parameters, \"invert\", false);\n\n    var shapeInput = inputs.Length > 0 ? inputs[0] : null;\n    var bgInput = inputs.Length > 1 ? inputs[1] : null;\n\n    var size = context.TileSize;\n    var buffer = new PixelBuffer(size, size);\n\n    // center in pixel coordinates\n    var cx = size * 0.5f;\n    var cy = size * 0.5f;\n\n    // radius in pixels (relative to half tile)\n    var radiusPx = radius * (size * 0.5f);\n\n    // spot radius in pixels (roughly the visual radius)\n    var spotRadiusPx = Math.Max(1f, spotSize * size);\n\n    // base softness\n    var baseSoftness = Math.Max(0.001f, softness);\n\n    // Pre-compute shape flags outside the loop\n    var isRingShape = shapeType == \"ring\";\n\n    buffer.ParallelForEachPixel((x, y) =>\n    {\n        var px = x + 0.5f;\n        var py = y + 0.5f;\n\n        float best = 0f;\n\n        // Multiple concentric rings support: iterate rings and spots per ring\n        for (int r = 0; r < rings; r++)\n        {\n            // compute ring radius as fraction of base radius; distribute between 0.4..1.0\n            float ringRadiusFactor = rings == 1 ? 1f : (0.4f + r * (0.6f / Math.Max(1, rings - 1)));\n            var ringRadiusPx = radiusPx * ringRadiusFactor;\n\n            // per-ring spot size with random variation per spot\n            for (int i = 0; i < count; i++)\n            {\n                // Per-spot random size modifier\n                var sizeMod = 1f - sizeVariation * 0.5f + HashToUnit(i, r + 100, seed + 50) * sizeVariation;\n                var ringSpotRadius = spotRadiusPx * (1f - r * 0.08f) * Math.Max(0.1f, sizeMod);\n                var sigmaRing = Math.Max(0.5f, ringSpotRadius * baseSoftness);\n                var invTwoSigmaSqRing = 1f / (2f * sigmaRing * sigmaRing);\n\n                // Angular position with optional rotation variation\n                var angleOffset = HashToUnit(i, r, seed) * rotationVariation * MathF.Tau;\n                var angle = startAngle + (i / (float)count) * MathF.Tau + angleOffset;\n                // slight per-spot radial jitter (deterministic) to avoid perfect repetition\n                var rOffset = (HashToUnit(i, r, 0) - 0.5f) * (ringSpotRadius * 0.12f);\n                var spotCx = cx + (ringRadiusPx + rOffset) * MathF.Cos(angle);\n                var spotCy = cy + (ringRadiusPx + rOffset) * MathF.Sin(angle);\n\n                var dx = px - spotCx;\n                var dy = py - spotCy;\n\n                float contrib;\n                // If user explicitly selected custom and provided a shape input, use it.\n                if (shapeType == \"custom\" && shapeInput is not null)\n                {\n                    contrib = SampleShapeFromBuffer(shapeInput, dx, dy, ringSpotRadius);\n                }\n                else\n                {\n                    // fallback to builtin shapes — pass rotation variation if applicable\n                    var spotAngle = rotationVariation > 0f ? angle : 0f;\n                    contrib = BuiltinShapeSample(shapeType, isRingShape, dx, dy, ringSpotRadius, invTwoSigmaSqRing, spotAngle);\n                }\n\n                if (contrib > best) best = contrib;\n            }\n        }\n\n        best = Math.Clamp(best, 0f, 1f);\n        if (invert) best = 1f - best;\n\n        // blend between background (B) and foreground (A)\n        var aR = colorA.R / 255f;\n        var aG = colorA.G / 255f;\n        var aB = colorA.B / 255f;\n\n        float bR, bG, bB;\n        if (bgInput is not null)\n        {\n            // map output pixel coords into background buffer space (scale if needed)\n            var bx = (int)MathF.Round(x * (bgInput.Width / (float)size));\n            var by = (int)MathF.Round(y * (bgInput.Height / (float)size));\n            var bp = bgInput.GetPixelWrapped(bx, by);\n            bR = bp.R;\n            bG = bp.G;\n            bB = bp.B;\n        }\n        else\n        {\n            bR = colorB.R / 255f;\n            bG = colorB.G / 255f;\n            bB = colorB.B / 255f;\n        }\n\n        var outR = bR * (1f - best) + aR * best;\n        var outG = bG * (1f - best) + aG * best;\n        var outB = bB * (1f - best) + aB * best;\n\n        buffer.SetPixel(x, y, outR, outG, outB, 1f);\n    });\n\n    return buffer;\n\nprivate static float SampleShapeFromBuffer(PixelBuffer buf, float dx, float dy, float ringSpotRadius)\n{\n    if (buf is null) return 0f;\n    var w = buf.Width;\n    var h = buf.Height;\n    if (w <= 0 || h <= 0) return 0f;\n\n    // Map local coordinates into shape buffer space. We assume the shape image covers diameter = 2 * ringSpotRadius.\n    // Center of the spot maps to texture UV (0.5,0.5). Values outside [0,1] are treated as zero\n    // (no contribution) so the shape does not tile.\n    var nx = (dx / (ringSpotRadius * 2f)) + 0.5f; // 0..1\n    var ny = (dy / (ringSpotRadius * 2f)) + 0.5f;\n\n    if (nx < 0f || nx > 1f || ny < 0f || ny > 1f)\n        return 0f;\n\n    var ix = (int)MathF.Round(nx * (w - 1));\n    var iy = (int)MathF.Round(ny * (h - 1));\n\n    // Nearest sampling without wrapping so shape image is used as a single silhouette.\n    var val = buf.GetValue(ix, iy);\n    return Math.Clamp(val, 0f, 1f);\n}\n\nprivate static float BuiltinShapeSample(string shapeType, bool isRing, float dx, float dy, float ringSpotRadius, float invTwoSigmaSq, float rotation)\n{\n    // Apply rotation to coordinates for non-circular shapes\n    var cosR = MathF.Cos(rotation);\n    var sinR = MathF.Sin(rotation);\n    var rdx = dx * cosR - dy * sinR;\n    var rdy = dx * sinR + dy * cosR;\n\n    // normalized radial distance\n    var r = MathF.Sqrt(dx * dx + dy * dy);\n\n    if (isRing)\n    {\n        // Ring shape: a circular outline with thickness\n        var ringThickness = ringSpotRadius * 0.3f;\n        var ringCenter = ringSpotRadius * 0.7f;\n        var distToRing = MathF.Abs(r - ringCenter);\n        var ringVal = 1f - distToRing / ringThickness;\n        return SmoothStep(0f, 1f, Math.Clamp(ringVal, 0f, 1f));\n    }\n\n    switch (shapeType)\n    {\n        case \"square\":\n            var d = MathF.Max(MathF.Abs(rdx), MathF.Abs(rdy));\n            var nx = d / ringSpotRadius; // 0=center..1=edge\n            return SmoothStep(0f, 1f, Math.Clamp(1f - nx, 0f, 1f));\n        case \"diamond\":\n            var l1 = (MathF.Abs(rdx) + MathF.Abs(rdy)) / ringSpotRadius;\n            return SmoothStep(0f, 1f, Math.Clamp(1f - l1, 0f, 1f));\n        case \"star\":\n            // radial stars: use angular modulation to create points\n            var angle = MathF.Atan2(rdy, rdx);\n            var spikes = MathF.Abs(MathF.Cos(angle * 5f)); // 5-point star\n            var radial = r / ringSpotRadius;\n            var profile = 1f - radial * (0.6f + 0.4f * spikes);\n            return SmoothStep(0f, 1f, Math.Clamp(profile, 0f, 1f));\n        default:\n            // sphere: use gaussian for soft round blob (matches previous behavior)\n            return MathF.Exp(-(r * r) * invTwoSigmaSq);\n    }\n    }\n}"
+  }
+}

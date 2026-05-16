@@ -1,0 +1,139 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "Rectangle",
+    "displayName": {
+      "zh-Hans": "矩形",
+      "en": "Rectangle"
+    },
+    "category": "Logic",
+    "description": {
+      "zh-Hans": "绘制填充或描边矩形，支持可选的圆角。",
+      "en": "Draws a filled or stroked rectangle with optional rounded corners."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [
+      {
+        "name": {
+          "zh-Hans": "输入",
+          "en": "Input"
+        },
+        "type": "Image"
+      }
+    ],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "输出",
+          "en": "Output"
+        },
+        "type": "Image"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "X 位置",
+        "en": "X"
+      },
+      "kind": "Number",
+      "default": 0.25,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "Y 位置",
+        "en": "Y"
+      },
+      "kind": "Number",
+      "default": 0.25,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "宽度",
+        "en": "Width"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.01,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "高度",
+        "en": "Height"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.01,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "颜色",
+        "en": "Color"
+      },
+      "kind": "Color",
+      "default": "#FFFFFFFF"
+    },
+    {
+      "name": {
+        "zh-Hans": "圆角",
+        "en": "Corner Radius"
+      },
+      "kind": "Number",
+      "default": 0.05,
+      "min": 0.0,
+      "max": 0.5,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "填充",
+        "en": "Filled"
+      },
+      "kind": "Boolean",
+      "default": true
+    },
+    {
+      "name": {
+        "zh-Hans": "描边宽度",
+        "en": "Stroke Width"
+      },
+      "kind": "Integer",
+      "default": 0,
+      "min": 0,
+      "max": 32,
+      "step": 1
+    }
+  ],
+  "ai": {
+    "capabilities": ["logic", "math"],
+    "triggers": {
+      "zh-Hans": "矩形, 画矩形, 圆角矩形, 填充矩形, 描边矩形",
+      "en": "rectangle, draw rectangle, rounded rect, filled rect, stroked rect"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "在输入缓冲区上绘制带圆角的填充矩形，用作UI元素或窗口。",
+      "en": "Draw a filled rectangle with rounded corners on an input buffer for UI elements or windows."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar size = context.TileSize;\n    var rx = GetFloat(parameters, \"x\", 0.25f);\n    var ry = GetFloat(parameters, \"y\", 0.25f);\n    var rw = GetFloat(parameters, \"width\", 0.5f);\n    var rh = GetFloat(parameters, \"height\", 0.5f);\n    var rectColor = GetColor(parameters, \"color\", Colors.White);\n    var cornerRadius = GetFloat(parameters, \"cornerRadius\", 0f);\n    var filled = GetBool(parameters, \"filled\", true);\n    var strokeWidth = GetInt(parameters, \"strokeWidth\", 0);\n\n    var cR = rectColor.R / 255f;\n    var cG = rectColor.G / 255f;\n    var cB = rectColor.B / 255f;\n\n    // Compute pixel-space rectangle bounds\n    var x0 = rx * size;\n    var y0 = ry * size;\n    var x1 = (rx + rw) * size;\n    var y1 = (ry + rh) * size;\n\n    var radius = cornerRadius * size;\n    var halfStroke = strokeWidth * 0.5f;\n\n    // Clone input buffer or create empty one\n    PixelBuffer buffer;\n    if (inputs.Length > 0 && inputs[0] != null)\n    {\n        buffer = inputs[0]!.Clone();\n    }\n    else\n    {\n        buffer = PixelBufferPool.Borrow(size, size);\n    }\n\n    buffer.ParallelForEachPixel((x, y) =>\n    {\n        var px = x + 0.5f;\n        var py = y + 0.5f;\n\n        // Signed distance to rectangle interior\n        var d = SignedRectDistance(px, py, x0, y0, x1, y1, radius);\n\n        float alpha;\n\n        if (filled)\n        {\n            // Fill interior\n            alpha = d <= 0f ? 1f : 0f;\n\n            // Stroke overlay if strokeWidth > 0\n            if (strokeWidth > 0)\n            {\n                var innerDist = d;\n                var outerDist = SignedRectDistance(px, py, x0 - halfStroke, y0 - halfStroke, x1 + halfStroke, y1 + halfStroke, radius + halfStroke);\n                if (innerDist > 0f && outerDist <= 0f)\n                {\n                    alpha = 1f;\n                }\n            }\n        }\n        else if (strokeWidth > 0)\n        {\n            // Stroke only\n            var innerDist = SignedRectDistance(px, py, x0 + halfStroke, y0 + halfStroke, x1 - halfStroke, y1 - halfStroke, Math.Max(0f, radius - halfStroke));\n            var outerDist = SignedRectDistance(px, py, x0 - halfStroke, y0 - halfStroke, x1 + halfStroke, y1 + halfStroke, radius + halfStroke);\n            alpha = (innerDist > 0f && outerDist <= 0f) ? 1f : 0f;\n        }\n        else\n        {\n            alpha = 0f;\n        }\n\n        if (alpha <= 0f) return;\n\n        var (or, og, ob, oa) = buffer.GetPixel(x, y);\n        var outA = oa + alpha * (1f - oa);\n        if (outA > 0f)\n        {\n            var outR = (or * oa + cR * alpha * (1f - oa)) / outA;\n            var outG = (og * oa + cG * alpha * (1f - oa)) / outA;\n            var outB = (ob * oa + cB * alpha * (1f - oa)) / outA;\n            buffer.SetPixel(x, y, outR, outG, outB, outA);\n        }\n        else\n        {\n            buffer.SetPixel(x, y, cR, cG, cB, alpha);\n        }\n    });\n\n    return buffer;\n\n/// <summary>\n/// Signed distance from point (px, py) to the axis-aligned rectangle with optional rounded corners.\n/// Negative means inside the rectangle.\n/// </summary>\nprivate static float SignedRectDistance(float px, float py, float x0, float y0, float x1, float y1, float radius)\n{\n    // Closest point on rectangle boundary\n    var cx = Math.Clamp(px, x0, x1);\n    var cy = Math.Clamp(py, y0, y1);\n    var dx = px - cx;\n    var dy = py - cy;\n\n    // Distance from point to nearest edge (positive = outside)\n    var dist = MathF.Sqrt(dx * dx + dy * dy);\n\n    if (radius > 0f)\n    {\n        // For rounded corners, the true distance requires checking corner regions\n        // Get the signed distance to the inner rect (shrunk by radius)\n        var innerX0 = x0 + radius;\n        var innerY0 = y0 + radius;\n        var innerX1 = x1 - radius;\n        var innerY1 = y1 - radius;\n\n        if (innerX1 < innerX0 || innerY1 < innerY0) radius = 0f;\n\n        if (px >= innerX0 && px <= innerX1 && py >= innerY0 && py <= innerY1)\n        {\n            // Fully inside the inner rectangle\n            var dLeft = px - x0;\n            var dRight = x1 - px;\n            var dTop = py - y0;\n            var dBot = y1 - py;\n            return -MathF.Min(MathF.Min(dLeft, dRight), MathF.Min(dTop, dBot));\n        }\n\n        if (px < innerX0 && py < innerY0)\n        {\n            // Top-left corner quadrant\n            var cd = MathF.Sqrt((px - (x0 + radius)) * (px - (x0 + radius)) + (py - (y0 + radius)) * (py - (y0 + radius)));\n            return cd - radius;\n        }\n\n        if (px > innerX1 && py < innerY0)\n        {\n            // Top-right corner quadrant\n            var cd = MathF.Sqrt((px - (x1 - radius)) * (px - (x1 - radius)) + (py - (y0 + radius)) * (py - (y0 + radius)));\n            return cd - radius;\n        }\n\n        if (px < innerX0 && py > innerY1)\n        {\n            // Bottom-left corner quadrant\n            var cd = MathF.Sqrt((px - (x0 + radius)) * (px - (x0 + radius)) + (py - (y1 - radius)) * (py - (y1 - radius)));\n            return cd - radius;\n        }\n\n        if (px > innerX1 && py > innerY1)\n        {\n            // Bottom-right corner quadrant\n            var cd = MathF.Sqrt((px - (x1 - radius)) * (px - (x1 - radius)) + (py - (y1 - radius)) * (py - (y1 - radius)));\n            return cd - radius;\n        }\n\n        // Edge regions: distance to nearest edge\n        if (px < x0) return x0 - px;\n        if (px > x1) return px - x1;\n        if (py < y0) return y0 - py;\n        if (py > y1) return py - y1;\n        return -MathF.Min(px - x0, MathF.Min(x1 - px, MathF.Min(py - y0, y1 - py)));\n    }\n\n    // Non-rounded: if point is inside, return negative distance to nearest edge\n    if (px >= x0 && px <= x1 && py >= y0 && py <= y1)\n    {\n        return -MathF.Min(px - x0, MathF.Min(x1 - px, MathF.Min(py - y0, y1 - py)));\n    }\n\n    return dist;\n    }\n}"
+  }
+}

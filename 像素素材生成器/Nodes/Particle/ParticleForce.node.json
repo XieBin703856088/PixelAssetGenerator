@@ -1,0 +1,81 @@
+{
+  "formatVersion": 2,
+  "processorType": "ParticleForce",
+  "identity": {
+    "typeName": "ParticleForce",
+    "displayName": {
+      "zh-Hans": "粒子力场",
+      "en": "Particle Force"
+    },
+    "category": "Particle",
+    "description": {
+      "zh-Hans": "对粒子施加力场效果（重力、吸引、漩涡、噪声运动等）",
+      "en": "Applies force field effects to particles (gravity, attract, vortex, noise motion, etc.)"
+    },
+    "tags": ["particle", "force"],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [
+      {
+        "name": { "zh-Hans": "粒子", "en": "Particles" },
+        "type": "Particle"
+      },
+      {
+        "name": { "zh-Hans": "遮罩", "en": "Mask" },
+        "type": "Mask"
+      }
+    ],
+    "outputs": [
+      {
+        "name": { "zh-Hans": "粒子", "en": "Particles" },
+        "type": "Particle"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": { "zh-Hans": "力类型", "en": "Force Type" },
+      "kind": "Choice",
+      "default": "gravity",
+      "choices": ["gravity", "attract", "vortex", "wind", "turbulence", "noiseMotion"],
+      "displayChoices": ["重力", "吸引", "漩涡", "风力", "湍流", "噪声运动"]
+    },
+    { "name": { "zh-Hans": "强度", "en": "Strength" }, "kind": "Number", "default": 1.0, "min": -5.0, "max": 5.0, "step": 0.1 },
+    { "name": { "zh-Hans": "位置X", "en": "Position X" }, "kind": "Number", "default": 0.5, "min": 0, "max": 1, "step": 0.01 },
+    { "name": { "zh-Hans": "位置Y", "en": "Position Y" }, "kind": "Number", "default": 0.5, "min": 0, "max": 1, "step": 0.01 },
+    { "name": { "zh-Hans": "作用半径", "en": "Radius" }, "kind": "Number", "default": 0.3, "min": 0, "max": 1, "step": 0.01 },
+    {
+      "name": { "zh-Hans": "衰减方式", "en": "Falloff" },
+      "kind": "Choice",
+      "default": "inverseSquare",
+      "choices": ["constant", "linear", "inverseSquare"],
+      "displayChoices": ["恒定", "线性", "平方反比"]
+    },
+    { "name": { "zh-Hans": "湍流频率", "en": "Turbulence Freq" }, "kind": "Number", "default": 2.0, "min": 0.1, "max": 10, "step": 0.1 },
+    {
+      "name": { "zh-Hans": "噪声类型", "en": "Noise Type" },
+      "kind": "Choice",
+      "default": "perlin",
+      "choices": ["perlin", "value"],
+      "displayChoices": ["Perlin噪声", "值噪声"]
+    },
+    { "name": { "zh-Hans": "噪声频率", "en": "Noise Freq" }, "kind": "Number", "default": 2.0, "min": 0.1, "max": 10.0, "step": 0.1 },
+    { "name": { "zh-Hans": "时间缩放", "en": "Time Scale" }, "kind": "Number", "default": 0.3, "min": 0.0, "max": 2.0, "step": 0.05 },
+    { "name": { "zh-Hans": "噪声八度", "en": "Noise Octaves" }, "kind": "Integer", "default": 3, "min": 1, "max": 6, "step": 1 },
+    { "name": { "zh-Hans": "各向异性", "en": "Anisotropy" }, "kind": "Number", "default": 1.0, "min": 0.0, "max": 2.0, "step": 0.05 }
+  ],
+  "ai": {
+    "capabilities": ["particle", "force"],
+    "triggers": {
+      "zh-Hans": "粒子力场, 粒子重力, 粒子吸引, 粒子漩涡, 粒子湍流",
+      "en": "particle force, particle gravity, particle attract, particle vortex, particle turbulence"
+    },
+    "suggestedInputs": ["ParticleEmitter"],
+    "exampleUsage": {
+      "zh-Hans": "对粒子施加重力场向下吸引，强度1.0，配合湍流制造不规则运动",
+      "en": "Apply a gravity force field pulling particles downward with strength 1.0, combined with turbulence for irregular motion"
+    }
+  }
+}

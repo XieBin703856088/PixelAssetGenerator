@@ -1,0 +1,142 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "NoiseInjection",
+    "displayName": {
+      "zh-Hans": "噪波注入",
+      "en": "Noise Injection"
+    },
+    "category": "ImageProcess",
+    "description": {
+      "zh-Hans": "向图像中注入噪波/颗粒效果：胶片颗粒、灰尘划痕、扫描线、彩色噪波和雪花。完全可平铺。",
+      "en": "Injects noise/grain effects into an image: film grain, dust, scanlines, color noise, and static. Fully tileable."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      }
+    ],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "结果",
+          "en": "Result"
+        },
+        "type": "Image"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "种子",
+        "en": "Seed"
+      },
+      "kind": "Seed",
+      "default": 42,
+      "min": 0,
+      "max": 9999
+    },
+    {
+      "name": {
+        "zh-Hans": "噪声类型",
+        "en": "Noise Type"
+      },
+      "kind": "Choice",
+      "default": "filmGrain",
+      "choices": [
+        {
+          "value": "filmGrain",
+          "label": {
+            "zh-Hans": "胶片颗粒",
+            "en": "filmGrain"
+          }
+        },
+        {
+          "value": "colorNoise",
+          "label": {
+            "zh-Hans": "彩色噪波",
+            "en": "colorNoise"
+          }
+        },
+        {
+          "value": "dustScratches",
+          "label": {
+            "zh-Hans": "灰尘划痕",
+            "en": "dustScratches"
+          }
+        },
+        {
+          "value": "snow",
+          "label": {
+            "zh-Hans": "雪花",
+            "en": "snow"
+          }
+        },
+        {
+          "value": "pixelJitter",
+          "label": {
+            "zh-Hans": "像素抖动",
+            "en": "pixelJitter"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "zh-Hans": "强度",
+        "en": "Intensity"
+      },
+      "kind": "Number",
+      "default": 0.3,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "缩放",
+        "en": "Scale"
+      },
+      "kind": "Number",
+      "default": 1.0,
+      "min": 0.5,
+      "max": 4.0,
+      "step": 0.5
+    },
+    {
+      "name": {
+        "zh-Hans": "保留透明通道",
+        "en": "Preserve Alpha"
+      },
+      "kind": "Boolean",
+      "default": true
+    }
+  ],
+  "ai": {
+    "capabilities": ["effect", "filter"],
+    "triggers": {
+      "zh-Hans": "噪波注入, 噪点, 胶片颗粒, 雪花, 像素抖动, 灰尘划痕",
+      "en": "noise injection, noise, film grain, snow, pixel jitter, dust scratches"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "为图像添加胶片颗粒噪点以模拟复古效果。",
+      "en": "Add film grain noise to an image for a retro effect."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar src = inputs.Length > 0 ? inputs[0] : null;\nif (src == null)\n    return new PixelBuffer(context.TileSize, context.TileSize);\n\nvar seed = GetInt(parameters, \"seed\", context.Seed);\nvar noiseType = GetChoice(parameters, \"noiseType\", \"filmGrain\");\nvar strength = GetFloat(parameters, \"intensity\", 0.3f);\nvar scale = GetFloat(parameters, \"scale\", 1f);\nvar preserveAlpha = GetBool(parameters, \"preserveAlpha\", true);\n\nvar size = context.TileSize;\nvar result = new PixelBuffer(size, size);\nvar period = Math.Max(1, (int)MathF.Round(scale * 20f));\n\nresult.ParallelForEachPixel((x, y) =>\n{\n    var (r, g, b, a) = src.GetPixel(x, y);\n    var u = (x + 0.5f) / size;\n    var v = (y + 0.5f) / size;\n\n    switch (noiseType)\n    {\n        case \"colorNoise\":\n        {\n            var nr = GraphNodeBase.TileableFractalNoise(u * scale * 8f, v * scale * 8f, period, 1, 0.5f, 2f, seed);\n            var ng = GraphNodeBase.TileableFractalNoise(u * scale * 8f + 100f, v * scale * 8f + 100f, period, 1, 0.5f, 2f, seed + 50);\n            var nb = GraphNodeBase.TileableFractalNoise(u * scale * 8f + 200f, v * scale * 8f + 200f, period, 1, 0.5f, 2f, seed + 100);\n            r = Math.Clamp(r + (nr - 0.5f) * strength, 0f, 1f);\n            g = Math.Clamp(g + (ng - 0.5f) * strength, 0f, 1f);\n            b = Math.Clamp(b + (nb - 0.5f) * strength, 0f, 1f);\n            break;\n        }\n        case \"dustScratches\":\n        {\n            var scratch = GraphNodeBase.TileableFractalNoise(u * scale * 2f, v * scale * 20f, period, 1, 0.5f, 2f, seed + 200);\n            if (scratch > 0.98f)\n            {\n                var s = (scratch - 0.98f) / 0.02f * strength;\n                r = Math.Clamp(r - s * 0.5f, 0f, 1f);\n                g = Math.Clamp(g - s * 0.5f, 0f, 1f);\n                b = Math.Clamp(b - s * 0.5f, 0f, 1f);\n            }\n            // Dust specks\n            var dust = GraphNodeBase.TileableFractalNoise(u * scale * 12f + 50f, v * scale * 12f + 50f, Math.Max(1, period / 2), 1, 0.5f, 2f, seed + 300);\n            if (dust > 0.995f)\n            {\n                var d = (dust - 0.995f) / 0.005f * strength;\n                r = Math.Clamp(r + d * 0.3f, 0f, 1f);\n                g = Math.Clamp(g + d * 0.3f, 0f, 1f);\n                b = Math.Clamp(b + d * 0.3f, 0f, 1f);\n            }\n            break;\n        }\n        case \"snow\":\n        {\n            var snow = GraphNodeBase.TileableFractalNoise(u * scale * 20f, v * scale * 20f, Math.Max(1, period / 2), 1, 0.5f, 2f, seed + 400);\n            if (snow > 1f - strength * 0.5f)\n            {\n                var s = (snow - (1f - strength * 0.5f)) / (strength * 0.5f);\n                r = Math.Clamp(r + s * 0.8f, 0f, 1f);\n                g = Math.Clamp(g + s * 0.8f, 0f, 1f);\n                b = Math.Clamp(b + s * 0.8f, 0f, 1f);\n            }\n            break;\n        }\n        case \"pixelJitter\":\n        {\n            var jitter = strength * 4f;\n            var jx = (int)(MathF.Round(x / Math.Max(1f, jitter)) * Math.Max(1f, jitter));\n            var jy = (int)(MathF.Round(y / Math.Max(1f, jitter)) * Math.Max(1f, jitter));\n            (r, g, b, a) = src.GetPixelWrapped(jx, jy);\n            break;\n        }\n        default: // filmGrain\n        {\n            var grain = GraphNodeBase.TileableFractalNoise(u * scale * 10f, v * scale * 10f, Math.Max(1, period / 2), 2, 0.5f, 2f, seed);\n            var offset = (grain - 0.5f) * strength;\n            r = Math.Clamp(r + offset, 0f, 1f);\n            g = Math.Clamp(g + offset * 0.9f, 0f, 1f);\n            b = Math.Clamp(b + offset * 0.8f, 0f, 1f);\n            break;\n        }\n    }\n\n    result.SetPixel(x, y, r, g, b, preserveAlpha ? a : 1f);\n});\n\nreturn result;\n}"
+  }
+}

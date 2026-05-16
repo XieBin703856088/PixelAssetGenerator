@@ -1,0 +1,156 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "Chainmail",
+    "displayName": {
+      "zh-Hans": "锁甲",
+      "en": "Chainmail"
+    },
+    "category": "Material",
+    "description": {
+      "zh-Hans": "生成锁甲/互锁环图案，带有重叠金属环、高光反射和阴影/深度提示。完全可平铺。",
+      "en": "Generates chainmail / interlocking ring patterns with overlapping metal links, specular highlights, and shadow/ depth cues. Fully tileable."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "遮罩",
+          "en": "Mask"
+        },
+        "type": "Mask"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "种子",
+        "en": "Seed"
+      },
+      "kind": "Seed",
+      "default": 42,
+      "min": 0,
+      "max": 9999
+    },
+    {
+      "name": {
+        "zh-Hans": "环形密度",
+        "en": "Ring Density"
+      },
+      "kind": "Integer",
+      "default": 8,
+      "min": 3,
+      "max": 16,
+      "step": 1
+    },
+    {
+      "name": {
+        "zh-Hans": "环形厚度",
+        "en": "Ring Thickness"
+      },
+      "kind": "Number",
+      "default": 0.3,
+      "min": 0.1,
+      "max": 0.6,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "金属度",
+        "en": "Metallic"
+      },
+      "kind": "Number",
+      "default": 0.75,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "阴影强度",
+        "en": "Shadow Strength"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "金属颜色",
+        "en": "Metal Color"
+      },
+      "kind": "Color",
+      "default": "#C8C0B8FF"
+    },
+    {
+      "name": {
+        "zh-Hans": "暗色",
+        "en": "Dark Color"
+      },
+      "kind": "Color",
+      "default": "#3A3530FF"
+    },
+    {
+      "name": {
+        "zh-Hans": "亮度",
+        "en": "Brightness"
+      },
+      "kind": "Number",
+      "default": 0.05,
+      "min": -0.3,
+      "max": 0.3,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "对比度",
+        "en": "Contrast"
+      },
+      "kind": "Number",
+      "default": 0.2,
+      "min": -0.5,
+      "max": 0.5,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "反相",
+        "en": "Invert"
+      },
+      "kind": "Boolean",
+      "default": false
+    }
+  ],
+  "ai": {
+    "capabilities": ["material", "procedural-texture", "metal", "armor", "tileable"],
+    "triggers": {
+      "zh-Hans": "锁甲, 盔甲, 金属环, 铠甲, 中世纪盔甲",
+      "en": "chainmail, armor, metal rings, maille, medieval armor"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "生成可平铺的锁子甲纹理，用于角色盔甲或装备图标。",
+      "en": "Generate a tileable chainmail armor texture for character equipment or armor icons."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar seed = GetInt(parameters, \"seed\", context.Seed);\nvar density = Math.Clamp(GetInt(parameters, \"ringDensity\", 6), 3, 16);\nvar ringThickness = GetFloat(parameters, \"ringThickness\", 0.3f);\nvar metallic = GetFloat(parameters, \"metallic\", 0.6f);\nvar shadowStrength = GetFloat(parameters, \"shadowStrength\", 0.4f);\nvar metalColor = GetColor(parameters, \"metalColor\", Color.FromRgb(180, 175, 170));\nvar darkColor = GetColor(parameters, \"darkColor\", Color.FromRgb(80, 75, 70));\nvar brightness = GetFloat(parameters, \"brightness\", 0f);\nvar contrast = GetFloat(parameters, \"contrast\", 0f);\nvar invert = GetBool(parameters, \"invert\", false);\n\nvar size = context.TileSize;\nvar buffer = new PixelBuffer(size, size);\n\nvar mR = metalColor.R / 255f; var mG = metalColor.G / 255f; var mB = metalColor.B / 255f;\nvar dR = darkColor.R / 255f; var dG = darkColor.G / 255f; var dB = darkColor.B / 255f;\n\n// Chainmail is a grid of interlocking rings\n// Each cell has one horizontal ring and one vertical ring woven together\n// The pattern repeats in a 2x2 tile arrangement for proper interlocking\nvar cellsPerRow = density;\nvar cellSize = 1f / cellsPerRow;\nvar ringRadius = cellSize * 0.45f;\nvar wireRadius = ringRadius * ringThickness;\n\n// Offsets for the 2x2 interlocking pattern\nvar offsets = new (float dx, float dy)[] {\n    (0.25f, 0.25f),   // horizontal ring\n    (0.75f, 0.25f),   // vertical ring\n    (0.25f, 0.75f),   // vertical ring\n    (0.75f, 0.75f)    // horizontal ring\n};\nvar ringTypes = new bool[] { true, false, false, true }; // true = horizontal, false = vertical\n\nbuffer.ParallelForEachPixel((x, y) =>\n{\n    var u = (x + 0.5f) / size;\n    var v = (y + 0.5f) / size;\n\n    var bestDist = float.MaxValue;\n    var bestHorizontal = true;\n    var bestLayer = 0;\n\n    // Evaluate which ring this pixel belongs to (nearest center)\n    for (var i = 0; i < 4; i++)\n    {\n        var baseCellX = (int)MathF.Floor(u / cellSize);\n        var baseCellY = (int)MathF.Floor(v / cellSize);\n\n        // Check neighboring cells for overlapping rings\n        for (var dx = -1; dx <= 1; dx++)\n        {\n            for (var dy = -1; dy <= 1; dy++)\n            {\n                var cellX = baseCellX + dx;\n                var cellY = baseCellY + dy;\n\n                // Wrap cell coordinates\n                var wrappedCellX = ((cellX % cellsPerRow) + cellsPerRow) % cellsPerRow;\n                var wrappedCellY = ((cellY % cellsPerRow) + cellsPerRow) % cellsPerRow;\n\n                // Each cell has multiple ring centers based on the 2x2 pattern\n                var cellOriginX = wrappedCellX * cellSize;\n                var cellOriginY = wrappedCellY * cellSize;\n\n                var subPattern = (wrappedCellX % 2) + (wrappedCellY % 2) * 2;\n                var off = offsets[subPattern];\n                var isHorizontal = ringTypes[subPattern];\n\n                // Ring center in UV space\n                var cx = cellOriginX + off.dx * cellSize;\n                var cy = cellOriginY + off.dy * cellSize;\n\n                var du = u - cx;\n                var dv = v - cy;\n\n                // Wrap distance for tileability\n                du -= MathF.Round(du / 1f);\n                dv -= MathF.Round(dv / 1f);\n\n                var dist = MathF.Sqrt(du * du + dv * dv);\n\n                // Distance from ring centerline (toroidal geometry)\n                float centerlineDist;\n                if (isHorizontal)\n                {\n                    var along = du;\n                    var perp = MathF.Abs(dv);\n                    // Ring is an ellipse: stretched horizontally\n                    var alongNorm = along / (ringRadius * 1.2f);\n                    var perpNorm = perp / ringRadius;\n                    centerlineDist = MathF.Sqrt(alongNorm * alongNorm + perpNorm * perpNorm);\n                }\n                else\n                {\n                    var along = dv;\n                    var perp = MathF.Abs(du);\n                    var alongNorm = along / (ringRadius * 1.2f);\n                    var perpNorm = perp / ringRadius;\n                    centerlineDist = MathF.Sqrt(alongNorm * alongNorm + perpNorm * perpNorm);\n                }\n\n                // Check if within ring wire\n                var surfaceDist = MathF.Abs(centerlineDist - 1f) * wireRadius;\n                var innerDist = centerlineDist;\n\n                if (surfaceDist < bestDist && centerlineDist > 0.5f && centerlineDist < 1.3f)\n                {\n                    bestDist = surfaceDist;\n                    bestHorizontal = isHorizontal;\n                    bestLayer = i;\n                }\n            }\n        }\n    }\n\n    float r, g, b;\n\n    if (bestDist < wireRadius * 0.5f)\n    {\n        // On a ring — compute shading\n        var depthFactor = bestDist / (wireRadius * 0.5f);\n        var baseR = Lerp(mR, dR, depthFactor * 0.3f);\n        var baseG = Lerp(mG, dG, depthFactor * 0.3f);\n        var baseB = Lerp(mB, dB, depthFactor * 0.3f);\n\n        // Specular highlight\n        var spec = (1f - depthFactor) * metallic * 0.5f;\n        r = Math.Clamp(baseR + spec, 0f, 1f);\n        g = Math.Clamp(baseG + spec * 0.95f, 0f, 1f);\n        b = Math.Clamp(baseB + spec * 0.9f, 0f, 1f);\n\n        // Layer-based shadow: lower layers are darker\n        var layerShadow = (bestLayer % 2 == 1) ? (1f - shadowStrength * 0.15f) : 1f;\n        r *= layerShadow;\n        g *= layerShadow;\n        b *= layerShadow;\n    }\n    else\n    {\n        // Background / between rings — shadow\n        var bgShadow = 1f - shadowStrength * 0.4f;\n        r = dR * bgShadow;\n        g = dG * bgShadow;\n        b = dB * bgShadow;\n\n        // Ambient glow from nearby rings\n        var ambient = (1f - MathF.Min(bestDist / (wireRadius * 2f), 1f)) * 0.1f;\n        r = Math.Clamp(r + ambient, 0f, 1f);\n        g = Math.Clamp(g + ambient, 0f, 1f);\n        b = Math.Clamp(b + ambient, 0f, 1f);\n    }\n\n    // Brightness and contrast\n    r = Math.Clamp(r + brightness, 0f, 1f);\n    g = Math.Clamp(g + brightness, 0f, 1f);\n    b = Math.Clamp(b + brightness, 0f, 1f);\n\n    if (MathF.Abs(contrast) > 0.001f)\n    {\n        var factor = 1f + contrast;\n        r = (r - 0.5f) * factor + 0.5f;\n        g = (g - 0.5f) * factor + 0.5f;\n        b = (b - 0.5f) * factor + 0.5f;\n    }\n\n    if (invert) { r = 1f - r; g = 1f - g; b = 1f - b; }\n\n    buffer.SetPixel(x, y, Math.Clamp(r, 0f, 1f), Math.Clamp(g, 0f, 1f), Math.Clamp(b, 0f, 1f), 1f);\n});\n\nreturn buffer;\n}"
+  }
+}

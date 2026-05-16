@@ -1,0 +1,140 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "Lightning",
+    "displayName": {
+      "zh-Hans": "闪电",
+      "en": "Lightning"
+    },
+    "category": "Material",
+    "description": {
+      "zh-Hans": "使用分形中点位移和分支生成逼真的闪电。Time参数（0-1）通过改变闪电路径驱动动画效果。支持辉光效果和像素化量化。",
+      "en": "Generates realistic lightning bolts with fractal midpoint displacement and branching. Time parameter (0-1) drives animation by varying bolt paths. Glow and pixel-art quantized."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "遮罩",
+          "en": "Mask"
+        },
+        "type": "Mask"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "种子",
+        "en": "Seed"
+      },
+      "kind": "Seed",
+      "default": 42,
+      "min": 0,
+      "max": 9999
+    },
+    {
+      "name": {
+        "zh-Hans": "时间",
+        "en": "Time"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "分支数",
+        "en": "Branching"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "畸变",
+        "en": "Distortion"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "亮度",
+        "en": "Brightness"
+      },
+      "kind": "Number",
+      "default": 1.0,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "厚度",
+        "en": "Thickness"
+      },
+      "kind": "Number",
+      "default": 0.03,
+      "min": 0.005,
+      "max": 0.1,
+      "step": 0.005
+    },
+    {
+      "name": {
+        "zh-Hans": "像素大小",
+        "en": "Pixel Size"
+      },
+      "kind": "Integer",
+      "default": 1,
+      "min": 1,
+      "max": 4,
+      "step": 1
+    },
+    {
+      "name": {
+        "zh-Hans": "闪电颜色",
+        "en": "Bolt Color"
+      },
+      "kind": "Color",
+      "default": "#B4C8FFFF"
+    }
+  ],
+  "ai": {
+    "capabilities": ["material", "procedural-texture", "weather", "animated", "magical"],
+    "triggers": {
+      "zh-Hans": "闪电, 雷电, 暴风雨, 魔法闪电, 自然现象",
+      "en": "lightning, thunder, storm, electricity, magical bolt"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "生成逼真的闪电动画帧，可用于场景特效或魔法技能效果。",
+      "en": "Generate realistic lightning bolt animation frames for scene effects or magical spell visuals."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar seed = GetInt(parameters, \"seed\", context.Seed);\nvar time = GetFloat(parameters, \"time\", 0f);\nvar branching = GetFloat(parameters, \"branching\", 0.5f);\nvar distortion = GetFloat(parameters, \"distortion\", 0.5f);\nvar brightness = GetFloat(parameters, \"brightness\", 1.0f);\nvar thickness = GetFloat(parameters, \"thickness\", 0.03f);\nvar pixelSize = Math.Max(1, GetInt(parameters, \"pixelSize\", 1));\nvar boltColor = GetColor(parameters, \"boltColor\", System.Windows.Media.Color.FromRgb(180, 200, 255));\n\nvar cR = boltColor.R/255f; var cG = boltColor.G/255f; var cB = boltColor.B/255f;\nvar size = context.TileSize;\nvar result = new PixelBuffer(size, size);\n\n// Time-driven animation\nvar animSeed = seed + (int)(time * 9973);\n\n// Generate bolt path using hash-based midpoint displacement\nvar ptCount = 2;\nvar ptX = new float[] { (0.2f + HashToUnit(animSeed, 111, 333) * 0.6f) * size, (0.2f + HashToUnit(animSeed + 1, 111, 333) * 0.6f) * size };\nvar ptY = new float[] { size * 0.05f, size * 0.95f };\n\nvar dispScale = distortion * size * 0.35f;\nfor (var iter = 0; iter < 6; iter++)\n{\n    var newCount = ptCount * 2 - 1;\n    var nx = new float[newCount]; var ny = new float[newCount];\n    for (var i = 0; i < ptCount - 1; i++)\n    {\n        var idx = i * 2;\n        nx[idx] = ptX[i]; ny[idx] = ptY[i];\n        var hash = HashToUnit(iter * 1000 + i, animSeed + 777, 999);\n        nx[idx + 1] = (ptX[i] + ptX[i+1]) * 0.5f + (hash - 0.5f) * dispScale;\n        ny[idx + 1] = (ptY[i] + ptY[i+1]) * 0.5f + (hash - 0.5f) * dispScale * 0.4f;\n    }\n    nx[newCount - 1] = ptX[ptCount - 1]; ny[newCount - 1] = ptY[ptCount - 1];\n    ptX = nx; ptY = ny; ptCount = newCount;\n    dispScale *= 0.45f;\n}\n\n// Draw main bolt - overlap additive blend, no black border\nDrawBolt(result, ptX, ptY, ptCount, thickness, pixelSize, cR, cG, cB, brightness, size);\n\n// Branches\nvar numBranches = (int)(branching * 5);\nfor (var b = 0; b < numBranches; b++)\n{\n    var segIdx = (int)(HashToUnit(b * 31 + 7, animSeed + 111, 555) * (ptCount - 2)) + 1;\n    segIdx = Math.Clamp(segIdx, 1, ptCount - 2);\n    \n    var angle = (HashToUnit(b * 17 + 3, animSeed + 222, 666) - 0.5f) * 2f;\n    var len = (0.08f + HashToUnit(b * 23 + 5, animSeed + 333, 777) * 0.18f) * size;\n    var dirX = MathF.Cos(angle);\n    var dirY = MathF.Sin(angle) * 0.7f + 0.5f;\n    var dl = Math.Max(0.001f, MathF.Sqrt(dirX*dirX + dirY*dirY));\n    dirX /= dl; dirY /= dl;\n    \n    var brCount = 2;\n    var brX = new float[] { ptX[segIdx], ptX[segIdx] + dirX * len };\n    var brY = new float[] { ptY[segIdx], ptY[segIdx] + dirY * len };\n    var bDisp = len * 0.15f;\n    for (var iter = 0; iter < 3; iter++)\n    {\n        var newCount = brCount * 2 - 1;\n        var nbx = new float[newCount]; var nby = new float[newCount];\n        for (var i = 0; i < brCount - 1; i++)\n        {\n            var idx = i * 2;\n            nbx[idx] = brX[i]; nby[idx] = brY[i];\n            var hash2 = HashToUnit(iter * 100 + i, b * 37 + animSeed + 888, 111);\n            nbx[idx + 1] = (brX[i] + brX[i+1]) * 0.5f + (hash2 - 0.5f) * bDisp;\n            nby[idx + 1] = (brY[i] + brY[i+1]) * 0.5f + (hash2 - 0.5f) * bDisp * 0.4f;\n        }\n        nbx[newCount - 1] = brX[brCount - 1]; nby[newCount - 1] = brY[brCount - 1];\n        brX = nbx; brY = nby; brCount = newCount;\n        bDisp *= 0.45f;\n    }\n    var bBright = brightness * (0.25f + HashToUnit(b, animSeed + 444, 888) * 0.25f);\n    DrawBolt(result, brX, brY, brCount, thickness * 0.5f, pixelSize, cR, cG, cB, bBright, size);\n}\nreturn result;\n\nvoid DrawBolt(PixelBuffer buf, float[] xs, float[] ys, int count, float thick, int pxSz, float rr, float gg, float bb, float bright, int sz)\n{\n    var r2 = Math.Max(1, (int)(thick * sz));\n    for (var i = 0; i < count - 1; i++)\n    {\n        var x1 = xs[i]; var y1 = ys[i];\n        var x2 = xs[i+1]; var y2 = ys[i+1];\n        var dx = x2 - x1; var dy = y2 - y1;\n        var steps = Math.Max(2, (int)MathF.Sqrt(dx*dx + dy*dy));\n        for (var s = 0; s <= steps; s++)\n        {\n            var t = s / (float)steps;\n            var px = (int)(x1 + dx * t);\n            var py = (int)(y1 + dy * t);\n            // Clamp to bounds\n            var cpx = Math.Clamp(px, 0, sz - 1);\n            var cpy = Math.Clamp(py, 0, sz - 1);\n            buf.SetPixel(cpx, cpy, Math.Clamp(rr * bright, 0f, 1f), Math.Clamp(gg * bright, 0f, 1f), Math.Clamp(bb * bright, 0f, 1f), 1f);\n            // Inner glow\n            if (r2 > 1)\n            for (var oy = -r2 + 1; oy <= r2 - 1; oy++)\n            for (var ox = -r2 + 1; ox <= r2 - 1; ox++)\n            {\n                var nx = cpx + ox;\n                var ny = cpy + oy;\n                if (nx < 0 || nx >= sz || ny < 0 || ny >= sz) continue;\n                var d = MathF.Sqrt(ox*ox + oy*oy) / r2;\n                var glow = Math.Clamp(1f - d * d, 0f, 1f) * bright * 0.5f;\n                buf.SetPixel(nx, ny, Math.Clamp(rr * glow, 0f, 1f), Math.Clamp(gg * glow, 0f, 1f), Math.Clamp(bb * glow, 0f, 1f), 1f);\n            }\n        }\n    }\n}\n}"
+  }
+}

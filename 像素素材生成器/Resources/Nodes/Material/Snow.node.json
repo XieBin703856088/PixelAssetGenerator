@@ -1,0 +1,143 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "Snow",
+    "displayName": {
+      "zh-Hans": "雪花",
+      "en": "Snow"
+    },
+    "category": "Material",
+    "description": {
+      "zh-Hans": "使用物理粒子模拟生成降雪效果。雪花受重力、风力和水平摇摆影响下落，渲染为柔和的白色圆点并带有像素艺术量化。由时间参数（0-1）驱动动画。输出可平铺。",
+      "en": "Generates snowfall using physical particle simulation. Snowflakes fall with gravity, wind, and horizontal sway, rendered as soft white circles with pixel-art quantization. Driven by a time parameter (0-1) for animation. Output is tileable."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "遮罩",
+          "en": "Mask"
+        },
+        "type": "Mask"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "种子",
+        "en": "Seed"
+      },
+      "kind": "Seed",
+      "default": 42,
+      "min": 0,
+      "max": 9999
+    },
+    {
+      "name": {
+        "zh-Hans": "时间",
+        "en": "Time"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "密度",
+        "en": "Density"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.1,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "速度",
+        "en": "Speed"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.1,
+      "max": 2.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "风力",
+        "en": "Wind"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": -1.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "大小",
+        "en": "Size"
+      },
+      "kind": "Integer",
+      "default": 2,
+      "min": 1,
+      "max": 5,
+      "step": 1
+    },
+    {
+      "name": {
+        "zh-Hans": "摇摆",
+        "en": "Sway"
+      },
+      "kind": "Number",
+      "default": 0.3,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "像素大小",
+        "en": "Pixel Size"
+      },
+      "kind": "Integer",
+      "default": 1,
+      "min": 1,
+      "max": 4,
+      "step": 1
+    }
+  ],
+  "ai": {
+    "capabilities": ["material", "procedural-texture", "weather", "animated"],
+    "triggers": {
+      "zh-Hans": "下雪, 雪景, 暴风雪, 雪花, 冬季天气, 降雪效果",
+      "en": "snow, snowfall, blizzard, snowflake, winter weather, snow effect"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "生成降雪动画帧，用于冬季场景天气效果或动态背景。",
+      "en": "Generate snowfall animation frames for winter scene weather effects or dynamic backgrounds."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar seed = GetInt(parameters, \"seed\", context.Seed);\nvar time = GetFloat(parameters, \"time\", 0f);\nvar density = GetFloat(parameters, \"density\", 0.5f);\nvar speed = GetFloat(parameters, \"speed\", 0.5f);\nvar wind = GetFloat(parameters, \"wind\", 0f);\nvar size2 = GetInt(parameters, \"size\", 2);\nvar sway = GetFloat(parameters, \"sway\", 0.3f);\nvar pixelSize = Math.Max(1, GetInt(parameters, \"pixelSize\", 1));\n\nvar size = context.TileSize;\nvar result = new PixelBuffer(size, size);\n\n// Grid-based snowflake distribution\nvar gridSize = Math.Max(5, (int)(15f * density));\nvar cellW = size / (float)gridSize;\nvar cellH = size / (float)gridSize;\n\nvar fallDist = time * speed * size;\nvar windBase = wind * size * 0.12f;\n\nfor (var gy = 0; gy < gridSize; gy++)\n{\n    for (var gx = 0; gx < gridSize; gx++)\n    {\n        var h = HashToUnit(gx * 31 + gy * 17, seed, 111);\n        if (h > density) continue;\n\n        // Position within cell\n        var xOff = HashToUnit(gx * 7 + gy * 13, seed + 50, 222);\n        var yOff = HashToUnit(gx * 11 + gy * 5, seed + 100, 333);\n\n        // Sway: sinusoidal horizontal drift\n        var swayAmount = sway * cellW * 0.4f;\n        var swayPhase = (gx * 23 + gy * 19) * 0.1f + seed * 0.01f;\n        var swayOff = (int)(MathF.Sin(time * MathF.PI * 2f * 0.5f + swayPhase) * swayAmount);\n\n        var sx = (int)((gx + xOff) * cellW + windBase + swayOff) % size;\n        if (sx < 0) sx += size;\n        sx = (sx / pixelSize) * pixelSize;\n\n        var rawY = (gy * cellH + yOff * cellH + fallDist) % (size + pixelSize * 4);\n        var sy = (int)(rawY - pixelSize * 2);\n        if (sy < 0 || sy >= size) continue;\n        sy = (sy / pixelSize) * pixelSize;\n\n        // Draw snowflake as soft circle\n        var r = Math.Max(1, size2);\n        for (var dy = -r; dy <= r; dy += pixelSize)\n        for (var dx = -r; dx <= r; dx += pixelSize)\n        {\n            if (dx * dx + dy * dy > r * r) continue;\n            var px = (sx + dx + size) % size;\n            var py = (sy + dy + size) % size;\n            var d = MathF.Sqrt(dx * dx + dy * dy) / Math.Max(1, r);\n            var a = Math.Clamp((1f - d * d) * 0.9f, 0f, 1f);\n            result.SetPixel(px, py, 1f, 1f, 1f, a);\n        }\n    }\n}\nreturn result;\n}"
+  }
+}

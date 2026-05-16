@@ -1,0 +1,145 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "Marble",
+    "displayName": {
+      "zh-Hans": "大理石",
+      "en": "Marble"
+    },
+    "category": "Noise",
+    "description": {
+      "zh-Hans": "使用正弦波配合分形噪波扰动，生成大理石/脉纹纹理。",
+      "en": "Generates marble/veined texture using sine wave with fractal noise perturbation."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "遮罩",
+          "en": "Mask"
+        },
+        "type": "Mask"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "种子",
+        "en": "Seed"
+      },
+      "kind": "Seed",
+      "default": 42,
+      "min": 0,
+      "max": 9999
+    },
+    {
+      "name": {
+        "zh-Hans": "缩放",
+        "en": "Scale"
+      },
+      "kind": "Number",
+      "default": 3.0,
+      "min": 0.1,
+      "max": 10.0,
+      "step": 0.1
+    },
+    {
+      "name": {
+        "zh-Hans": "纹路频率",
+        "en": "Vein Frequency"
+      },
+      "kind": "Number",
+      "default": 4.0,
+      "min": 1.0,
+      "max": 20.0,
+      "step": 0.5
+    },
+    {
+      "name": {
+        "zh-Hans": "纹路锐度",
+        "en": "Vein Sharpness"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "纹路颜色",
+        "en": "Vein Color"
+      },
+      "kind": "Color",
+      "default": "#4A5058FF"
+    },
+    {
+      "name": {
+        "zh-Hans": "背景颜色",
+        "en": "Bg Color"
+      },
+      "kind": "Color",
+      "default": "#EDE8E0FF"
+    },
+    {
+      "name": {
+        "zh-Hans": "畸变",
+        "en": "Distortion"
+      },
+      "kind": "Number",
+      "default": 2.5,
+      "min": 0.0,
+      "max": 5.0,
+      "step": 0.1
+    },
+    {
+      "name": {
+        "zh-Hans": "八度",
+        "en": "Octaves"
+      },
+      "kind": "Integer",
+      "default": 4,
+      "min": 1,
+      "max": 8,
+      "step": 1
+    },
+    {
+      "name": {
+        "zh-Hans": "反相",
+        "en": "Invert"
+      },
+      "kind": "Boolean",
+      "default": false
+    }
+  ],
+  "ai": {
+    "capabilities": ["generate-noise", "procedural-texture", "organic", "tileable"],
+    "triggers": {
+      "zh-Hans": "大理石, 石材, 脉纹, 装饰纹理, 建筑",
+      "en": "marble, stone, veined, decorative texture, architectural"
+    },
+    "suggestedInputs": ["Noise"],
+    "exampleUsage": {
+      "zh-Hans": "生成大理石脉纹纹理，可用于建筑材质或装饰性背景。",
+      "en": "Generates a marble veined texture for architectural materials or decorative backgrounds."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar seed = GetInt(parameters, \"seed\", context.Seed);\nvar scale = GetFloat(parameters, \"scale\", 2f);\nvar veinFreq = GetFloat(parameters, \"veinFrequency\", 4f);\nvar veinSharpness = GetFloat(parameters, \"veinSharpness\", 0.5f);\nvar veinColor = GetColor(parameters, \"veinColor\", Color.FromRgb(80, 80, 80));\nvar bgColor = GetColor(parameters, \"bgColor\", Color.FromRgb(240, 240, 235));\nvar distortion = GetFloat(parameters, \"distortion\", 2f);\nvar octaves = Math.Max(1, GetInt(parameters, \"octaves\", 4));\nvar invert = GetBool(parameters, \"invert\", false);\n\nvar size = context.TileSize;\nvar buffer = new PixelBuffer(size, size);\n\nvar vR = veinColor.R / 255f; var vG = veinColor.G / 255f; var vB = veinColor.B / 255f;\nvar bR = bgColor.R / 255f; var bG = bgColor.G / 255f; var bB = bgColor.B / 255f;\nvar period = Math.Max(1, (int)MathF.Round(scale));\n\nbuffer.ParallelForEachPixel((x, y) =>\n{\n    var u = x / (float)size;\n    var v = y / (float)size;\n\n    // Fractal noise for distortion\n    var noiseVal = TileableFractalNoise(\n        u * scale, v * scale,\n        period, octaves, 0.6f, 2.2f, seed);\n\n    // Sine wave with noise perturbation creates vein pattern\n    var pattern = MathF.Sin((u * veinFreq + noiseVal * distortion) * MathF.PI * 2f);\n\n    // Second direction for cross-veining\n    var noiseVal2 = TileableFractalNoise(\n        u * scale * 1.3f + 10f, v * scale * 1.3f + 10f,\n        period, octaves - 1, 0.5f, 2f, seed + 500);\n    var pattern2 = MathF.Sin((v * veinFreq * 0.7f + noiseVal2 * distortion * 0.8f) * MathF.PI * 2f);\n\n    // Combine patterns\n    var combined = (pattern + pattern2) * 0.5f;\n\n    // Apply sharpness\n    combined = MathF.Pow(MathF.Abs(combined), 1f - veinSharpness * 0.8f);\n    combined = Math.Clamp(combined * 0.5f + 0.5f, 0f, 1f);\n\n    // Fine detail noise for stone texture\n    var detail = TileableFractalNoise(\n        u * scale * 8f, v * scale * 8f,\n        Math.Max(1, period / 4), 2, 0.5f, 2f, seed + 300);\n    var fineGrain = (detail - 0.5f) * 0.08f;\n\n    if (invert) combined = 1f - combined;\n\n    var r = Math.Clamp(Lerp(bR, vR, combined) + fineGrain, 0f, 1f);\n    var g = Math.Clamp(Lerp(bG, vG, combined) + fineGrain, 0f, 1f);\n    var b = Math.Clamp(Lerp(bB, vB, combined) + fineGrain, 0f, 1f);\n\n    buffer.SetPixel(x, y, r, g, b, 1f);\n});\n\nreturn buffer;\n}"
+  }
+}

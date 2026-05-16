@@ -1,0 +1,136 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "NormalMap",
+    "displayName": {
+      "zh-Hans": "法线贴图",
+      "en": "Normal Map"
+    },
+    "category": "ImageProcess",
+    "description": {
+      "zh-Hans": "使用Sobel梯度检测将高度图图像转换为法线贴图。输出RGB = (nx*0.5+0.5, ny*0.5+0.5, height)，强度可配置。",
+      "en": "Converts a heightmap image into a normal map using Sobel gradient detection. Outputs RGB = (nx*0.5+0.5, ny*0.5+0.5, height) with configurable strength."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [
+      {
+        "name": {
+          "zh-Hans": "高度图",
+          "en": "HeightMap"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "强度",
+          "en": "Intensity"
+        },
+        "type": "Float"
+      }
+    ],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "法线图",
+          "en": "NormalMap"
+        },
+        "type": "Image"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "强度",
+        "en": "Intensity"
+      },
+      "kind": "Number",
+      "default": 3.0,
+      "min": 0.1,
+      "max": 10.0,
+      "step": 0.1
+    },
+    {
+      "name": {
+        "zh-Hans": "通道",
+        "en": "Channel"
+      },
+      "kind": "Choice",
+      "default": "luminance",
+      "choices": [
+        {
+          "value": "luminance",
+          "label": {
+            "zh-Hans": "亮度",
+            "en": "luminance"
+          }
+        },
+        {
+          "value": "red",
+          "label": {
+            "zh-Hans": "红色",
+            "en": "red"
+          }
+        },
+        {
+          "value": "green",
+          "label": {
+            "zh-Hans": "绿色",
+            "en": "green"
+          }
+        },
+        {
+          "value": "blue",
+          "label": {
+            "zh-Hans": "蓝色",
+            "en": "blue"
+          }
+        },
+        {
+          "value": "alpha",
+          "label": {
+            "zh-Hans": "透明通道",
+            "en": "alpha"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "zh-Hans": "翻转X",
+        "en": "Flip X"
+      },
+      "kind": "Boolean",
+      "default": false
+    },
+    {
+      "name": {
+        "zh-Hans": "翻转Y",
+        "en": "Flip Y"
+      },
+      "kind": "Boolean",
+      "default": false
+    }
+  ],
+  "ai": {
+    "capabilities": ["normal-map"],
+    "triggers": {
+      "zh-Hans": "法线贴图, 法线生成, 高度图转法线, Sobel法线",
+      "en": "normal map, generate normal, height to normal, Sobel normal"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "从高度图生成法线贴图，用于光照节点。",
+      "en": "Generate a normal map from a height map for use with the lighting node."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar input = inputs.Length > 0 && inputs[0] != null ? inputs[0]! :\n        new PixelBuffer(context.TileSize, context.TileSize);\n\n    var strength = GetFloat(parameters, \"intensity\", 2f);\n    var channel = GetChoice(parameters, \"channel\", \"luminance\");\n    var flipX = GetBool(parameters, \"flipX\", false);\n    var flipY = GetBool(parameters, \"flipY\", false);\n\n    var size = context.TileSize;\n    var output = new PixelBuffer(size, size);\n\n    // Override strength from float input\n    if (inputs.Length > 1 && inputs[1] != null)\n    {\n        var (r, _, _, _) = inputs[1]!.GetPixel(0, 0);\n        strength = r * 10f;\n    }\n\n    output.ParallelForEachPixel((x, y) =>\n    {\n        // Sample height at neighboring pixels\n        var hL = SampleHeight(input, x - 1, y, channel);\n        var hR = SampleHeight(input, x + 1, y, channel);\n        var hD = SampleHeight(input, x, y - 1, channel);\n        var hU = SampleHeight(input, x, y + 1, channel);\n        var hC = SampleHeight(input, x, y, channel);\n\n        // Sobel gradients\n        var gx = (hR - hL) * strength * 0.5f;\n        var gy = (hD - hU) * strength * 0.5f;\n\n        if (flipX) gx = -gx;\n        if (flipY) gy = -gy;\n\n        // Normalize\n        var length = MathF.Sqrt(gx * gx + gy * gy + 1f);\n        var nx = gx / length;\n        var ny = gy / length;\n        var nz = 1f / length;\n\n        // Encode normal in RGB\n        var rVal = nx * 0.5f + 0.5f;\n        var gVal = ny * 0.5f + 0.5f;\n        var bVal = nz * 0.5f + 0.5f;\n\n        output.SetPixel(x, y, rVal, gVal, bVal, 1f);\n    });\n\n    return output;\n\nprivate static float SampleHeight(PixelBuffer buffer, int x, int y, string channel)\n{\n    x = Math.Clamp(x, 0, buffer.Width - 1);\n    y = Math.Clamp(y, 0, buffer.Height - 1);\n    var (r, g, b, a) = buffer.GetPixel(x, y);\n\n    return channel switch\n    {\n        \"red\" => r,\n        \"green\" => g,\n        \"blue\" => b,\n        \"alpha\" => a,\n        _ => r * 0.299f + g * 0.587f + b * 0.114f // luminance\n    };\n    }\n}"
+  }
+}

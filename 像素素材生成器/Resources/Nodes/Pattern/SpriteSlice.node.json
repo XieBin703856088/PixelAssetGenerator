@@ -1,0 +1,97 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "SpriteSlice",
+    "displayName": {
+      "zh-Hans": "精灵切片",
+      "en": "Sprite Slice"
+    },
+    "category": "Pattern",
+    "description": {
+      "zh-Hans": "从精灵表图像网格中提取单个单元格/帧。将输入图像分割为列x行，并在指定帧索引处选择单元格（行主序）。",
+      "en": "Extracts a single cell/frame from a sprite sheet image grid. Divides the input image into cols x rows and selects the cell at 帧索引 (row-major order)."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [
+      {
+        "name": {
+          "zh-Hans": "源图像",
+          "en": "SourceImage"
+        },
+        "type": "Image"
+      }
+    ],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "遮罩",
+          "en": "Mask"
+        },
+        "type": "Mask"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "列数",
+        "en": "Columns"
+      },
+      "kind": "Integer",
+      "default": 4,
+      "min": 1,
+      "max": 8,
+      "step": 1
+    },
+    {
+      "name": {
+        "zh-Hans": "行数",
+        "en": "Rows"
+      },
+      "kind": "Integer",
+      "default": 4,
+      "min": 1,
+      "max": 8,
+      "step": 1
+    },
+    {
+      "name": {
+        "zh-Hans": "帧索引",
+        "en": "Frame Index"
+      },
+      "kind": "Integer",
+      "default": 0,
+      "min": 0,
+      "max": 63,
+      "step": 1
+    }
+  ],
+  "ai": {
+    "capabilities": ["pattern", "sprite-sheet", "tiling"],
+    "triggers": {
+      "zh-Hans": "精灵切片, 精灵提取, 帧提取, 精灵裁剪",
+      "en": "sprite slice, sprite extract, frame extract, sprite crop"
+    },
+    "suggestedInputs": ["SpriteSheet"],
+    "exampleUsage": {
+      "zh-Hans": "从精灵表中提取指定帧索引的单个图像单元。",
+      "en": "Extract a single image cell at a specified frame index from a sprite sheet."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar src = inputs[0];\nvar cols = Math.Max(1, GetInt(parameters, \"columns\", 4));\nvar rows = Math.Max(1, GetInt(parameters, \"rows\", 4));\nvar frameIndex = GetInt(parameters, \"frameIndex\", 0);\nvar size = context.TileSize;\nvar result = new PixelBuffer(size, size);\nif (src == null) return result;\nvar srcSize = src.Width;\nvar cellW = srcSize / cols;\nvar cellH = srcSize / rows;\nvar totalFrames = cols * rows;\nvar frame = ((frameIndex % totalFrames) + totalFrames) % totalFrames;\nvar srcCol = frame % cols;\nvar srcRow = frame / cols;\nresult.ParallelForEachPixel((x, y) =>\n{\n    var srcX = srcCol * cellW + (int)((float)x / size * cellW);\n    var srcY = srcRow * cellH + (int)((float)y / size * cellH);\n    srcX = Math.Clamp(srcX, 0, srcSize - 1);\n    srcY = Math.Clamp(srcY, 0, srcSize - 1);\n    var (r, g, b, a) = src.GetPixel(srcX, srcY);\n    result.SetPixel(x, y, r, g, b, a);\n});\nreturn result;\n}"
+  }
+}

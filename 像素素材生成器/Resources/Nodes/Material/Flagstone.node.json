@@ -1,0 +1,211 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "Flagstone",
+    "displayName": {
+      "zh-Hans": "石板",
+      "en": "Flagstone"
+    },
+    "category": "Material",
+    "description": {
+      "zh-Hans": "生成石板铺装图案，使用半规则矩形石块。采用抖动网格并支持可选的相邻单元格合并以形成更大的石块。具有砂浆缝隙、3D边缘着色、逐石颜色变化和表面细节等特性。",
+      "en": "Generates flagstone / flagging stone paving patterns with semi-regular rectangular stones. Uses a jittered grid with optional merging of adjacent cells for larger stones. Features mortar gaps, 3D edge shading, per-stone color variation, and surface detail."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "遮罩",
+          "en": "Mask"
+        },
+        "type": "Mask"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "种子",
+        "en": "Seed"
+      },
+      "kind": "Seed",
+      "default": 42,
+      "min": 0,
+      "max": 9999
+    },
+    {
+      "name": {
+        "zh-Hans": "X 方向数量",
+        "en": "Tiles X"
+      },
+      "kind": "Integer",
+      "default": 4,
+      "min": 2,
+      "max": 10,
+      "step": 1
+    },
+    {
+      "name": {
+        "zh-Hans": "Y 方向数量",
+        "en": "Tiles Y"
+      },
+      "kind": "Integer",
+      "default": 4,
+      "min": 2,
+      "max": 10,
+      "step": 1
+    },
+    {
+      "name": {
+        "zh-Hans": "不规则度",
+        "en": "Irregularity"
+      },
+      "kind": "Number",
+      "default": 0.3,
+      "min": 0.0,
+      "max": 0.8,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "合并概率",
+        "en": "Merge Chance"
+      },
+      "kind": "Number",
+      "default": 0.2,
+      "min": 0.0,
+      "max": 0.6,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "缝隙宽度",
+        "en": "Gap Width"
+      },
+      "kind": "Number",
+      "default": 0.06,
+      "min": 0.01,
+      "max": 0.2,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "石头颜色",
+        "en": "Stone Color"
+      },
+      "kind": "Color",
+      "default": "#B4AA9BFF"
+    },
+    {
+      "name": {
+        "zh-Hans": "间隙颜色",
+        "en": "Gap Color"
+      },
+      "kind": "Color",
+      "default": "#413C37FF"
+    },
+    {
+      "name": {
+        "zh-Hans": "颜色变化",
+        "en": "Color Variation"
+      },
+      "kind": "Number",
+      "default": 0.2,
+      "min": 0.0,
+      "max": 0.5,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "高光",
+        "en": "Highlight"
+      },
+      "kind": "Number",
+      "default": 0.2,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "阴影",
+        "en": "Shadow"
+      },
+      "kind": "Number",
+      "default": 0.2,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "粗糙度",
+        "en": "Roughness"
+      },
+      "kind": "Number",
+      "default": 0.3,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "亮度",
+        "en": "Brightness"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": -0.3,
+      "max": 0.3,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "对比度",
+        "en": "Contrast"
+      },
+      "kind": "Number",
+      "default": 0.15,
+      "min": -0.5,
+      "max": 0.5,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "反相",
+        "en": "Invert"
+      },
+      "kind": "Boolean",
+      "default": false
+    }
+  ],
+  "ai": {
+    "capabilities": ["material", "procedural-texture", "stone", "tileable", "architectural"],
+    "triggers": {
+      "zh-Hans": "石板, 石板路, 铺路石, 石块路面, 室外地面",
+      "en": "flagstone, paving stone, stone slab, patio, walkway"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "生成石板铺装纹理，用于庭院、广场或室外场景的地面。",
+      "en": "Generate a flagstone paving texture for courtyards, plazas, or outdoor scene grounds."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar seed = GetInt(parameters, \"seed\", context.Seed);\nvar tilesX = Math.Max(2, GetInt(parameters, \"tilesX\", 4));\nvar tilesY = Math.Max(2, GetInt(parameters, \"tilesY\", 4));\nvar irregularity = GetFloat(parameters, \"irregularity\", 0.3f);\nvar mergeChance = GetFloat(parameters, \"mergeChance\", 0.2f);\nvar gapWidth = GetFloat(parameters, \"gapWidth\", 0.06f);\nvar stoneColor = GetColor(parameters, \"stoneColor\", Color.FromRgb(180, 170, 155));\nvar gapColor = GetColor(parameters, \"gapColor\", Color.FromRgb(65, 60, 55));\nvar colorVar = GetFloat(parameters, \"colorVariation\", 0.2f);\nvar highlight = GetFloat(parameters, \"highlight\", 0.2f);\nvar shadow = GetFloat(parameters, \"shadow\", 0.2f);\nvar roughness = GetFloat(parameters, \"roughness\", 0.3f);\nvar brightness = GetFloat(parameters, \"brightness\", 0f);\nvar contrast = GetFloat(parameters, \"contrast\", 0f);\nvar invert = GetBool(parameters, \"invert\", false);\n\nvar size = context.TileSize;\nvar buffer = new PixelBuffer(size, size);\n\nvar sR = stoneColor.R / 255f; var sG = stoneColor.G / 255f; var sB = stoneColor.B / 255f;\nvar gR = gapColor.R / 255f; var gG = gapColor.G / 255f; var gB = gapColor.B / 255f;\n\nvar cellW = 1f / tilesX;\nvar cellH = 1f / tilesY;\nvar maxJitter = Math.Min(cellW, cellH) * irregularity * 0.35f;\n\n// Generate stone grid with optional cell merging\n// merged[r,c] = (-1,-1) if not merged, or (targetR, targetC) if merged into another\nvar mergedInto = new (int tr, int tc)[tilesY, tilesX];\nvar mergedFrom = new System.Collections.Generic.List<(int r, int c)>[tilesY, tilesX];\n\nfor (var r = 0; r < tilesY; r++)\n{\n    for (var c = 0; c < tilesX; c++)\n    {\n        mergedInto[r, c] = (-1, -1);\n    }\n}\n\n// Merge cells (random horizontal merges)\nfor (var r = 0; r < tilesY; r++)\n{\n    for (var c = 0; c < tilesX - 1; c++)\n    {\n        if (mergedInto[r, c].tr != -1) continue;\n        if (mergedInto[r, c + 1].tr != -1) continue;\n\n        var roll = HashToUnit(c * 17 + r * 13, seed + 50, 111);\n        if (roll < mergeChance)\n        {\n            mergedInto[r, c + 1] = (r, c);\n        }\n    }\n}\n\n// Per-stone color and jitter\nvar stoneData = new (float jx, float jy, float r, float g, float b)[tilesY, tilesX];\nfor (var r = 0; r < tilesY; r++)\n{\n    for (var c = 0; c < tilesX; c++)\n    {\n        // Use the merged-into parent for consistent data\n        var (pr, pc) = mergedInto[r, c];\n        if (pr != -1)\n        {\n            // Share parent's data\n            stoneData[r, c] = stoneData[pr, pc];\n            continue;\n        }\n\n        var jx = (HashToUnit(c * 7 + r * 11, seed, 222) - 0.5f) * 2f * maxJitter;\n        var jy = (HashToUnit(c * 13 + r * 5, seed + 100, 333) - 0.5f) * 2f * maxJitter;\n        var hash = HashToUnit(c * 23 + r * 17, seed + 200, 444);\n        var varAmt = (hash - 0.5f) * colorVar;\n        stoneData[r, c] = (\n            jx, jy,\n            Math.Clamp(sR + varAmt, 0f, 1f),\n            Math.Clamp(sG + varAmt * 0.85f, 0f, 1f),\n            Math.Clamp(sB + varAmt * 0.7f, 0f, 1f)\n        );\n    }\n}\n\nbuffer.ParallelForEachPixel((x, y) =>\n{\n    var u = (x + 0.5f) / size;\n    var v = (y + 0.5f) / size;\n\n    // Base grid cell\n    var baseCol = (int)(u / cellW);\n    var baseRow = (int)(v / cellH);\n\n    // Find actual stone (follow merge chain)\n    var stoneR = baseRow;\n    var stoneC = baseCol;\n    // Check if this cell was merged into another\n    var (mr, mc) = mergedInto[stoneR % tilesY, stoneC % tilesX];\n    if (mr != -1)\n    {\n        stoneR = mr;\n        stoneC = mc;\n    }\n\n    // Get stone center position with jitter\n    var sd = stoneData[stoneR % tilesY, stoneC % tilesX];\n    var cx = (stoneC + 0.5f) * cellW + sd.jx;\n    var cy = (stoneR + 0.5f) * cellH + sd.jy;\n\n    // Wrapped center-to-pixel distance\n    var dx = u - cx;\n    var dy = v - cy;\n    if (dx > 0.5f) dx -= 1f; else if (dx < -0.5f) dx += 1f;\n    if (dy > 0.5f) dy -= 1f; else if (dy < -0.5f) dy += 1f;\n\n    // Determine which cell range this stone occupies\n    var stoneLeft = stoneC * cellW;\n    var stoneRight = (mergedInto[stoneR % tilesY, stoneC % tilesX].tr != -1)\n        ? (stoneC + 2) * cellW : (stoneC + 1) * cellW;\n    var stoneTop = stoneR * cellH;\n    var stoneBottom = (stoneR + 1) * cellH;\n\n    // Distance to stone edges in UV space\n    var leftDist = MathF.Abs(u - stoneLeft);\n    var rightDist = MathF.Abs(u - stoneRight);\n    var topDist = MathF.Abs(v - stoneTop);\n    var bottomDist = MathF.Abs(v - stoneBottom);\n\n    // Wrapped edge distances\n    if (stoneLeft < 0f) leftDist = MathF.Min(leftDist, MathF.Abs(u - (stoneLeft + 1f)));\n    if (stoneRight > 1f) rightDist = MathF.Min(rightDist, MathF.Abs(u - (stoneRight - 1f)));\n    if (stoneTop < 0f) topDist = MathF.Min(topDist, MathF.Abs(v - (stoneTop + 1f)));\n    if (stoneBottom > 1f) bottomDist = MathF.Min(bottomDist, MathF.Abs(v - (stoneBottom - 1f)));\n\n    var minEdgeDist = MathF.Min(MathF.Min(leftDist, rightDist), MathF.Min(topDist, bottomDist));\n    var gapHalf = gapWidth * 0.5f;\n\n    float r, g, b;\n\n    if (minEdgeDist < gapHalf)\n    {\n        // Mortar gap\n        var gapNoise = TileableFractalNoise(\n            u * 4f + 100f, v * 4f + 100f,\n            Math.Max(1, size / 3), 1, 0.5f, 2f, seed + 300);\n        var gapVar = (gapNoise - 0.5f) * 0.06f;\n        r = Math.Clamp(gR + gapVar, 0f, 1f);\n        g = Math.Clamp(gG + gapVar * 0.9f, 0f, 1f);\n        b = Math.Clamp(gB + gapVar * 0.8f, 0f, 1f);\n\n        // Depth shading\n        var depth = (1f - minEdgeDist / gapHalf) * 0.15f;\n        r = Math.Clamp(r - depth, 0f, 1f);\n        g = Math.Clamp(g - depth * 0.9f, 0f, 1f);\n        b = Math.Clamp(b - depth * 0.85f, 0f, 1f);\n    }\n    else\n    {\n        // Stone surface\n        r = sd.r;\n        g = sd.g;\n        b = sd.b;\n\n        // 3D edge shading (light from top-left)\n        var edgeT = 1f - (minEdgeDist - gapHalf) / (0.5f - gapHalf);\n        edgeT = MathF.Max(0f, MathF.Min(1f, edgeT));\n\n        var lightDot = (-dx + -dy) * 0.5f;\n        var hl = MathF.Max(0f, lightDot) * highlight * edgeT;\n        var sh = MathF.Max(0f, -lightDot) * shadow * edgeT;\n\n        r = Math.Clamp(r + hl - sh, 0f, 1f);\n        g = Math.Clamp(g + hl * 0.85f - sh * 0.85f, 0f, 1f);\n        b = Math.Clamp(b + hl * 0.7f - sh * 0.7f, 0f, 1f);\n\n        // Surface roughness\n        if (roughness > 0f)\n        {\n            var roughNoise = TileableFractalNoise(\n                u * 6f, v * 6f,\n                Math.Max(1, size / 3), 2, 0.5f, 2.5f, seed + 400);\n            var rough = (roughNoise - 0.5f) * roughness * 0.08f;\n            r = Math.Clamp(r + rough, 0f, 1f);\n            g = Math.Clamp(g + rough * 0.9f, 0f, 1f);\n            b = Math.Clamp(b + rough * 0.8f, 0f, 1f);\n        }\n    }\n\n    // Brightness and contrast\n    r = Math.Clamp(r + brightness, 0f, 1f);\n    g = Math.Clamp(g + brightness, 0f, 1f);\n    b = Math.Clamp(b + brightness, 0f, 1f);\n\n    if (MathF.Abs(contrast) > 0.001f)\n    {\n        var factor = 1f + contrast;\n        r = (r - 0.5f) * factor + 0.5f;\n        g = (g - 0.5f) * factor + 0.5f;\n        b = (b - 0.5f) * factor + 0.5f;\n    }\n\n    if (invert) { r = 1f - r; g = 1f - g; b = 1f - b; }\n\n    buffer.SetPixel(x, y, Math.Clamp(r, 0f, 1f), Math.Clamp(g, 0f, 1f), Math.Clamp(b, 0f, 1f), 1f);\n});\n\nreturn buffer;\n}"
+  }
+}

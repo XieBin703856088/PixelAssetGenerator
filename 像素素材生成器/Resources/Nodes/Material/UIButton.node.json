@@ -1,0 +1,166 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "UIButton",
+    "displayName": {
+      "zh-Hans": "UI按钮",
+      "en": "UI Button"
+    },
+    "category": "Material",
+    "description": {
+      "zh-Hans": "生成像素艺术UI按钮，支持可配置大小、配色方案和图标叠加。支持正常和按下两种视觉状态。适用于游戏菜单和HUD原型设计。",
+      "en": "Generates pixel art UI buttons with configurable size, color scheme, and icon overlay. Supports normal and pressed visual states. Suitable for game menu and HUD mockups."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [
+      {
+        "name": {
+          "zh-Hans": "图标",
+          "en": "Icon"
+        },
+        "type": "Image"
+      }
+    ],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "遮罩",
+          "en": "Mask"
+        },
+        "type": "Mask"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "宽度",
+        "en": "Width"
+      },
+      "kind": "Number",
+      "default": 0.4,
+      "min": 0.1,
+      "max": 0.8,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "高度",
+        "en": "Height"
+      },
+      "kind": "Number",
+      "default": 0.15,
+      "min": 0.05,
+      "max": 0.4,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "圆角",
+        "en": "Corner Radius"
+      },
+      "kind": "Number",
+      "default": 0.04,
+      "min": 0.0,
+      "max": 0.12,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "按钮颜色",
+        "en": "Button Color"
+      },
+      "kind": "Color",
+      "default": "#4178C8FF"
+    },
+    {
+      "name": {
+        "zh-Hans": "边框颜色",
+        "en": "Border Color"
+      },
+      "kind": "Color",
+      "default": "#6496DCFF"
+    },
+    {
+      "name": {
+        "zh-Hans": "状态",
+        "en": "State"
+      },
+      "kind": "Choice",
+      "default": "normal",
+      "choices": [
+        {
+          "value": "normal",
+          "label": {
+            "zh-Hans": "正常",
+            "en": "normal"
+          }
+        },
+        {
+          "value": "hover",
+          "label": {
+            "zh-Hans": "悬停",
+            "en": "hover"
+          }
+        },
+        {
+          "value": "pressed",
+          "label": {
+            "zh-Hans": "按下",
+            "en": "pressed"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "zh-Hans": "X偏移",
+        "en": "Offset X"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": -0.5,
+      "max": 0.5,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "Y偏移",
+        "en": "Offset Y"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": -0.5,
+      "max": 0.5,
+      "step": 0.01
+    }
+  ],
+  "ai": {
+    "capabilities": ["material", "procedural-texture", "ui-element", "game-ui", "icon"],
+    "triggers": {
+      "zh-Hans": "按钮, UI按钮, 菜单按钮, 游戏界面, HUD按钮",
+      "en": "button, UI button, menu button, game UI, HUD button"
+    },
+    "suggestedInputs": ["Icon", "Gem", "Rune", "Shield"],
+    "exampleUsage": {
+      "zh-Hans": "生成像素艺术UI按钮，可叠加图标输入，用于游戏菜单和HUD原型。",
+      "en": "Generate pixel-art UI buttons with optional icon overlay for game menus and HUD mockups."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar iconInput = inputs.Length > 0 ? inputs[0] : null;\nvar width = GetFloat(parameters, \"width\", 0.4f);\nvar height = GetFloat(parameters, \"height\", 0.15f);\nvar cornerR = GetFloat(parameters, \"cornerRadius\", 0.04f);\nvar btnColor = GetColor(parameters, \"buttonColor\", Color.FromRgb(65, 120, 200));\nvar borderColor = GetColor(parameters, \"borderColor\", Color.FromRgb(100, 150, 220));\nvar state = GetChoice(parameters, \"state\", \"normal\");\nvar offsetX = GetFloat(parameters, \"offsetX\", 0f);\nvar offsetY = GetFloat(parameters, \"offsetY\", 0f);\n\nvar tileSize = context.TileSize;\nvar buffer = new PixelBuffer(tileSize, tileSize);\n\nvar bR = btnColor.R / 255f; var bG = btnColor.G / 255f; var bB = btnColor.B / 255f;\nvar oR = borderColor.R / 255f; var oG = borderColor.G / 255f; var oB = borderColor.B / 255f;\n\nvar halfSize = tileSize * 0.5f;\nvar btnW = tileSize * width * 0.5f;\nvar btnH = tileSize * height * 0.5f;\nvar cornerPx = tileSize * cornerR;\nvar cx = halfSize + offsetX * tileSize;\nvar cy = halfSize + offsetY * tileSize;\n\n// State adjustment\nvar brightnessMul = state switch\n{\n    \"hover\" => 1.15f,\n    \"pressed\" => 0.8f,\n    _ => 1f\n};\nvar yOffset = state == \"pressed\" ? 1 : 0;\n\nbuffer.ParallelForEachPixel((x, y) =>\n{\n    var px = x + 0.5f - cx;\n    var py = y + 0.5f - cy + yOffset;\n\n    var ax = MathF.Abs(px);\n    var ay = MathF.Abs(py);\n\n    if (ax > btnW || ay > btnH) return;\n\n    // Rounded rectangle SDF\n    var rx = Math.Max(0f, ax - (btnW - cornerPx));\n    var ry = Math.Max(0f, ay - (btnH - cornerPx));\n    var cornerDist = MathF.Sqrt(rx * rx + ry * ry);\n\n    if (cornerDist > cornerPx) return;\n\n    var isBorder = cornerDist > cornerPx - 1.5f || ax > btnW - 1.5f || ay > btnH - 1.5f;\n\n    if (isBorder)\n    {\n        var bevel = ax < btnW * 0.5f && ay < btnH * 0.5f ? 1.3f : 0.7f;\n        buffer.SetPixel(x, y,\n            Math.Clamp(oR * bevel * brightnessMul, 0f, 1f),\n            Math.Clamp(oG * bevel * brightnessMul, 0f, 1f),\n            Math.Clamp(oB * bevel * brightnessMul, 0f, 1f), 1f);\n        return;\n    }\n\n    // Body gradient\n    var gradY = py / btnH;\n    var shade = state == \"pressed\" ? 0.8f : (0.8f - gradY * 0.3f);\n    var finalMul = shade * brightnessMul;\n\n    buffer.SetPixel(x, y,\n        Math.Clamp(bR * finalMul, 0f, 1f),\n        Math.Clamp(bG * finalMul, 0f, 1f),\n        Math.Clamp(bB * finalMul, 0f, 1f), 1f);\n\n    // Icon overlay\n    if (iconInput != null && ax < btnW * 0.5f && ay < btnH * 0.5f)\n    {\n        var ix = (int)MathF.Round((px / (btnW * 0.5f) + 1f) * 0.5f * (iconInput.Width - 1));\n        var iy = (int)MathF.Round((py / (btnH * 0.5f) + 1f) * 0.5f * (iconInput.Height - 1));\n        ix = Math.Clamp(ix, 0, iconInput.Width - 1);\n        iy = Math.Clamp(iy, 0, iconInput.Height - 1);\n        var (ir, ig, ib, ia) = iconInput.GetPixel(ix, iy);\n        if (ia > 0.5f)\n        {\n            // Blend icon over button\n            buffer.SetPixel(x, y,\n                ir * ia + bR * finalMul * (1f - ia),\n                ig * ia + bG * finalMul * (1f - ia),\n                ib * ia + bB * finalMul * (1f - ia), 1f);\n        }\n    }\n});\n\nreturn buffer;\n}"
+  }
+}

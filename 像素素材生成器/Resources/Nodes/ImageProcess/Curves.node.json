@@ -1,0 +1,377 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "Curves",
+    "displayName": {
+      "zh-Hans": "色阶/曲线",
+      "en": "Levels/Curves"
+    },
+    "category": "ImageProcess",
+    "description": {
+      "zh-Hans": "应用色阶调整：逐通道或整体调整输入/输出黑白点、伽马值。支持RGB整体、红/绿/蓝独立通道以及Alpha通道调整。提供直观的色阶映射：输入范围[iBlack, iWhite]映射到输出范围[oBlack, oWhite]，伽马控制中间调曲线曲率。",
+      "en": "Applies levels adjustment: per-channel or combined input/output black/white points and gamma. Supports RGB combined, individual R/G/B channels, and alpha channel. Maps input range [iBlack, iWhite] to output range [oBlack, oWhite], with gamma controlling mid-tone curvature."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "2.0"
+  },
+  "ports": {
+    "inputs": [
+      {
+        "name": {
+          "zh-Hans": "输入",
+          "en": "Input"
+        },
+        "type": "Image"
+      }
+    ],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "输出",
+          "en": "Output"
+        },
+        "type": "Image"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "通道",
+        "en": "Channel"
+      },
+      "kind": "Choice",
+      "default": "RGB",
+      "choices": [
+        {
+          "value": "RGB",
+          "label": {
+            "zh-Hans": "RGB（全部）",
+            "en": "RGB (All)"
+          }
+        },
+        {
+          "value": "red",
+          "label": {
+            "zh-Hans": "红",
+            "en": "Red"
+          }
+        },
+        {
+          "value": "green",
+          "label": {
+            "zh-Hans": "绿",
+            "en": "Green"
+          }
+        },
+        {
+          "value": "blue",
+          "label": {
+            "zh-Hans": "蓝",
+            "en": "Blue"
+          }
+        },
+        {
+          "value": "alpha",
+          "label": {
+            "zh-Hans": "Alpha",
+            "en": "Alpha"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "zh-Hans": "输入黑点",
+        "en": "In Black"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "输入白点",
+        "en": "In White"
+      },
+      "kind": "Number",
+      "default": 1.0,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "输出黑点",
+        "en": "Out Black"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "输出白点",
+        "en": "Out White"
+      },
+      "kind": "Number",
+      "default": 1.0,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "伽马",
+        "en": "Gamma"
+      },
+      "kind": "Number",
+      "default": 1.0,
+      "min": 0.05,
+      "max": 10.0,
+      "step": 0.05
+    },
+    {
+      "name": {
+        "zh-Hans": "红色通道输入黑点",
+        "en": "Red In Black"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "红色通道输入白点",
+        "en": "Red In White"
+      },
+      "kind": "Number",
+      "default": 1.0,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "红色通道输出黑点",
+        "en": "Red Out Black"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "红色通道输出白点",
+        "en": "Red Out White"
+      },
+      "kind": "Number",
+      "default": 1.0,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "红色通道伽马",
+        "en": "Red Gamma"
+      },
+      "kind": "Number",
+      "default": 1.0,
+      "min": 0.05,
+      "max": 10.0,
+      "step": 0.05
+    },
+    {
+      "name": {
+        "zh-Hans": "绿色通道输入黑点",
+        "en": "Green In Black"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "绿色通道输入白点",
+        "en": "Green In White"
+      },
+      "kind": "Number",
+      "default": 1.0,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "绿色通道输出黑点",
+        "en": "Green Out Black"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "绿色通道输出白点",
+        "en": "Green Out White"
+      },
+      "kind": "Number",
+      "default": 1.0,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "绿色通道伽马",
+        "en": "Green Gamma"
+      },
+      "kind": "Number",
+      "default": 1.0,
+      "min": 0.05,
+      "max": 10.0,
+      "step": 0.05
+    },
+    {
+      "name": {
+        "zh-Hans": "蓝色通道输入黑点",
+        "en": "Blue In Black"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "蓝色通道输入白点",
+        "en": "Blue In White"
+      },
+      "kind": "Number",
+      "default": 1.0,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "蓝色通道输出黑点",
+        "en": "Blue Out Black"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "蓝色通道输出白点",
+        "en": "Blue Out White"
+      },
+      "kind": "Number",
+      "default": 1.0,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "蓝色通道伽马",
+        "en": "Blue Gamma"
+      },
+      "kind": "Number",
+      "default": 1.0,
+      "min": 0.05,
+      "max": 10.0,
+      "step": 0.05
+    },
+    {
+      "name": {
+        "zh-Hans": "Alpha通道输入黑点",
+        "en": "Alpha In Black"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "Alpha通道输入白点",
+        "en": "Alpha In White"
+      },
+      "kind": "Number",
+      "default": 1.0,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "Alpha通道输出黑点",
+        "en": "Alpha Out Black"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "Alpha通道输出白点",
+        "en": "Alpha Out White"
+      },
+      "kind": "Number",
+      "default": 1.0,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "Alpha通道伽马",
+        "en": "Alpha Gamma"
+      },
+      "kind": "Number",
+      "default": 1.0,
+      "min": 0.05,
+      "max": 10.0,
+      "step": 0.05
+    }
+  ],
+  "ai": {
+    "capabilities": ["color-adjust"],
+    "triggers": {
+      "zh-Hans": "色阶, 曲线, 色阶调整, 色阶曲线, 色调调整, 伽马校正, 黑点, 白点",
+      "en": "levels, curves, levels adjustment, tone curve, tonal adjustment, gamma correction, black point, white point"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "调整图像的黑点和白点以增强对比度，同时校正伽马值。",
+      "en": "Adjust black and white points to enhance contrast while correcting gamma."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar input = inputs.Length > 0 ? inputs[0] : null;\nif (input is null)\n    return PixelBuffer.CreateSolid(context.TileSize, context.TileSize, 0, 0, 0);\n\nvar channel = GetChoice(parameters, \"channel\", \"RGB\");\n\n// Master controls\nvar inBlack = GetFloat(parameters, \"inBlack\", 0f);\nvar inWhite = GetFloat(parameters, \"inWhite\", 1f);\nvar outBlack = GetFloat(parameters, \"outBlack\", 0f);\nvar outWhite = GetFloat(parameters, \"outWhite\", 1f);\nvar gamma = GetFloat(parameters, \"gamma\", 1f);\n\n// Per-channel controls (used when channel is a specific RGBA)\nvar rInBlack = GetFloat(parameters, \"redInBlack\", 0f);\nvar rInWhite = GetFloat(parameters, \"redInWhite\", 1f);\nvar rOutBlack = GetFloat(parameters, \"redOutBlack\", 0f);\nvar rOutWhite = GetFloat(parameters, \"redOutWhite\", 1f);\nvar rGamma = GetFloat(parameters, \"redGamma\", 1f);\n\nvar gInBlack = GetFloat(parameters, \"greenInBlack\", 0f);\nvar gInWhite = GetFloat(parameters, \"greenInWhite\", 1f);\nvar gOutBlack = GetFloat(parameters, \"greenOutBlack\", 0f);\nvar gOutWhite = GetFloat(parameters, \"greenOutWhite\", 1f);\nvar gGamma = GetFloat(parameters, \"greenGamma\", 1f);\n\nvar bInBlack = GetFloat(parameters, \"blueInBlack\", 0f);\nvar bInWhite = GetFloat(parameters, \"blueInWhite\", 1f);\nvar bOutBlack = GetFloat(parameters, \"blueOutBlack\", 0f);\nvar bOutWhite = GetFloat(parameters, \"blueOutWhite\", 1f);\nvar bGamma = GetFloat(parameters, \"blueGamma\", 1f);\n\nvar aInBlack = GetFloat(parameters, \"alphaInBlack\", 0f);\nvar aInWhite = GetFloat(parameters, \"alphaInWhite\", 1f);\nvar aOutBlack = GetFloat(parameters, \"alphaOutBlack\", 0f);\nvar aOutWhite = GetFloat(parameters, \"alphaOutWhite\", 1f);\nvar aGamma = GetFloat(parameters, \"alphaGamma\", 1f);\n\nvar result = input.Clone();\n\n// Pre-compute per-channel level parameters based on active mode\nfloat ibR, iwR, obR, owR, gR;\nfloat ibG, iwG, obG, owG, gG;\nfloat ibB, iwB, obB, owB, gB;\nfloat ibA, iwA, obA, owA, gA;\n\nswitch (channel)\n{\n    case \"red\":\n        ibR = rInBlack; iwR = rInWhite; obR = rOutBlack; owR = rOutWhite; gR = rGamma;\n        ibG = inBlack; iwG = inWhite; obG = outBlack; owG = outWhite; gG = gamma;\n        ibB = inBlack; iwB = inWhite; obB = outBlack; owB = outWhite; gB = gamma;\n        ibA = inBlack; iwA = inWhite; obA = outBlack; owA = outWhite; gA = gamma;\n        break;\n    case \"green\":\n        ibR = inBlack; iwR = inWhite; obR = outBlack; owR = outWhite; gR = gamma;\n        ibG = gInBlack; iwG = gInWhite; obG = gOutBlack; owG = gOutWhite; gG = gGamma;\n        ibB = inBlack; iwB = inWhite; obB = outBlack; owB = outWhite; gB = gamma;\n        ibA = inBlack; iwA = inWhite; obA = outBlack; owA = outWhite; gA = gamma;\n        break;\n    case \"blue\":\n        ibR = inBlack; iwR = inWhite; obR = outBlack; owR = outWhite; gR = gamma;\n        ibG = inBlack; iwG = inWhite; obG = outBlack; owG = outWhite; gG = gamma;\n        ibB = bInBlack; iwB = bInWhite; obB = bOutBlack; owB = bOutWhite; gB = bGamma;\n        ibA = inBlack; iwA = inWhite; obA = outBlack; owA = outWhite; gA = gamma;\n        break;\n    case \"alpha\":\n        ibR = inBlack; iwR = inWhite; obR = outBlack; owR = outWhite; gR = gamma;\n        ibG = inBlack; iwG = inWhite; obG = outBlack; owG = outWhite; gG = gamma;\n        ibB = inBlack; iwB = inWhite; obB = outBlack; owB = outWhite; gB = gamma;\n        ibA = aInBlack; iwA = aInWhite; obA = aOutBlack; owA = aOutWhite; gA = aGamma;\n        break;\n    default: // RGB\n        ibR = inBlack; iwR = inWhite; obR = outBlack; owR = outWhite; gR = gamma;\n        ibG = inBlack; iwG = inWhite; obG = outBlack; owG = outWhite; gG = gamma;\n        ibB = inBlack; iwB = inWhite; obB = outBlack; owB = outWhite; gB = gamma;\n        ibA = inBlack; iwA = inWhite; obA = outBlack; owA = outWhite; gA = gamma;\n        break;\n}\n\nresult.Apply((r, g, b, a) =>\n{\n    r = ApplyLevels(r, ibR, iwR, obR, owR, gR);\n    g = ApplyLevels(g, ibG, iwG, obG, owG, gG);\n    b = ApplyLevels(b, ibB, iwB, obB, owB, gB);\n    a = ApplyLevels(a, ibA, iwA, obA, owA, gA);\n    return (Math.Clamp(r, 0f, 1f), Math.Clamp(g, 0f, 1f), Math.Clamp(b, 0f, 1f), Math.Clamp(a, 0f, 1f));\n});\n\nreturn result;\n\n\n/// <summary>\n/// Applies a single-channel levels adjustment:\n///   1. Clamp input to [inBlack, inWhite]\n///   2. Normalize to [0, 1]\n///   3. Apply gamma (power law)\n///   4. Map to output range [outBlack, outWhite]\n/// </summary>\nprivate static float ApplyLevels(float val, float inBlack, float inWhite, float outBlack, float outWhite, float gammaVal)\n{\n    // Guard degenerate range\n    if (inWhite <= inBlack) return outBlack;\n\n    // Clamp to input range\n    val = Math.Clamp(val, inBlack, inWhite);\n\n    // Normalize to [0, 1]\n    val = (val - inBlack) / (inWhite - inBlack);\n\n    // Apply gamma (gamma = 1 is identity; < 1 brightens mid-tones; > 1 darkens)\n    var invGamma = 1f / MathF.Max(0.001f, gammaVal);\n    val = MathF.Pow(val, invGamma);\n\n    // Map to output range\n    val = outBlack + val * (outWhite - outBlack);\n\n    return val;\n}"
+  }
+}

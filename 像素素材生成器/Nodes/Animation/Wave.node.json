@@ -1,0 +1,55 @@
+{
+  "formatVersion": 2,
+  "processorType": "Wave",
+  "identity": {
+    "typeName": "Wave",
+    "displayName": {
+      "zh-Hans": "波形动画",
+      "en": "Wave Animation"
+    },
+    "category": "Animation",
+    "description": {
+      "zh-Hans": "生成周期性波形值（正弦波、三角波、锯齿波、方波、脉冲波、随机噪声），用于驱动动画参数",
+      "en": "Generates periodic wave values (sine, triangle, sawtooth, square, pulse, random) for driving animation parameters"
+    },
+    "tags": ["animation", "wave", "oscillator"],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [],
+    "outputs": [
+      {
+        "name": { "zh-Hans": "值", "en": "Value" },
+        "type": "Float"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": { "zh-Hans": "波形类型", "en": "Wave Type" },
+      "kind": "Choice",
+      "default": "sine",
+      "choices": ["sine", "triangle", "sawtooth", "square", "pulse", "random"],
+      "displayChoices": ["正弦波", "三角波", "锯齿波", "方波", "脉冲波", "随机"]
+    },
+    { "name": { "zh-Hans": "频率", "en": "Frequency" }, "kind": "Number", "default": 1.0, "min": 0.01, "max": 20.0, "step": 0.1 },
+    { "name": { "zh-Hans": "振幅", "en": "Amplitude" }, "kind": "Number", "default": 1.0, "min": 0.0, "max": 10.0, "step": 0.1 },
+    { "name": { "zh-Hans": "偏移", "en": "Offset" }, "kind": "Number", "default": 0.0, "min": -5.0, "max": 5.0, "step": 0.01 },
+    { "name": { "zh-Hans": "相位偏移", "en": "Phase Offset" }, "kind": "Number", "default": 0.0, "min": 0.0, "max": 360.0, "step": 1.0 },
+    { "name": { "zh-Hans": "占空比", "en": "Duty Cycle" }, "kind": "Number", "default": 0.5, "min": 0.01, "max": 0.99, "step": 0.01 },
+    { "name": { "zh-Hans": "双极性输出", "en": "Bipolar" }, "kind": "Boolean", "default": false }
+  ],
+  "ai": {
+    "capabilities": ["animation", "wave", "time"],
+    "triggers": {
+      "zh-Hans": "波形动画, 正弦波, 三角波, 周期性运动, 振荡",
+      "en": "wave animation, sine wave, triangle wave, periodic motion, oscillation"
+    },
+    "suggestedInputs": ["Time"],
+    "exampleUsage": {
+      "zh-Hans": "生成频率1Hz的正弦波驱动粒子大小，实现节奏性呼吸效果",
+      "en": "Generate a 1Hz sine wave to drive particle size for a rhythmic breathing effect"
+    }
+  }
+}

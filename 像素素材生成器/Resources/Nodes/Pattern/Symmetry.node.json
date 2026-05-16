@@ -1,0 +1,124 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "Symmetry",
+    "displayName": {
+      "zh-Hans": "对称",
+      "en": "Symmetry"
+    },
+    "category": "Pattern",
+    "description": {
+      "zh-Hans": "通过在可配置的中心线上镜像像素位置，创建对称的像素布局。支持水平、垂直、对角和四重对称模式。",
+      "en": "Creates symmetrical pixel layouts by mirroring pixel positions across configurable center lines. Supports horizontal, vertical, diagonal, and quadruple symmetry modes."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      }
+    ],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "遮罩",
+          "en": "Mask"
+        },
+        "type": "Mask"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "模式",
+        "en": "Mode"
+      },
+      "kind": "Choice",
+      "default": "mirrorHorizontal",
+      "choices": [
+        {
+          "value": "mirrorHorizontal",
+          "label": {
+            "zh-Hans": "水平镜像",
+            "en": "mirrorHorizontal"
+          }
+        },
+        {
+          "value": "mirrorVertical",
+          "label": {
+            "zh-Hans": "垂直镜像",
+            "en": "mirrorVertical"
+          }
+        },
+        {
+          "value": "mirrorDiagonal",
+          "label": {
+            "zh-Hans": "对角镜像",
+            "en": "mirrorDiagonal"
+          }
+        },
+        {
+          "value": "mirrorQuad",
+          "label": {
+            "zh-Hans": "四重镜像",
+            "en": "mirrorQuad"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "zh-Hans": "中心 X",
+        "en": "Center X"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "中心 Y",
+        "en": "Center Y"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    }
+  ],
+  "ai": {
+    "capabilities": ["pattern", "mirror", "geometric", "tiling"],
+    "triggers": {
+      "zh-Hans": "对称, 镜像, 水平镜像, 垂直镜像, 对角镜像, 四重镜像",
+      "en": "symmetry, mirror, horizontal mirror, vertical mirror, diagonal mirror"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "对输入图像应用水平镜像对称，创建立面或角色反射效果。",
+      "en": "Apply horizontal mirror symmetry to an input image to create a facade or character reflection."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar input = inputs.Length > 0 ? inputs[0] : null;\nif (input == null)\n    return new PixelBuffer(context.TileSize, context.TileSize);\n\nvar mode = GetChoice(parameters, \"mode\", \"mirrorHorizontal\");\nvar centerX = GetFloat(parameters, \"centerX\", 0.5f);\nvar centerY = GetFloat(parameters, \"centerY\", 0.5f);\n\nvar size = context.TileSize;\nvar result = new PixelBuffer(size, size);\nvar cx = centerX * size;\nvar cy = centerY * size;\n\nresult.ParallelForEachPixel((x, y) =>\n{\n    float sx, sy;\n\n    switch (mode)\n    {\n        case \"mirrorVertical\":\n            sx = x;\n            sy = y < cy ? y : 2f * cy - y;\n            break;\n        case \"mirrorDiagonal\":\n            sx = y;\n            sy = x;\n            break;\n        case \"mirrorQuad\":\n            sx = x < cx ? x : 2f * cx - x;\n            sy = y < cy ? y : 2f * cy - y;\n            break;\n        default: // mirrorHorizontal\n            sx = x < cx ? x : 2f * cx - x;\n            sy = y;\n            break;\n    }\n\n    var si = Math.Clamp((int)MathF.Round(sx), 0, size - 1);\n    var sj = Math.Clamp((int)MathF.Round(sy), 0, size - 1);\n\n    var (r, g, b, a) = input.GetPixel(si, sj);\n    result.SetPixel(x, y, r, g, b, a);\n});\n\nreturn result;\n}"
+  }
+}

@@ -1,0 +1,142 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "Gem",
+    "displayName": {
+      "zh-Hans": "宝石",
+      "en": "Gem"
+    },
+    "category": "Material",
+    "description": {
+      "zh-Hans": "生成像素艺术宝石，支持可配置的切割形状、颜色和反射高光。适用于宝藏、魔法和UI图标。",
+      "en": "Generates pixel art gemstones with configurable cut shape, color, and reflective highlights. Useful for treasure, magic, and UI icons."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "遮罩",
+          "en": "Mask"
+        },
+        "type": "Mask"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "种子",
+        "en": "Seed"
+      },
+      "kind": "Seed",
+      "default": 42,
+      "min": 0,
+      "max": 9999
+    },
+    {
+      "name": {
+        "zh-Hans": "切割形状",
+        "en": "Cut Shape"
+      },
+      "kind": "Choice",
+      "default": "round",
+      "choices": [
+        {
+          "value": "round",
+          "label": {
+            "zh-Hans": "圆形",
+            "en": "round"
+          }
+        },
+        {
+          "value": "square",
+          "label": {
+            "zh-Hans": "正方形",
+            "en": "square"
+          }
+        },
+        {
+          "value": "diamond",
+          "label": {
+            "zh-Hans": "菱形",
+            "en": "diamond"
+          }
+        },
+        {
+          "value": "teardrop",
+          "label": {
+            "zh-Hans": "泪滴",
+            "en": "teardrop"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "zh-Hans": "大小",
+        "en": "Size"
+      },
+      "kind": "Number",
+      "default": 0.6,
+      "min": 0.1,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "宝石颜色",
+        "en": "Gem Color"
+      },
+      "kind": "Color",
+      "default": "#3C78F0FF"
+    },
+    {
+      "name": {
+        "zh-Hans": "高光颜色",
+        "en": "Spec Color"
+      },
+      "kind": "Color",
+      "default": "#B4DCFFFF"
+    },
+    {
+      "name": {
+        "zh-Hans": "光泽",
+        "en": "Gloss"
+      },
+      "kind": "Number",
+      "default": 0.7,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    }
+  ],
+  "ai": {
+    "capabilities": ["material", "procedural-texture", "gem", "crystal", "ui-element", "icon"],
+    "triggers": {
+      "zh-Hans": "宝石, 钻石, 珠宝, 切面, 宝藏, 魔法宝石",
+      "en": "gem, gemstone, diamond, jewel, faceted, treasure"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "生成像素艺术宝石，用于道具图标、宝藏或魔法物品的UI显示。",
+      "en": "Generate pixel-art gemstones for item icons, treasure, or magical UI displays."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar seed = GetInt(parameters, \"seed\", context.Seed);\nvar cut = GetChoice(parameters, \"cutShape\", \"round\");\nvar size = GetFloat(parameters, \"size\", 0.6f);\nvar gemColor = GetColor(parameters, \"gemColor\", Color.FromRgb(60, 120, 240));\nvar specColor = GetColor(parameters, \"specColor\", Color.FromRgb(180, 220, 255));\nvar gloss = GetFloat(parameters, \"gloss\", 0.7f);\n\nvar tileSize = context.TileSize;\nvar buffer = new PixelBuffer(tileSize, tileSize);\n\nvar gR = gemColor.R / 255f; var gG = gemColor.G / 255f; var gB = gemColor.B / 255f;\nvar sR = specColor.R / 255f; var sG = specColor.G / 255f; var sB = specColor.B / 255f;\n\nvar halfSize = tileSize * 0.5f;\nvar radius = halfSize * size;\n\nbuffer.ParallelForEachPixel((x, y) =>\n{\n    var px = x + 0.5f - halfSize;\n    var py = y + 0.5f - halfSize;\n\n    // Distance function based on cut shape\n    var dist = cut switch\n    {\n        \"square\" => MathF.Max(MathF.Abs(px), MathF.Abs(py)),\n        \"diamond\" => (MathF.Abs(px) + MathF.Abs(py)) * 0.7071f,\n        \"teardrop\" => MathF.Sqrt(px * px + (py - radius * 0.2f) * (py - radius * 0.2f)) * (1f - py / (radius * 2f) * 0.3f),\n        _ => MathF.Sqrt(px * px + py * py)\n    };\n\n    var alpha = 1f - SmoothStep(radius * 0.8f, radius, dist);\n    if (alpha <= 0.01f)\n    {\n        buffer.SetPixel(x, y, 0, 0, 0, 0);\n        return;\n    }\n\n    // Facet-like internal pattern using deterministic cell noise\n    var cellSize = radius * 0.3f;\n    var cellX = (int)MathF.Floor(px / cellSize + 0.5f);\n    var cellY = (int)MathF.Floor(py / cellSize + 0.5f);\n    var cellHash = HashToUnit(cellX, cellY, seed);\n\n    // Each facet has slightly different brightness\n    var facetBrightness = 0.7f + cellHash * 0.3f;\n\n    // Center highlight: bright reflection in the upper-left\n    var hlX = -radius * 0.25f;\n    var hlY = -radius * 0.25f;\n    var hlDist = MathF.Sqrt((px - hlX) * (px - hlX) + (py - hlY) * (py - hlY));\n    var highlight = MathF.Exp(-hlDist * hlDist / (radius * radius * 0.15f)) * gloss;\n\n    // Secondary highlight (smaller, lower-right)\n    var hl2X = radius * 0.3f;\n    var hl2Y = radius * 0.3f;\n    var hlDist2 = MathF.Sqrt((px - hl2X) * (px - hl2X) + (py - hl2Y) * (py - hl2Y));\n    var highlight2 = MathF.Exp(-hlDist2 * hlDist2 / (radius * radius * 0.08f)) * gloss * 0.5f;\n\n    // Edge darkening\n    var edgeDark = Math.Clamp(1f - (radius - dist) / (radius * 0.2f), 0f, 1f) * 0.3f;\n\n    // Combine: base gem color * facet brightness + specular highlights - edge darkening\n    var finalR = gR * facetBrightness + sR * Math.Max(highlight, highlight2) - edgeDark * gR;\n    var finalG = gG * facetBrightness + sG * Math.Max(highlight, highlight2) - edgeDark * gG;\n    var finalB = gB * facetBrightness + sB * Math.Max(highlight, highlight2) - edgeDark * gB;\n\n    buffer.SetPixel(x, y,\n        Math.Clamp(finalR, 0f, 1f),\n        Math.Clamp(finalG, 0f, 1f),\n        Math.Clamp(finalB, 0f, 1f), alpha);\n});\n\nreturn buffer;\n}"
+  }
+}

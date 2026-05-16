@@ -1,0 +1,169 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "AiImageGen",
+    "displayName": {
+      "zh-Hans": "AI图像生成[占位]",
+      "en": "AI Image Gen [Placeholder]"
+    },
+    "category": "Logic",
+    "description": {
+      "zh-Hans": "【占位功能】使用AI图像生成API生成像素艺术图像。当前仅返回随机占位图，真正的AI图像生成功能待开发。请使用AI侧边栏聊天功能协助你搭建节点管线，或等待后续版本完善此节点。",
+      "en": "[PLACEHOLDER] Generates pixel art images using AI image API. Currently returns a random placeholder image; real AI image generation is under development. Use the AI sidebar chat to help build your node pipeline, or wait for a future version to complete this node."
+    },
+    "tags": [
+      "ai",
+      "generation"
+    ],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [
+      {
+        "name": {
+          "zh-Hans": "参考图像",
+          "en": "Reference Image"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "可选遮罩",
+          "en": "Optional Mask"
+        },
+        "type": "Mask"
+      }
+    ],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "输出",
+          "en": "Output"
+        },
+        "type": "Image"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "提示词",
+        "en": "Prompt"
+      },
+      "kind": "Text",
+      "default": "a pixel art tree"
+    },
+    {
+      "name": {
+        "zh-Hans": "反向提示词",
+        "en": "Negative Prompt"
+      },
+      "kind": "Text",
+      "default": ""
+    },
+    {
+      "name": {
+        "zh-Hans": "风格",
+        "en": "Style"
+      },
+      "kind": "Choice",
+      "default": "pixelArt",
+      "choices": [
+        {
+          "value": "pixelArt",
+          "label": {
+            "zh-Hans": "像素艺术",
+            "en": "pixelArt"
+          }
+        },
+        {
+          "value": "pixelCharacter",
+          "label": {
+            "zh-Hans": "像素角色",
+            "en": "pixelCharacter"
+          }
+        },
+        {
+          "value": "pixelScene",
+          "label": {
+            "zh-Hans": "像素场景",
+            "en": "pixelScene"
+          }
+        },
+        {
+          "value": "pixelIcon",
+          "label": {
+            "zh-Hans": "像素图标",
+            "en": "pixelIcon"
+          }
+        },
+        {
+          "value": "pixelUI",
+          "label": {
+            "zh-Hans": "像素UI",
+            "en": "pixelUI"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "zh-Hans": "宽度",
+        "en": "Width"
+      },
+      "kind": "Integer",
+      "default": 64,
+      "min": 16,
+      "max": 512
+    },
+    {
+      "name": {
+        "zh-Hans": "高度",
+        "en": "Height"
+      },
+      "kind": "Integer",
+      "default": 64,
+      "min": 16,
+      "max": 512
+    },
+    {
+      "name": {
+        "zh-Hans": "创意度",
+        "en": "Creativity"
+      },
+      "kind": "Number",
+      "default": 0.8,
+      "min": 0,
+      "max": 1,
+      "step": 0.05
+    },
+    {
+      "name": {
+        "zh-Hans": "种子",
+        "en": "Seed"
+      },
+      "kind": "Seed",
+      "default": 42,
+      "min": 0,
+      "max": 9999
+    }
+  ],
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar prompt = GetString(parameters, \"prompt\");\n        var width = GetInt(parameters, \"width\");\n        var height = GetInt(parameters, \"height\");\n        var seed = GetInt(parameters, \"seed\");\n\n        if (!string.IsNullOrWhiteSpace(prompt))\n        {\n            // Placeholder: when AI service is connected, dispatch a generation request here.\n            // For now, return a visually distinctive placeholder so the user can see the node is working.\n            return GeneratePlaceholder(width, height, seed, prompt);\n        }\n\n        // Default placeholder when no prompt is given\n        return PixelBuffer.CreateSolid(width, height, 0.3f, 0.2f, 0.5f);\n}\n\nprivate static PixelBuffer GeneratePlaceholder(int width, int height, int seed, string prompt)\n{\n    var buf = new PixelBuffer(width > 0 ? width : 64, height > 0 ? height : 64);\n    var rng = new Random(seed);\n    float r = (float)rng.NextDouble() * 0.4f + 0.3f;\n    float g = (float)rng.NextDouble() * 0.4f + 0.2f;\n    float b = (float)rng.NextDouble() * 0.4f + 0.3f;\n    for (var y = 0; y < buf.Height; y++)\n        for (var x = 0; x < buf.Width; x++)\n            buf.SetPixel(x, y, r + (float)rng.NextDouble() * 0.1f, g + (float)rng.NextDouble() * 0.1f, b + (float)rng.NextDouble() * 0.1f, 1f);\n    return buf;\n}"
+  },
+  "ai": {
+    "capabilities": ["logic", "ai-image-gen", "image-analysis"],
+    "triggers": {
+      "zh-Hans": "AI图像, AI图像生成, 生成图片, AI像素, AI生成",
+      "en": "ai image, ai image generation, generate image, ai pixel art"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "使用AI根据文本提示词生成像素艺术树的图像。",
+      "en": "Use AI to generate a pixel art tree image from a text prompt."
+    }
+  }
+}

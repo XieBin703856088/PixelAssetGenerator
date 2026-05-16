@@ -1,0 +1,147 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "Glow",
+    "displayName": {
+      "zh-Hans": "发光",
+      "en": "Glow"
+    },
+    "category": "ImageProcess",
+    "description": {
+      "zh-Hans": "应用发光/泛光效果：提取明亮区域、模糊处理，再混回原图。支持多种发光类型。",
+      "en": "Applies a glow/bloom effect: extracts bright areas, blurs them, and blends back over the original. Supports multiple glow types."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      }
+    ],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "结果",
+          "en": "Result"
+        },
+        "type": "Image"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "亮度阈值",
+        "en": "Brightness Threshold"
+      },
+      "kind": "Number",
+      "default": 0.4,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "发光强度",
+        "en": "Glow Intensity"
+      },
+      "kind": "Number",
+      "default": 0.6,
+      "min": 0.0,
+      "max": 2.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "发光半径",
+        "en": "Glow Radius"
+      },
+      "kind": "Number",
+      "default": 3.0,
+      "min": 1.0,
+      "max": 15.0,
+      "step": 1.0
+    },
+    {
+      "name": {
+        "zh-Hans": "发光类型",
+        "en": "Glow Type"
+      },
+      "kind": "Choice",
+      "default": "soft",
+      "choices": [
+        {
+          "value": "soft",
+          "label": {
+            "zh-Hans": "柔和",
+            "en": "soft"
+          }
+        },
+        {
+          "value": "hardLight",
+          "label": {
+            "zh-Hans": "强光",
+            "en": "hardLight"
+          }
+        },
+        {
+          "value": "edgeGlow",
+          "label": {
+            "zh-Hans": "边缘发光",
+            "en": "edgeGlow"
+          }
+        },
+        {
+          "value": "neon",
+          "label": {
+            "zh-Hans": "霓虹",
+            "en": "neon"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "zh-Hans": "混合比例",
+        "en": "Mix Ratio"
+      },
+      "kind": "Number",
+      "default": 1.0,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "保留透明通道",
+        "en": "Preserve Alpha"
+      },
+      "kind": "Boolean",
+      "default": true
+    }
+  ],
+  "ai": {
+    "capabilities": ["lighting-effect", "filter"],
+    "triggers": {
+      "zh-Hans": "发光, 泛光, 辉光, 霓虹, 边缘发光",
+      "en": "glow, bloom, neon glow, edge glow, light effect"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "为亮色区域添加柔和发光效果，模拟泛光。",
+      "en": "Add a soft glow to bright areas to simulate a bloom effect."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar src = inputs.Length > 0 ? inputs[0] : null;\n    if (src == null)\n        return new PixelBuffer(context.TileSize, context.TileSize);\n\n    var threshold = GetFloat(parameters, \"brightnessThreshold\", 0.5f);\n    var glowIntensity = GetFloat(parameters, \"glowIntensity\", 0.5f);\n    var radius = Math.Max(1, (int)GetFloat(parameters, \"glowRadius\", 3f));\n    var glowType = GetChoice(parameters, \"glowType\", \"soft\");\n    var mixRatio = GetFloat(parameters, \"mixRatio\", 1f);\n    var preserveAlpha = GetBool(parameters, \"preserveAlpha\", true);\n\n    var size = context.TileSize;\n    var result = new PixelBuffer(size, size);\n\n    // Step 1: Extract bright areas\n    var bright = new PixelBuffer(size, size);\n    bright.ParallelForEachPixel((x, y) =>\n    {\n        var (r, g, b, _) = src.GetPixel(x, y);\n        var luminance = 0.299f * r + 0.587f * g + 0.114f * b;\n\n        if (luminance > threshold)\n        {\n            var intensity = (luminance - threshold) / (1f - threshold);\n            bright.SetPixel(x, y,\n                MathF.Pow(r * intensity, 1.2f),\n                MathF.Pow(g * intensity, 1.2f),\n                MathF.Pow(b * intensity, 1.2f), 1f);\n        }\n        else\n        {\n            bright.SetPixel(x, y, 0, 0, 0, 1f);\n        }\n    });\n\n    // Step 2: Blur the bright areas\n    var glowBuffer = new PixelBuffer(size, size);\n    GaussianBlur(bright, glowBuffer, radius, size);\n\n    // Step 3: Compose\n    result.ParallelForEachPixel((x, y) =>\n    {\n        var (r, g, b, a) = src.GetPixel(x, y);\n        var (gr, gg, gb, _) = glowBuffer.GetPixel(x, y);\n\n        float outR, outG, outB;\n\n        switch (glowType)\n        {\n            case \"hardLight\":\n            {\n                // Screen blend\n                outR = 1f - (1f - r) * (1f - gr * glowIntensity);\n                outG = 1f - (1f - g) * (1f - gg * glowIntensity);\n                outB = 1f - (1f - b) * (1f - gb * glowIntensity);\n                break;\n            }\n            case \"edgeGlow\":\n            {\n                // Only glow where there's a transition\n                var edge = MathF.Abs(gr - r) * 2f;\n                outR = r + edge * glowIntensity;\n                outG = g + edge * glowIntensity * 0.8f;\n                outB = b + edge * glowIntensity * 0.6f;\n                break;\n            }\n            case \"neon\":\n            {\n                // Vivid colored glow\n                outR = r + gr * glowIntensity * 0.8f;\n                outG = g + gg * glowIntensity * 0.5f;\n                outB = b + gb * glowIntensity * 1.2f;\n                break;\n            }\n            default: // soft\n            {\n                outR = r + gr * glowIntensity * 0.5f;\n                outG = g + gg * glowIntensity * 0.5f;\n                outB = b + gb * glowIntensity * 0.5f;\n                break;\n            }\n        }\n\n        // Mix with original\n        if (mixRatio < 0.999f)\n        {\n            outR = r + (outR - r) * mixRatio;\n            outG = g + (outG - g) * mixRatio;\n            outB = b + (outB - b) * mixRatio;\n        }\n\n        result.SetPixel(x, y,\n            Math.Clamp(outR, 0f, 1f),\n            Math.Clamp(outG, 0f, 1f),\n            Math.Clamp(outB, 0f, 1f),\n            preserveAlpha ? a : 1f);\n    });\n\n    return result;\n\nprivate static void GaussianBlur(PixelBuffer src, PixelBuffer dst, int radius, int size)\n{\n    var sigma = radius * 0.5f + 0.5f;\n    var temp = new PixelBuffer(size, size);\n    var kernelSize = radius * 2 + 1;\n    var kernel = new float[kernelSize];\n    var sum = 0f;\n    for (var i = 0; i < kernelSize; i++)\n    {\n        var dx = i - radius;\n        kernel[i] = MathF.Exp(-(dx * dx) / (2f * sigma * sigma));\n        sum += kernel[i];\n    }\n    var invSum = 1f / sum;\n\n    temp.ParallelForEachPixel((x, y) =>\n    {\n        var sumR = 0f; var sumG = 0f; var sumB = 0f;\n        for (var i = 0; i < kernelSize; i++)\n        {\n            var (pr, pg, pb, _) = src.GetPixelWrapped(x + i - radius, y);\n            var w = kernel[i] * invSum;\n            sumR += pr * w; sumG += pg * w; sumB += pb * w;\n        }\n        temp.SetPixel(x, y, sumR, sumG, sumB, 1f);\n    });\n\n    dst.ParallelForEachPixel((x, y) =>\n    {\n        var sumR = 0f; var sumG = 0f; var sumB = 0f;\n        for (var i = 0; i < kernelSize; i++)\n        {\n            var (pr, pg, pb, _) = temp.GetPixelWrapped(x, y + i - radius);\n            var w = kernel[i] * invSum;\n            sumR += pr * w; sumG += pg * w; sumB += pb * w;\n        }\n        dst.SetPixel(x, y, sumR, sumG, sumB, 1f);\n    });\n    }\n}"
+  }
+}

@@ -1,0 +1,167 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "Wood",
+    "displayName": {
+      "zh-Hans": "木材",
+      "en": "Wood"
+    },
+    "category": "Noise",
+    "description": {
+      "zh-Hans": "生成可平铺的木纹纹理，具有同心年轮、正弦扰动木纹和节疤效果。",
+      "en": "Generates tileable wood grain texture with concentric annual rings, sinusoidal perturbation for grain, and knot effects."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "遮罩",
+          "en": "Mask"
+        },
+        "type": "Mask"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "种子",
+        "en": "Seed"
+      },
+      "kind": "Seed",
+      "default": 42,
+      "min": 0,
+      "max": 9999
+    },
+    {
+      "name": {
+        "zh-Hans": "密度",
+        "en": "Density"
+      },
+      "kind": "Integer",
+      "default": 6,
+      "min": 2,
+      "max": 20,
+      "step": 1
+    },
+    {
+      "name": {
+        "zh-Hans": "年轮扭曲",
+        "en": "Ring Distort"
+      },
+      "kind": "Number",
+      "default": 0.35,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "纹理对比度",
+        "en": "Grain Contrast"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "年轮锐度",
+        "en": "Ring Sharpness"
+      },
+      "kind": "Number",
+      "default": 0.7,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "颜色 A",
+        "en": "Color A"
+      },
+      "kind": "Color",
+      "default": "#B88858FF"
+    },
+    {
+      "name": {
+        "zh-Hans": "颜色 B",
+        "en": "Color B"
+      },
+      "kind": "Color",
+      "default": "#5A3A20FF"
+    },
+    {
+      "name": {
+        "zh-Hans": "颜色变化",
+        "en": "Color Variation"
+      },
+      "kind": "Number",
+      "default": 0.1,
+      "min": 0.0,
+      "max": 0.5,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "亮度",
+        "en": "Brightness"
+      },
+      "kind": "Number",
+      "default": 0.05,
+      "min": -1.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "对比度",
+        "en": "Contrast"
+      },
+      "kind": "Number",
+      "default": 0.2,
+      "min": -1.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "反相",
+        "en": "Invert"
+      },
+      "kind": "Boolean",
+      "default": false
+    }
+  ],
+  "ai": {
+    "capabilities": ["generate-noise", "procedural-texture", "organic", "tileable"],
+    "triggers": {
+      "zh-Hans": "木材, 木纹, 年轮, 木板, 树木, 家具纹理",
+      "en": "wood, wood grain, timber, plank, lumber, grain texture"
+    },
+    "suggestedInputs": ["Noise"],
+    "exampleUsage": {
+      "zh-Hans": "生成可平铺的木纹纹理，带同心年轮和节疤效果，适用于家具或建筑材质。",
+      "en": "Generates a tileable wood grain texture with concentric annual rings and knot effects for furniture or architectural materials."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar seed = GetInt(parameters, \"seed\", context.Seed);\nvar density = Math.Max(2, GetInt(parameters, \"density\", 8));\nvar ringDistort = GetFloat(parameters, \"ringDistort\", 0.3f);\nvar grainContrast = GetFloat(parameters, \"grainContrast\", 0.5f);\nvar ringSharpness = GetFloat(parameters, \"ringSharpness\", 0.7f);\nvar colorA = GetColor(parameters, \"colorA\", Color.FromRgb(160, 120, 80));\nvar colorB = GetColor(parameters, \"colorB\", Color.FromRgb(100, 70, 40));\nvar colorVar = GetFloat(parameters, \"colorVariation\", 0.1f);\nvar brightness = GetFloat(parameters, \"brightness\", 0f);\nvar contrast = GetFloat(parameters, \"contrast\", 0f);\nvar invert = GetBool(parameters, \"invert\", false);\n\nvar size = context.TileSize;\nvar buffer = new PixelBuffer(size, size);\n\nvar aR = colorA.R / 255f; var aG = colorA.G / 255f; var aB = colorA.B / 255f;\nvar bR = colorB.R / 255f; var bG = colorB.G / 255f; var bB = colorB.B / 255f;\n\nbuffer.ParallelForEachPixel((x, y) =>\n{\n    var u = (x + 0.5f) / size;\n    var v = (y + 0.5f) / size;\n\n    // Center the coordinate system for concentric rings\n    var cx = u - 0.5f;\n    var cy = v - 0.5f;\n\n    // Convert to polar: radius and angle\n    var radius = MathF.Sqrt(cx * cx + cy * cy);\n    var angle = MathF.Atan2(cy, cx);\n\n    // Ring perturbation using angular noise (creates wavy rings)\n    var perturb = TileableFractalNoise(\n        MathF.Cos(angle) * 0.5f + 0.5f,\n        MathF.Sin(angle) * 0.5f + 0.5f,\n        density * 2, 3, 0.6f, 2f, seed) - 0.5f;\n\n    // Radial perturbation creates organic ring shapes (knots/burls)\n    var radialNoise = TileableFractalNoise(u * 3f, v * 3f,\n        3, 2, 0.5f, 2f, seed + 100);\n    radius += (radialNoise - 0.5f) * ringDistort * 0.3f;\n    radius += perturb * ringDistort * 0.15f;\n\n    // Map radius to ring pattern\n    var ringPos = radius * density;\n    var localRing = ringPos - MathF.Floor(ringPos);\n\n    // Grain: high-frequency noise along the ring tangent\n    var grainNoise = TileableFractalNoise(u * 8f, v * 8f,\n        8, 2, 0.5f, 2.5f, seed + 200);\n    var grain = (grainNoise - 0.5f) * grainContrast * 0.4f;\n\n    // Ring shape with sharpness control\n    var ringVal = MathF.Sin(localRing * MathF.PI);\n    ringVal = MathF.Pow(MathF.Abs(ringVal), 1f - ringSharpness * 0.7f);\n    ringVal = Math.Clamp(ringVal + grain, 0f, 1f);\n\n    // Color with variation\n    var cellHash = HashToUnit((int)(ringPos * 7), (int)(ringPos * 13), seed + 50);\n    var varAmt = (cellHash - 0.5f) * colorVar;\n    var r = Lerp(aR + varAmt, bR, ringVal);\n    var g = Lerp(aG + varAmt * 0.8f, bG, ringVal);\n    var b = Lerp(aB + varAmt * 0.6f, bB, ringVal);\n\n    // Brightness and contrast\n    r = Math.Clamp(r + brightness, 0f, 1f);\n    g = Math.Clamp(g + brightness, 0f, 1f);\n    b = Math.Clamp(b + brightness, 0f, 1f);\n    if (contrast > 0f)\n    {\n        var mid = 0.5f;\n        r = Lerp(mid, r, 1f + contrast);\n        g = Lerp(mid, g, 1f + contrast);\n        b = Lerp(mid, b, 1f + contrast);\n    }\n\n    if (invert) { r = 1f - r; g = 1f - g; b = 1f - b; }\n\n    buffer.SetPixel(x, y, Math.Clamp(r, 0f, 1f), Math.Clamp(g, 0f, 1f), Math.Clamp(b, 0f, 1f), 1f);\n});\n\nreturn buffer;\n}"
+  }
+}

@@ -1,0 +1,104 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "Torch",
+    "displayName": {
+      "zh-Hans": "火炬",
+      "en": "Torch"
+    },
+    "category": "Material",
+    "description": {
+      "zh-Hans": "生成像素艺术壁挂火炬，带有闪烁的泪滴形火焰、木质手柄、护手和墙壁支架。实现IMultiOutputNode以提供独立的图像和遮罩输出端口。",
+      "en": "Generates a pixel-art wall-mount torch with a flickering teardrop flame, wooden handle, cross-guard, and wall bracket. Implements IMultiOutputNode for separate image and mask ports."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "遮罩",
+          "en": "Mask"
+        },
+        "type": "Mask"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "种子",
+        "en": "Seed"
+      },
+      "kind": "Seed",
+      "default": 42,
+      "min": 0,
+      "max": 9999
+    },
+    {
+      "name": {
+        "zh-Hans": "火焰颜色",
+        "en": "Flame Color"
+      },
+      "kind": "Color",
+      "default": "#FF8C00FF"
+    },
+    {
+      "name": {
+        "zh-Hans": "内部颜色",
+        "en": "Inner Color"
+      },
+      "kind": "Color",
+      "default": "#FFEE80FF"
+    },
+    {
+      "name": {
+        "zh-Hans": "亮度",
+        "en": "Brightness"
+      },
+      "kind": "Number",
+      "default": 0.8,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.05
+    },
+    {
+      "name": {
+        "zh-Hans": "大小",
+        "en": "Size"
+      },
+      "kind": "Number",
+      "default": 1.0,
+      "min": 0.5,
+      "max": 2.0,
+      "step": 0.1
+    }
+  ],
+  "ai": {
+    "capabilities": ["material", "procedural-texture", "ui-element", "icon", "fantasy"],
+    "triggers": {
+      "zh-Hans": "火炬, 火把, 火焰, 照明, 壁挂火炬, 地牢灯光",
+      "en": "torch, fire, flame, wall torch, light source, dungeon"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "生成像素艺术壁挂火炬，用于地牢或城堡场景的环境装饰。",
+      "en": "Generate pixel-art wall-mount torches for dungeon or castle scene environment decoration."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar seed = GetInt(parameters, \"seed\", context.Seed);\nvar flameColor = GetColor(parameters, \"flameColor\", System.Windows.Media.Color.FromRgb(255, 140, 0));\nvar innerColor = GetColor(parameters, \"innerColor\", System.Windows.Media.Color.FromRgb(255, 238, 128));\nvar brightness = GetFloat(parameters, \"brightness\", 0.8f);\nvar sizeParam = GetFloat(parameters, \"size\", 1.0f);\n\nvar size = context.TileSize;\nvar half = size * 0.5f;\nvar maxH = size * sizeParam * 0.45f;\nvar maxW = size * sizeParam * 0.35f;\nvar seedVal = seed;\n\nvar result = new PixelBuffer(size, size);\n\nvar oR = flameColor.R / 255f;\nvar oG = flameColor.G / 255f;\nvar oB = flameColor.B / 255f;\nvar iR = innerColor.R / 255f;\nvar iG = innerColor.G / 255f;\nvar iB = innerColor.B / 255f;\n\nresult.ParallelForEachPixel((x, y) =>\n{\n    var u = (x + 0.5f - half) / maxW;\n    var v = (y + 0.5f - (size - half)) / maxH; // flame sits above center\n    \n    // Flame base at v=-0.3, tip at v=1.2\n    var localV = (v + 0.3f) / 1.5f; // 0=base, 1=tip\n    \n    if (localV < 0f || localV > 1f) { result.SetPixel(x, y, 0, 0, 0, 0); return; }\n    \n    // Teardrop flame profile: wider at base, narrow at tip\n    var baseWidth = 1f - localV * 0.3f;\n    var tipWidth = 1f - (1f - localV) * (1f - localV) * 0.7f;\n    var flameWidth = baseWidth * tipWidth;\n    \n    // Core width (the bright inner part)\n    var coreFrac = 0.3f + localV * 0.2f;\n    var coreWidth = flameWidth * coreFrac;\n    \n    // Distance from flame centerline\n    var dist = MathF.Abs(u) / Math.Max(0.01f, flameWidth);\n    var coreDist = MathF.Abs(u) / Math.Max(0.01f, coreWidth);\n    \n    // Organic waviness on edges\n    var waveX = MathF.Sin(localV * 10f + seedVal) * 0.08f +\n                MathF.Sin(localV * 23f + seedVal * 3) * 0.04f;\n    var wavyDist = MathF.Abs(u - waveX * (1f - localV)) / Math.Max(0.01f, flameWidth);\n    \n    // Turbulent flicker at the tip\n    var tipFlicker = 1f - MathF.Pow(1f - localV, 0.5f) * 0.15f *\n        MathF.Abs(MathF.Sin(localV * 40f + seedVal * 7));\n    \n    // Intensity profiles\n    var outerIntensity = Math.Clamp(1f - wavyDist * 0.8f, 0f, 1f) * brightness * tipFlicker;\n    var innerIntensity = Math.Clamp(1f - coreDist * 0.6f, 0f, 1f) * brightness * tipFlicker;\n    \n    // Spatial variation along flame for color mixing\n    var t = localV;\n    var r = Lerp(oR, iR, t * 0.5f) * outerIntensity + iR * innerIntensity * 0.3f;\n    var g = Lerp(oG, iG, t * 0.5f) * outerIntensity * 0.8f + iG * innerIntensity * 0.3f;\n    var b = Lerp(oB, iB, t * 0.3f) * outerIntensity * 0.4f + 0.1f * outerIntensity;\n    \n    var alpha = Math.Clamp(outerIntensity * 0.9f, 0f, 1f);\n    \n    result.SetPixel(x, y, Math.Clamp(r, 0, 1), Math.Clamp(g, 0, 1), Math.Clamp(b, 0, 1), alpha);\n    \n});\n\nreturn result;\n}"
+  }
+}

@@ -1,0 +1,118 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "Hologram",
+    "displayName": {
+      "zh-Hans": "全息",
+      "en": "Hologram"
+    },
+    "category": "Noise",
+    "description": {
+      "zh-Hans": "生成全息显示效果，具有水平扫描线、色差偏移、基于噪波的闪烁和边缘暗角。实现IMultiOutputNode以提供独立的图像和遮罩输出端口。",
+      "en": "Generates a holographic display effect with horizontal scanlines, chromatic offset, noise-based flicker, and edge vignette. Implements IMultiOutputNode for separate image and mask ports."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "遮罩",
+          "en": "Mask"
+        },
+        "type": "Mask"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "种子",
+        "en": "Seed"
+      },
+      "kind": "Seed",
+      "default": 42,
+      "min": 0,
+      "max": 9999
+    },
+    {
+      "name": {
+        "zh-Hans": "颜色",
+        "en": "Color"
+      },
+      "kind": "Color",
+      "default": "#30D8E8FF"
+    },
+    {
+      "name": {
+        "zh-Hans": "扫描线强度",
+        "en": "Scanline Strength"
+      },
+      "kind": "Number",
+      "default": 0.35,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "闪烁",
+        "en": "Flicker"
+      },
+      "kind": "Number",
+      "default": 0.2,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "颜色偏移",
+        "en": "Color Shift"
+      },
+      "kind": "Number",
+      "default": 0.3,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "不透明度",
+        "en": "Opacity"
+      },
+      "kind": "Number",
+      "default": 0.6,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    }
+  ],
+  "ai": {
+    "capabilities": ["generate-noise", "procedural-texture", "atmospheric-effect", "sci-fi", "post-processing"],
+    "triggers": {
+      "zh-Hans": "全息, 全息投影, 扫描线, 科幻显示, 数字效果",
+      "en": "hologram, holographic, scanline, sci-fi display, digital effect"
+    },
+    "suggestedInputs": ["Noise"],
+    "exampleUsage": {
+      "zh-Hans": "创建全息显示效果，带扫描线和色差偏移，适用于科幻UI或投影道具。",
+      "en": "Creates a holographic display effect with scanlines and chromatic aberration for sci-fi UI or projection props."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar src = inputs[0];\nvar color = GetColor(parameters, \"color\", System.Windows.Media.Color.FromRgb(40, 200, 220));\nvar scanIntensity = GetFloat(parameters, \"scanlineStrength\", 0.3f);\nvar flicker = GetFloat(parameters, \"flicker\", 0.2f);\nvar chromShift = GetFloat(parameters, \"colorShift\", 0.3f);\nvar opacity = GetFloat(parameters, \"opacity\", 0.7f);\nvar seed = GetInt(parameters, \"seed\", context.Seed);\nvar size = context.TileSize;\nvar result = new PixelBuffer(size, size);\nvar hR = color.R / 255f; var hG = color.G / 255f; var hB = color.B / 255f;\nresult.ParallelForEachPixel((x, y) =>\n{\n    var u = (x + 0.5f) / size;\n    var v = (y + 0.5f) / size;\n    // Source color (with chromatic shift)\n    float sR = 0.5f, sG = 0.5f, sB = 0.5f;\n    if (src != null)\n    {\n        var shiftPx = (int)(chromShift * size * 0.03f);\n        var (r0, _, _, _) = src.GetPixel(Math.Clamp(x + shiftPx, 0, size-1), y);\n        var (_, g0, _, _) = src.GetPixel(x, y);\n        var (_, _, b0, _) = src.GetPixel(Math.Clamp(x - shiftPx, 0, size-1), y);\n        sR = r0; sG = g0; sB = b0;\n    }\n    // Scanlines\n    var scan = 1f - scanIntensity * (MathF.Sin(v * size * MathF.PI * 0.5f) * 0.5f + 0.5f);\n    // Flicker noise\n    var flickNoise = 1f - flicker * HashToUnit(x, y, seed ^ 777) * 0.3f;\n    // Tint with holo color\n    var lum = 0.2126f * sR + 0.7152f * sG + 0.0722f * sB;\n    var r = lum * hR * scan * flickNoise;\n    var g = lum * hG * scan * flickNoise;\n    var b = lum * hB * scan * flickNoise;\n    result.SetPixel(x, y, Math.Clamp(r,0,1), Math.Clamp(g,0,1), Math.Clamp(b,0,1), opacity);\n});\nreturn result;\n}"
+  }
+}

@@ -1,0 +1,158 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "Alveolus",
+    "displayName": {
+      "zh-Hans": "蜂巢",
+      "en": "Alveolus"
+    },
+    "category": "Material",
+    "description": {
+      "zh-Hans": "生成蜂巢/细胞图案（基于可平铺的沃罗诺伊），类似于 Substance 3D Designer 的蜂巢节点。产生柔和的细胞内部，可控制壁宽、羽化和凹凸/脊线。",
+      "en": "Generates an alveolus / cellular pattern (tileable Voronoi-based) similar to Substance 3D Designer's alveolus node. Produces a soft cellular interior with controllable wall width, feather and bump/ridge."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "遮罩",
+          "en": "Mask"
+        },
+        "type": "Mask"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "单元数量",
+        "en": "Cell Count"
+      },
+      "kind": "Integer",
+      "default": 4,
+      "min": 2,
+      "max": 8,
+      "step": 1
+    },
+    {
+      "name": {
+        "zh-Hans": "种子",
+        "en": "Seed"
+      },
+      "kind": "Seed",
+      "default": 0,
+      "min": 0,
+      "max": 9999
+    },
+    {
+      "name": {
+        "zh-Hans": "排列方式",
+        "en": "Arrangement"
+      },
+      "kind": "Choice",
+      "default": "random",
+      "choices": [
+        {
+          "value": "random",
+          "label": {
+            "zh-Hans": "随机",
+            "en": "random"
+          }
+        },
+        {
+          "value": "hexagonal",
+          "label": {
+            "zh-Hans": "六边形",
+            "en": "hexagonal"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "zh-Hans": "墙壁宽度",
+        "en": "Wall Width"
+      },
+      "kind": "Number",
+      "default": 0.18,
+      "min": 0.0,
+      "max": 0.5,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "羽化",
+        "en": "Feather"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.0,
+      "max": 0.5,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "凹凸",
+        "en": "Bump"
+      },
+      "kind": "Number",
+      "default": 0.25,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "颜色 A",
+        "en": "Color A"
+      },
+      "kind": "Color",
+      "default": "#E6E6E6FF"
+    },
+    {
+      "name": {
+        "zh-Hans": "颜色 B",
+        "en": "Color B"
+      },
+      "kind": "Color",
+      "default": "#181818FF"
+    },
+    {
+      "name": {
+        "zh-Hans": "反相",
+        "en": "Invert"
+      },
+      "kind": "Boolean",
+      "default": false
+    }
+  ],
+  "ai": {
+    "capabilities": ["material", "procedural-texture", "organic", "tileable", "cellular"],
+    "triggers": {
+      "zh-Hans": "蜂巢, 细胞, 蜂窝, 沃罗诺伊图案, 生物纹理",
+      "en": "alveolus, cell pattern, honeycomb, voronoi, cellular texture"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "生成可平铺的蜂巢/细胞纹理，用于科幻护甲或生物材质表面。",
+      "en": "Generate a tileable honeycomb cellular texture for sci-fi armor or organic material surfaces."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar cells = GetInt(parameters, \"cellCount\", 4);\n        var seed = GetInt(parameters, \"seed\", 0);\n        var wallWidth = GetFloat(parameters, \"wallWidth\", 0.18f);\n        var feather = GetFloat(parameters, \"feather\", 0.5f);\n        var bump = GetFloat(parameters, \"bump\", 0.25f);\n        var colorA = GetColor(parameters, \"colorA\", Color.FromRgb(230, 230, 230));\n        var colorB = GetColor(parameters, \"colorB\", Color.FromRgb(24, 24, 24));\n        var invert = GetBool(parameters, \"invert\", false);\n\n        var aR = colorA.R / 255f;\n        var aG = colorA.G / 255f;\n        var aB = colorA.B / 255f;\n        var bR = colorB.R / 255f;\n        var bG = colorB.G / 255f;\n        var bB = colorB.B / 255f;\n\n        var size = context.TileSize;\n        var buffer = new PixelBuffer(size, size);\n\n        var layout = GetChoice(parameters, \"arrangement\", \"random\");\n\n        // Precompute hex parameters if needed\n        float hexWidth = 0f, hexHeight = 0f;\n        int hexCols = 0, hexRows = 0;\n        if (layout == \"hexagonal\")\n        {\n            // Choose integer columns/rows so hex cell spacing divides the tile as closely\n            // as possible while preserving the correct hex aspect ratio (height = width * sqrt(3)/2).\n            // Special-case handling when `cells == 3` to avoid degenerate rounding that produced\n            // inconsistent hex geometry (which caused visible artifacts).\n            var sqrt3 = MathF.Sqrt(3f);\n\n            if (cells == 3)\n            {\n                // Start with desired columns equal to the cell count, then compute rows\n                // based on the hex aspect ratio and round to nearest integer. Then\n                // recompute width/height so the relationship height = width * sqrt3/2\n                // holds for the final integer grid.\n                var cols = Math.Max(1, cells);\n                var hexW = (float)size / cols;\n                var hexH = hexW * sqrt3 / 2f;\n                var rows = Math.Max(1, (int)MathF.Round(size / hexH));\n\n                // Recompute so height/width maintain proper hex proportions\n                hexH = (float)size / rows;\n                hexW = hexH * 2f / sqrt3;\n                cols = Math.Max(1, (int)MathF.Round(size / hexW));\n\n                hexCols = cols;\n                hexRows = rows;\n                hexWidth = (float)size / hexCols;\n                hexHeight = hexWidth * sqrt3 / 2f;\n            }\n            else\n            {\n                // Existing iterative approach for general case\n                var cols = Math.Max(1, cells);\n\n                // Iterate to find integer cols/rows that make hexWidth/hexHeight align with tile size.\n                float w = (float)size / cols;\n                float h = w * sqrt3 / 2f;\n                var rows = Math.Max(1, (int)MathF.Round(size / h));\n\n                for (int it = 0; it < 2; it++)\n                {\n                    h = (float)size / rows;\n                    w = h * 2f / sqrt3;\n                    cols = Math.Max(1, (int)MathF.Round(size / w));\n                    w = (float)size / cols;\n                    h = w * sqrt3 / 2f;\n                    rows = Math.Max(1, (int)MathF.Round(size / h));\n                }\n\n                hexCols = cols;\n                hexRows = rows;\n                hexWidth = (float)size / hexCols;\n                hexHeight = (float)size / hexRows;\n            }\n        }\n\n        // Local helper: compute tileable hex-grid Voronoi distances normalized by hexWidth\n        void TileableHexVoronoi(float px, float py, out float nearest, out float secondNearest)\n        {\n            nearest = float.MaxValue;\n            secondNearest = float.MaxValue;\n\n            if (hexCols <= 0 || hexRows <= 0)\n                return;\n\n            // Determine base row first, then compute base column using the\n            // horizontal offset for staggered (odd) rows. This ensures the\n            // correct hex cell is chosen for rows that are offset by half\n            // a column, which fixes layout artifacts when columns/rows are\n            // small (for example when \"cellCount\" == 3).\n            var baseRow = (int)MathF.Floor(py / hexHeight);\n            var rowOffset = ((baseRow & 1) != 0) ? hexWidth * 0.5f : 0f;\n            var baseCol = (int)MathF.Floor((px - rowOffset) / hexWidth);\n\n            for (int ro = -2; ro <= 2; ro++)\n            {\n                for (int co = -2; co <= 2; co++)\n                {\n                    var c = baseCol + co;\n                    var r = baseRow + ro;\n\n                    // compute center position for flat-top hex grid with horizontal offset on odd rows\n                    var cxPos = c * hexWidth + ((r & 1) != 0 ? hexWidth * 0.5f : 0f);\n                    var cyPos = r * hexHeight;\n\n                    // compute periodic delta (tile repeats over 'size')\n                    var dx = px - cxPos;\n                    var dy = py - cyPos;\n                    dx -= MathF.Round(dx / size) * size;\n                    dy -= MathF.Round(dy / size) * size;\n\n                    var dist = MathF.Sqrt(dx * dx + dy * dy);\n                    if (dist < nearest)\n                    {\n                        secondNearest = nearest;\n                        nearest = dist;\n                    }\n                    else if (dist < secondNearest)\n                    {\n                        secondNearest = dist;\n                    }\n                }\n            }\n\n            // normalize by hexWidth to be comparable with other code\n            var denom = MathF.Max(1e-6f, hexWidth);\n            nearest = Math.Clamp(nearest / denom, 0f, 1f);\n            secondNearest = Math.Clamp(secondNearest / denom, 0f, 1f);\n        }\n\n        // Local helper: tileable Voronoi using float cell size so period equals `size` in pixels.\n        void TileableVoronoiFloat(float x, float y, float cellSizeFloat, int periodInCells, int seedParam, out float nearestOut, out float secondOut)\n        {\n            nearestOut = float.MaxValue;\n            secondOut = float.MaxValue;\n\n            var periodSize = (float)size; // tile repeats every `size` pixels\n\n            var cellX0 = (int)MathF.Floor(x / cellSizeFloat);\n            var cellY0 = (int)MathF.Floor(y / cellSizeFloat);\n\n            // Expand neighbor search to cover additional periodic candidates.\n            // For small `cells` values (for example 3) the Voronoi feature can\n            // wrap around the tile boundary; considering a larger neighborhood\n            // avoids missing the true nearest points and eliminates visible\n            // artifacts for low cell counts.\n            for (var dy = -2; dy <= 2; dy++)\n            {\n                for (var dx = -2; dx <= 2; dx++)\n                {\n                    var cx = cellX0 + dx;\n                    var cy = cellY0 + dy;\n\n                    var wrappedX = Mod(cx, periodInCells);\n                    var wrappedY = Mod(cy, periodInCells);\n\n                    var jitterX = HashToUnit(wrappedX, wrappedY, seedParam) - 0.5f;\n                    var jitterY = HashToUnit(wrappedX, wrappedY, seedParam + 19) - 0.5f;\n\n                    var pointX = (wrappedX + 0.5f + jitterX) * cellSizeFloat;\n                    var pointY = (wrappedY + 0.5f + jitterY) * cellSizeFloat;\n\n                    var ddx = pointX - x;\n                    var ddy = pointY - y;\n                    ddx -= MathF.Round(ddx / periodSize) * periodSize;\n                    ddy -= MathF.Round(ddy / periodSize) * periodSize;\n\n                    var dist = MathF.Sqrt(ddx * ddx + ddy * ddy);\n                    if (dist < nearestOut)\n                    {\n                        secondOut = nearestOut;\n                        nearestOut = dist;\n                    }\n                    else if (dist < secondOut)\n                    {\n                        secondOut = dist;\n                    }\n                }\n            }\n\n            var denom = MathF.Max(1e-6f, cellSizeFloat);\n            nearestOut = Math.Clamp(nearestOut / denom, 0f, 1f);\n            secondOut = Math.Clamp(secondOut / denom, 0f, 1f);\n        }\n\n        // Ensure valid parameters\n        cells = Math.Max(1, cells);\n        feather = Math.Max(0f, feather);\n        wallWidth = Math.Clamp(wallWidth, 0f, 1f);\n\n        // Use float cell size to ensure perfect tiling even when `size` is not divisible by `cells`.\n        var cellSizeF = Math.Max(1f, (float)size / (float)cells);\n\n        // Per-pixel evaluation: sample at pixel centers for stable results\n        buffer.ParallelForEachPixel((x, y) =>\n        {\n            var px = x + 0.5f;\n            var py = y + 0.5f;\n\n            float nearest, secondNearest;\n            if (layout == \"hexagonal\")\n            {\n                TileableHexVoronoi(px, py, out nearest, out secondNearest);\n                // cx/cy not used for hex layout\n            }\n            else\n            {\n                // Use a local float-aware tileable Voronoi to avoid seams when size % cells != 0\n                TileableVoronoiFloat(px, py, cellSizeF, cells, seed, out nearest, out secondNearest);\n            }\n\n            // nearest is normalized by cellSize in [0,1]\n            // interior mask: full inside cells, falling to 0 across walls\n            var wall = SmoothStep(wallWidth - feather, wallWidth + feather, nearest);\n            var interior = 1f - wall; // interior = 1 at cell center, 0 at walls\n\n            // ridge: highlight borders using difference between first and second distance\n            var d = MathF.Max(0f, secondNearest - nearest); // larger in center, smaller near border\n            // normalize difference heuristically (0.3 chosen to control sharpness)\n            var ridge = Math.Clamp(d / 0.3f, 0f, 1f);\n            ridge = SmoothStep(0f, 1f, ridge);\n\n            // Combine interior and ridge to get final luminance\n            var value = interior + bump * (1f - interior) * ridge;\n            value = Math.Clamp(value, 0f, 1f);\n\n            if (invert) value = 1f - value;\n\n            // Lerp between background (B) and interior color (A)\n            var outR = bR * (1f - value) + aR * value;\n            var outG = bG * (1f - value) + aG * value;\n            var outB = bB * (1f - value) + aB * value;\n\n            buffer.SetPixel(x, y, outR, outG, outB, 1f);\n        });\n\n        return buffer;\n}"
+  }
+}

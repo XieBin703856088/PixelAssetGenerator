@@ -1,0 +1,136 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "Blur",
+    "displayName": {
+      "zh-Hans": "模糊",
+      "en": "Blur"
+    },
+    "category": "ImageProcess",
+    "description": {
+      "zh-Hans": "对图像应用多种模糊效果：方框模糊、高斯模糊和运动模糊。采用可分离通道提升效率，使用环绕采样实现无缝平铺。",
+      "en": "Applies various blur effects to an image: box blur, Gaussian blur, and motion blur. Uses separable passes for efficiency and wrapped sampling for seamless tiling."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      }
+    ],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "结果",
+          "en": "Result"
+        },
+        "type": "Image"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "模糊类型",
+        "en": "Blur Type"
+      },
+      "kind": "Choice",
+      "default": "gaussian",
+      "choices": [
+        {
+          "value": "gaussian",
+          "label": {
+            "zh-Hans": "高斯模糊",
+            "en": "gaussian"
+          }
+        },
+        {
+          "value": "box",
+          "label": {
+            "zh-Hans": "方框模糊",
+            "en": "box"
+          }
+        },
+        {
+          "value": "motion",
+          "label": {
+            "zh-Hans": "运动模糊",
+            "en": "motion"
+          }
+        },
+        {
+          "value": "radial",
+          "label": {
+            "zh-Hans": "径向模糊",
+            "en": "radial"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "zh-Hans": "强度",
+        "en": "Strength"
+      },
+      "kind": "Number",
+      "default": 3.0,
+      "min": 0.0,
+      "max": 20.0,
+      "step": 1.0
+    },
+    {
+      "name": {
+        "zh-Hans": "运动角度",
+        "en": "Motion Angle"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 360.0,
+      "step": 1.0
+    },
+    {
+      "name": {
+        "zh-Hans": "混合比例",
+        "en": "Mix Ratio"
+      },
+      "kind": "Number",
+      "default": 1.0,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "保留透明通道",
+        "en": "Preserve Alpha"
+      },
+      "kind": "Boolean",
+      "default": true
+    }
+  ],
+  "ai": {
+    "capabilities": ["blur"],
+    "triggers": {
+      "zh-Hans": "模糊, 高斯模糊, 运动模糊, 径向模糊, 柔化",
+      "en": "blur, gaussian blur, motion blur, radial blur, soften"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "对背景应用高斯模糊以创建景深效果。",
+      "en": "Apply Gaussian blur to a background to create depth of field."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar src = inputs.Length > 0 ? inputs[0] : null;\n    if (src == null)\n        return new PixelBuffer(context.TileSize, context.TileSize);\n\n    var blurType = GetChoice(parameters, \"blurType\", \"gaussian\");\n    var strength = GetFloat(parameters, \"strength\", 2f);\n    var motionAngle = GetFloat(parameters, \"motionAngle\", 0f) * MathF.PI / 180f;\n    var mixRatio = GetFloat(parameters, \"mixRatio\", 1f);\n    var preserveAlpha = GetBool(parameters, \"preserveAlpha\", true);\n\n    var size = context.TileSize;\n    var result = new PixelBuffer(size, size);\n\n    var radius = Math.Max(1, (int)MathF.Ceiling(strength));\n\n    switch (blurType)\n    {\n        case \"box\":\n            BoxBlur(src, result, radius, size);\n            break;\n        case \"motion\":\n            MotionBlur(src, result, radius, motionAngle, size);\n            break;\n        case \"radial\":\n            RadialBlur(src, result, strength, size);\n            break;\n        default: // gaussian\n            GaussianBlur(src, result, radius, size);\n            break;\n    }\n\n    // Mix with original\n    if (mixRatio < 0.999f)\n    {\n        result.ParallelForEachPixel((x, y) =>\n        {\n            var (br, bg, bb, ba) = result.GetPixel(x, y);\n            var (sr, sg, sb, sa) = src.GetPixel(x, y);\n            result.SetPixel(x, y,\n                sr + (br - sr) * mixRatio,\n                sg + (bg - sg) * mixRatio,\n                sb + (bb - sb) * mixRatio,\n                preserveAlpha ? sa : ba);\n        });\n    }\n\n    return result;\n\nprivate static void BoxBlur(PixelBuffer src, PixelBuffer dst, int radius, int size)\n{\n    var temp = new PixelBuffer(size, size);\n\n    // Horizontal pass\n    temp.ParallelForEachPixel((x, y) =>\n    {\n        var sumR = 0f; var sumG = 0f; var sumB = 0f; var sumA = 0f;\n        var count = 0;\n        for (var dx = -radius; dx <= radius; dx++)\n        {\n            var (pr, pg, pb, pa) = src.GetPixelWrapped(x + dx, y);\n            sumR += pr; sumG += pg; sumB += pb; sumA += pa;\n            count++;\n        }\n        var inv = 1f / count;\n        temp.SetPixel(x, y, sumR * inv, sumG * inv, sumB * inv, sumA * inv);\n    });\n\n    // Vertical pass\n    dst.ParallelForEachPixel((x, y) =>\n    {\n        var sumR = 0f; var sumG = 0f; var sumB = 0f; var sumA = 0f;\n        var count = 0;\n        for (var dy = -radius; dy <= radius; dy++)\n        {\n            var (pr, pg, pb, pa) = temp.GetPixelWrapped(x, y + dy);\n            sumR += pr; sumG += pg; sumB += pb; sumA += pa;\n            count++;\n        }\n        var inv = 1f / count;\n        dst.SetPixel(x, y, sumR * inv, sumG * inv, sumB * inv, sumA * inv);\n    });\n}\n\nprivate static void GaussianBlur(PixelBuffer src, PixelBuffer dst, int radius, int size)\n{\n    // Standard 3-sigma rule: kernel radius should cover ~3 sigma\n    var sigma = Math.Max(0.5f, radius / 3f);\n    var temp = new PixelBuffer(size, size);\n\n    // Pre-compute 1D kernel\n    var kernelSize = radius * 2 + 1;\n    var kernel = new float[kernelSize];\n    var sum = 0f;\n    for (var i = 0; i < kernelSize; i++)\n    {\n        var dx = i - radius;\n        kernel[i] = MathF.Exp(-(dx * dx) / (2f * sigma * sigma));\n        sum += kernel[i];\n    }\n    var invSum = 1f / sum;\n\n    // Horizontal pass\n    temp.ParallelForEachPixel((x, y) =>\n    {\n        var sumR = 0f; var sumG = 0f; var sumB = 0f; var sumA = 0f;\n        for (var i = 0; i < kernelSize; i++)\n        {\n            var (pr, pg, pb, pa) = src.GetPixelWrapped(x + i - radius, y);\n            var w = kernel[i] * invSum;\n            sumR += pr * w; sumG += pg * w; sumB += pb * w; sumA += pa * w;\n        }\n        temp.SetPixel(x, y, sumR, sumG, sumB, sumA);\n    });\n\n    // Vertical pass\n    dst.ParallelForEachPixel((x, y) =>\n    {\n        var sumR = 0f; var sumG = 0f; var sumB = 0f; var sumA = 0f;\n        for (var i = 0; i < kernelSize; i++)\n        {\n            var (pr, pg, pb, pa) = temp.GetPixelWrapped(x, y + i - radius);\n            var w = kernel[i] * invSum;\n            sumR += pr * w; sumG += pg * w; sumB += pb * w; sumA += pa * w;\n        }\n        dst.SetPixel(x, y, sumR, sumG, sumB, sumA);\n    });\n}\n\nprivate static void MotionBlur(PixelBuffer src, PixelBuffer dst, int samples, float angle, int size)\n{\n    var cosA = MathF.Cos(angle);\n    var sinA = MathF.Sin(angle);\n    var halfSamples = samples / 2;\n\n    dst.ParallelForEachPixel((x, y) =>\n    {\n        var sumR = 0f; var sumG = 0f; var sumB = 0f; var sumA = 0f;\n        var count = 0;\n        for (var i = -halfSamples; i <= halfSamples; i++)\n        {\n            var sx = x + i * cosA;\n            var sy = y + i * sinA;\n            var (pr, pg, pb, pa) = src.GetPixelWrapped((int)MathF.Round(sx), (int)MathF.Round(sy));\n            sumR += pr; sumG += pg; sumB += pb; sumA += pa;\n            count++;\n        }\n        var inv = 1f / count;\n        dst.SetPixel(x, y, sumR * inv, sumG * inv, sumB * inv, sumA * inv);\n    });\n}\n\nprivate static void RadialBlur(PixelBuffer src, PixelBuffer dst, float strength, int size)\n{\n    var cx = size * 0.5f;\n    var cy = size * 0.5f;\n    var maxDist = MathF.Sqrt(cx * cx + cy * cy);\n\n    dst.ParallelForEachPixel((x, y) =>\n    {\n        var dx = x + 0.5f - cx;\n        var dy = y + 0.5f - cy;\n        var dist = MathF.Sqrt(dx * dx + dy * dy) / maxDist;\n        var blurAmount = dist * strength;\n        var samples = Math.Max(3, (int)blurAmount);\n\n        var sumR = 0f; var sumG = 0f; var sumB = 0f; var sumA = 0f;\n        for (var i = 0; i < samples; i++)\n        {\n            var t = (i / (float)samples - 0.5f) * blurAmount;\n            var sx = x + dx / maxDist * t;\n            var sy = y + dy / maxDist * t;\n            var (pr, pg, pb, pa) = src.GetPixelWrapped((int)MathF.Round(sx), (int)MathF.Round(sy));\n            sumR += pr; sumG += pg; sumB += pb; sumA += pa;\n        }\n        var inv = 1f / samples;\n        dst.SetPixel(x, y, sumR * inv, sumG * inv, sumB * inv, sumA * inv);\n    });\n    }\n}"
+  }
+}

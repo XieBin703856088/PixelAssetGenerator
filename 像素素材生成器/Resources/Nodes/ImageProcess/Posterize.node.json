@@ -1,0 +1,76 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "Posterize",
+    "displayName": {
+      "zh-Hans": "色调分离",
+      "en": "Posterize"
+    },
+    "category": "ImageProcess",
+    "description": {
+      "zh-Hans": "减少每个颜色通道的色调级别数量，产生色调分离效果。可选择独立处理每个RGB通道，获得色彩偏移结果。",
+      "en": "Reduces the number of tonal levels per color channel, creating a posterization effect. Can optionally posterize each RGB channel independently for color-shifted results."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [
+      {
+        "name": {
+          "zh-Hans": "输入",
+          "en": "Input"
+        },
+        "type": "Image"
+      }
+    ],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "输出",
+          "en": "Output"
+        },
+        "type": "Image"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "色阶",
+        "en": "Levels"
+      },
+      "kind": "Integer",
+      "default": 8,
+      "min": 2,
+      "max": 32,
+      "step": 1
+    },
+    {
+      "name": {
+        "zh-Hans": "独立通道",
+        "en": "Independent Channels"
+      },
+      "kind": "Boolean",
+      "default": false
+    }
+  ],
+  "ai": {
+    "capabilities": ["stylize", "color-adjust"],
+    "triggers": {
+      "zh-Hans": "色调分离, 减少色阶, 色阶压缩, 平化颜色",
+      "en": "posterize, reduce levels, tone compression, flatten colors"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "对图像应用色调分离，将颜色数量减少到8级。",
+      "en": "Apply posterization to an image, reducing colors to 8 levels."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar input = inputs.Length > 0 ? inputs[0] : null;\nif (input is null)\n    return PixelBuffer.CreateSolid(context.TileSize, context.TileSize, 0, 0, 0);\n\nvar levels = GetInt(parameters, \"levels\", 8);\nvar independentChannels = GetBool(parameters, \"independentChannels\");\n\nvar result = input.Clone();\nvar steps = levels - 1;\n\nif (independentChannels)\n{\n    result.Apply((r, g, b, a) =>\n    {\n        r = MathF.Round(r * steps) / steps;\n        g = MathF.Round(g * steps) / steps;\n        b = MathF.Round(b * steps) / steps;\n        return (r, g, b, a);\n    });\n}\nelse\n{\n    // Compute grayscale luminance first, quantize that, then map all channels to same level\n    result.Apply((r, g, b, a) =>\n    {\n        var lum = 0.2126f * r + 0.7152f * g + 0.0722f * b;\n        var quantized = MathF.Round(lum * steps) / steps;\n        return (quantized, quantized, quantized, a);\n    });\n}\n\nreturn result;\n}"
+  }
+}

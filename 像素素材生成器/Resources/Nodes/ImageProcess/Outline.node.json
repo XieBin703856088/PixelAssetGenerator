@@ -1,0 +1,167 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "Outline",
+    "displayName": {
+      "zh-Hans": "描边",
+      "en": "Outline"
+    },
+    "category": "ImageProcess",
+    "description": {
+      "zh-Hans": "检测边缘并在像素艺术上绘制描边。使用Sobel梯度进行边缘检测。",
+      "en": "Detects edges and draws outlines on pixel art. Uses Sobel gradient for edge detection."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      }
+    ],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "厚度",
+        "en": "Thickness"
+      },
+      "kind": "Integer",
+      "default": 2,
+      "min": 1,
+      "max": 8,
+      "step": 1
+    },
+    {
+      "name": {
+        "zh-Hans": "阈值",
+        "en": "Threshold"
+      },
+      "kind": "Number",
+      "default": 0.3,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "线条颜色",
+        "en": "Line Color"
+      },
+      "kind": "Color",
+      "default": "#0A0A1EFF"
+    },
+    {
+      "name": {
+        "zh-Hans": "柔化",
+        "en": "Softness"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "模式",
+        "en": "Mode"
+      },
+      "kind": "Choice",
+      "default": "outside",
+      "choices": [
+        {
+          "value": "outside",
+          "label": {
+            "zh-Hans": "外部",
+            "en": "outside"
+          }
+        },
+        {
+          "value": "inside",
+          "label": {
+            "zh-Hans": "内部",
+            "en": "inside"
+          }
+        },
+        {
+          "value": "both",
+          "label": {
+            "zh-Hans": "双向",
+            "en": "both"
+          }
+        },
+        {
+          "value": "glow",
+          "label": {
+            "zh-Hans": "发光",
+            "en": "glow"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "zh-Hans": "检测模式",
+        "en": "Detect Mode"
+      },
+      "kind": "Choice",
+      "default": "alpha",
+      "choices": [
+        {
+          "value": "alpha",
+          "label": {
+            "zh-Hans": "透明通道",
+            "en": "alpha"
+          }
+        },
+        {
+          "value": "luminance",
+          "label": {
+            "zh-Hans": "亮度",
+            "en": "luminance"
+          }
+        },
+        {
+          "value": "color",
+          "label": {
+            "zh-Hans": "颜色",
+            "en": "color"
+          }
+        }
+      ]
+    }
+  ],
+  "ai": {
+    "capabilities": ["edge"],
+    "triggers": {
+      "zh-Hans": "描边, 轮廓, 边缘线, 精灵描边, 线条效果",
+      "en": "outline, contour, edge line, sprite outline, line effect"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "为精灵添加外部描边以增强可辨识度。",
+      "en": "Add an external outline to a sprite for better visibility."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar input = inputs.Length > 0 && inputs[0] != null ? inputs[0]! :\n        new PixelBuffer(context.TileSize, context.TileSize);\n    var thickness = Math.Max(1, GetInt(parameters, \"thickness\", 1));\n    var edgeThreshold = GetFloat(parameters, \"threshold\", 0.3f);\n    var lineColor = GetColor(parameters, \"lineColor\", Colors.Black);\n    var mode = GetChoice(parameters, \"mode\", \"outside\");\n    var detectMode = GetChoice(parameters, \"detectMode\", \"alpha\");\n    var softness = GetFloat(parameters, \"softness\", 0f);\n\n    var size = context.TileSize;\n    var buffer = input.Clone();\n    var (edgeMask, edgeMagnitude) = ComputeEdgeMask(input, size, edgeThreshold, detectMode);\n\n    var lR = lineColor.R / 255f;\n    var lG = lineColor.G / 255f;\n    var lB = lineColor.B / 255f;\n\n    // Dilate edge mask based on thickness\n    var dilatedEdges = DilateEdges(edgeMask, size, thickness);\n\n    buffer.ParallelForEachPixel((x, y) =>\n    {\n        var (r, g, b, a) = buffer.GetPixel(x, y);\n        var edge = dilatedEdges[y * size + x];\n\n        // Soft edge: use SmoothStep on continuous magnitude with softness-controlled threshold.\n        var edgeAlpha = softness > 0f\n            ? SmoothStepEdge(edgeMagnitude[y * size + x], softness)\n            : edge;\n\n        if (edgeAlpha <= 0f) return;\n\n        if (mode == \"outside\")\n        {\n            // Only draw outline on transparent/background areas\n            if (a < 0.5f)\n            {\n                buffer.SetPixel(x, y, lR, lG, lB, edgeAlpha);\n            }\n        }\n        else if (mode == \"inside\")\n        {\n            // Draw outline inside the alpha > 0 region\n            if (a > 0.5f)\n            {\n                buffer.SetPixel(x, y,\n                    Lerp(r, lR, edgeAlpha),\n                    Lerp(g, lG, edgeAlpha),\n                    Lerp(b, lB, edgeAlpha), 1f);\n            }\n        }\n        else if (mode == \"glow\")\n        {\n            // Glow: colored outline over transparent areas near edges\n            if (a < 0.8f)\n            {\n                var glow = edgeAlpha * 0.7f;\n                buffer.SetPixel(x, y, lR * glow, lG * glow, lB * glow, glow);\n            }\n        }\n        else // both\n        {\n            buffer.SetPixel(x, y, lR, lG, lB, Math.Max(edgeAlpha, a));\n        }\n    });\n\n    return buffer;\n\nprivate static (float[] Binary, float[] Continuous) ComputeEdgeMask(PixelBuffer input, int size, float threshold, string detectMode)\n{\n    var binary = new float[size * size];\n    var continuous = new float[size * size];\n\n    // Sobel kernels (3x3)\n    var sobelX = new[,] { { -1, 0, 1 }, { -2, 0, 2 }, { -1, 0, 1 } };\n    var sobelY = new[,] { { -1, -2, -1 }, { 0, 0, 0 }, { 1, 2, 1 } };\n\n    for (var y = 0; y < size; y++)\n    {\n        for (var x = 0; x < size; x++)\n        {\n            float gx = 0, gy = 0;\n\n            for (var ky = -1; ky <= 1; ky++)\n            {\n                for (var kx = -1; kx <= 1; kx++)\n                {\n                    var sx = (x + kx + size) % size;\n                    var sy = (y + ky + size) % size;\n                    var (r, g, b, a) = input.GetPixel(sx, sy);\n\n                    var val = detectMode switch\n                    {\n                        \"alpha\" => a,\n                        \"luminance\" => r * 0.299f + g * 0.587f + b * 0.114f,\n                        _ => (r + g + b) / 3f\n                    };\n\n                    gx += val * sobelX[ky + 1, kx + 1];\n                    gy += val * sobelY[ky + 1, kx + 1];\n                }\n            }\n\n            var magnitude = MathF.Sqrt(gx * gx + gy * gy);\n            // Normalize magnitude: Sobel output range is roughly [-4, 4] per channel\n            // for [0,1] input, so max magnitude is ~5.66\n            continuous[y * size + x] = Math.Clamp(magnitude / 4f, 0f, 1f);\n            binary[y * size + x] = magnitude > threshold ? 1f : 0f;\n        }\n    }\n\n    return (binary, continuous);\n}\n\n/// <summary>\n/// SmoothStep mapped through [edge0, edge1] for soft edge falloff.\n/// </summary>\nprivate static float SmoothStepEdge(float x, float softness)\n{\n    var edge0 = MathF.Max(0f, 0.15f - softness * 0.12f);\n    var edge1 = MathF.Min(1f, 0.15f + softness * 0.6f);\n    var t = Math.Clamp((x - edge0) / (edge1 - edge0 + 0.0001f), 0f, 1f);\n    return t * t * (3f - 2f * t);\n}\n\nprivate static float[] DilateEdges(float[] edges, int size, int thickness)\n{\n    if (thickness <= 1) return edges;\n    // Reuse a single temp buffer across dilation iterations\n    var temp = new float[size * size];\n    var src = edges;\n    var dst = temp;\n\n    for (var iter = 1; iter < thickness; iter++)\n    {\n        // Clear destination\n        Array.Clear(dst);\n\n        for (var y = 0; y < size; y++)\n        {\n            for (var x = 0; x < size; x++)\n            {\n                if (src[y * size + x] > 0f)\n                {\n                    dst[y * size + x] = 1f;\n                    continue;\n                }\n\n                // Check neighbors in a diamond pattern\n                for (var dy = -1; dy <= 1; dy++)\n                {\n                    for (var dx = -1; dx <= 1; dx++)\n                    {\n                        if (dx == 0 && dy == 0) continue;\n                        var nx = (x + dx + size) % size;\n                        var ny = (y + dy + size) % size;\n                        if (src[ny * size + nx] > 0f)\n                        {\n                            dst[y * size + x] = 1f;\n                            goto next;\n                        }\n                    }\n                }\n                next:;\n            }\n        }\n\n        // Swap buffers for next iteration\n        (src, dst) = (dst, src);\n    }\n\n    // If we ended on temp, copy to edges\n    if (thickness % 2 == 0)\n    {\n        Array.Copy(temp, edges, temp.Length);\n    }\n\n    return edges;\n    }\n}"
+  }
+}

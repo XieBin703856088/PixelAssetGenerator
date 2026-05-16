@@ -1,0 +1,125 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "SolidColor",
+    "displayName": {
+      "zh-Hans": "纯色",
+      "en": "Solid Color"
+    },
+    "category": "Pattern",
+    "description": {
+      "zh-Hans": "生成纯色图块。使用颜色参数进行直观的色轮选择。",
+      "en": "Generates a solid color tile. Uses Color parameters for intuitive color-wheel picking."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "主色",
+        "en": "Main Color"
+      },
+      "kind": "Color",
+      "default": "#FFFFFFFF"
+    },
+    {
+      "name": {
+        "zh-Hans": "不透明度",
+        "en": "Opacity"
+      },
+      "kind": "Number",
+      "default": 1.0,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "图案",
+        "en": "Pattern"
+      },
+      "kind": "Choice",
+      "default": "solid",
+      "choices": [
+        {
+          "value": "solid",
+          "label": {
+            "zh-Hans": "纯色",
+            "en": "solid"
+          }
+        },
+        {
+          "value": "checkerboard",
+          "label": {
+            "zh-Hans": "棋盘",
+            "en": "checkerboard"
+          }
+        },
+        {
+          "value": "stripesHorizontal",
+          "label": {
+            "zh-Hans": "水平条纹",
+            "en": "stripesHorizontal"
+          }
+        },
+        {
+          "value": "stripesVertical",
+          "label": {
+            "zh-Hans": "垂直条纹",
+            "en": "stripesVertical"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "zh-Hans": "图案间距",
+        "en": "Pattern Spacing"
+      },
+      "kind": "Number",
+      "default": 0.25,
+      "min": 0.02,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "辅助色",
+        "en": "Secondary Color"
+      },
+      "kind": "Color",
+      "default": "#333333FF"
+    }
+  ],
+  "ai": {
+    "capabilities": ["pattern", "gradient"],
+    "triggers": {
+      "zh-Hans": "纯色, 实色, 纯色填充, 单色",
+      "en": "solid color, solid fill, plain color"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "生成纯白色的像素图块，作为基础颜色层使用。",
+      "en": "Generate a solid white pixel tile for use as a base color layer."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar primary = GetColor(parameters, \"mainColor\", System.Windows.Media.Colors.White);\n        var r = primary.R / 255f;\n        var g = primary.G / 255f;\n        var b = primary.B / 255f;\n        var a = GetFloat(parameters, \"opacity\", 1f);\n        var pattern = GetChoice(parameters, \"pattern\", \"solid\");\n        var spacing = GetFloat(parameters, \"patternSpacing\", 0.25f);\n        var secondary = GetColor(parameters, \"secondaryColor\", System.Windows.Media.Color.FromRgb(51, 51, 51));\n        var r2 = secondary.R / 255f;\n        var g2 = secondary.G / 255f;\n        var b2 = secondary.B / 255f;\n\n        var size = context.TileSize;\n\n        // Try GPU accelerated path first when available\n\n        if (pattern == \"solid\")\n            return PixelBuffer.CreateSolid(size, size, r, g, b, a);\n\n        var buffer = new PixelBuffer(size, size);\n        var cellPixels = Math.Max(1, (int)(spacing * size));\n\n        buffer.ParallelForEachPixel((x, y) =>\n        {\n            bool useSecondary;\n            switch (pattern)\n            {\n                case \"checkerboard\":\n                    useSecondary = ((x / cellPixels) + (y / cellPixels)) % 2 == 1;\n                    break;\n                case \"stripesHorizontal\":\n                    useSecondary = (y / cellPixels) % 2 == 1;\n                    break;\n                case \"stripesVertical\":\n                    useSecondary = (x / cellPixels) % 2 == 1;\n                    break;\n                default:\n                    useSecondary = false;\n                    break;\n            }\n\n            if (useSecondary)\n                buffer.SetPixel(x, y, r2, g2, b2, a);\n            else\n                buffer.SetPixel(x, y, r, g, b, a);\n        });\n\n        return buffer;\n}"
+  }
+}

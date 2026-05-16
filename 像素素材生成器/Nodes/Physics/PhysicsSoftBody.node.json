@@ -1,0 +1,63 @@
+{
+  "formatVersion": 2,
+  "processorType": "PhysicsSoftBody",
+  "identity": {
+    "typeName": "PhysicsSoftBody",
+    "displayName": {
+      "zh-Hans": "软体物理",
+      "en": "Soft Body Physics"
+    },
+    "category": "Physics",
+    "description": {
+      "zh-Hans": "创建弹簧质点网络模拟软体物理（果冻、弹性体），支持多种形状、内部压力和固定约束",
+      "en": "Creates spring-mass network soft body simulation (jelly, elastomer), supports multiple shapes, internal pressure, and pin constraints"
+    },
+    "tags": ["physics", "soft-body", "spring"],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [],
+    "outputs": [
+      {
+        "name": { "zh-Hans": "粒子", "en": "Particles" },
+        "type": "Particle"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": { "zh-Hans": "形状", "en": "Shape" },
+      "kind": "Choice",
+      "default": "rectangle",
+      "choices": ["rectangle", "circle", "blob"],
+      "displayChoices": ["矩形", "圆形", "团块"]
+    },
+    { "name": { "zh-Hans": "网格宽度", "en": "Grid Width" }, "kind": "Integer", "default": 5, "min": 2, "max": 16, "step": 1 },
+    { "name": { "zh-Hans": "网格高度", "en": "Grid Height" }, "kind": "Integer", "default": 5, "min": 2, "max": 16, "step": 1 },
+    { "name": { "zh-Hans": "弹簧刚度", "en": "Stiffness" }, "kind": "Number", "default": 0.5, "min": 0.01, "max": 2.0, "step": 0.01 },
+    { "name": { "zh-Hans": "内部阻尼", "en": "Damping" }, "kind": "Number", "default": 0.5, "min": 0.0, "max": 1.0, "step": 0.01 },
+    { "name": { "zh-Hans": "重力", "en": "Gravity" }, "kind": "Number", "default": 0.3, "min": -1.0, "max": 1.0, "step": 0.01 },
+    { "name": { "zh-Hans": "风力", "en": "Wind" }, "kind": "Number", "default": 0.0, "min": -1.0, "max": 1.0, "step": 0.01 },
+    { "name": { "zh-Hans": "内部压力", "en": "Pressure" }, "kind": "Number", "default": 0.1, "min": 0.0, "max": 1.0, "step": 0.01 },
+    { "name": { "zh-Hans": "中心X", "en": "Center X" }, "kind": "Number", "default": 0.5, "min": 0, "max": 1, "step": 0.01 },
+    { "name": { "zh-Hans": "中心Y", "en": "Center Y" }, "kind": "Number", "default": 0.5, "min": 0, "max": 1, "step": 0.01 },
+    { "name": { "zh-Hans": "软体大小", "en": "Size" }, "kind": "Number", "default": 0.3, "min": 0.05, "max": 0.8, "step": 0.01 },
+    { "name": { "zh-Hans": "固定顶部", "en": "Pin Top" }, "kind": "Boolean", "default": false },
+    { "name": { "zh-Hans": "固定底部", "en": "Pin Bottom" }, "kind": "Boolean", "default": false },
+    { "name": { "zh-Hans": "固定左侧", "en": "Pin Left" }, "kind": "Boolean", "default": false },
+    { "name": { "zh-Hans": "固定右侧", "en": "Pin Right" }, "kind": "Boolean", "default": false }
+  ],
+  "ai": {
+    "capabilities": ["physics", "soft-body", "simulation"],
+    "triggers": {
+      "zh-Hans": "软体物理, 果冻物理, 弹簧质点, 弹性体, 可变形体",
+      "en": "soft body physics, jelly physics, spring-mass, elastomer, deformable body"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "创建一个5x5网格的矩形软体，弹簧刚度0.5，重力0.3，固定顶部使其悬挂摆动",
+      "en": "Create a 5x5 grid rectangular soft body with stiffness 0.5 and gravity 0.3, pinning the top edge for hanging/swinging motion"
+    }
+  }
+}

@@ -1,0 +1,97 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "NineSlice",
+    "displayName": {
+      "zh-Hans": "九宫格",
+      "en": "Nine Slice"
+    },
+    "category": "Pattern",
+    "description": {
+      "zh-Hans": "应用九宫格缩放：将输入图像分割为3x3网格（四角、四边、中心），缩放输出时保持四角尺寸不变，拉伸四边和中心区域。",
+      "en": "Applies 9-slice scaling: divides the input into a 3x3 grid (corners, edges, center) and scales the output preserving corner sizes while stretching edges and center."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [
+      {
+        "name": {
+          "zh-Hans": "源图像",
+          "en": "SourceImage"
+        },
+        "type": "Image"
+      }
+    ],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "遮罩",
+          "en": "Mask"
+        },
+        "type": "Mask"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "边框比例",
+        "en": "Border Ratio"
+      },
+      "kind": "Number",
+      "default": 0.2,
+      "min": 0.05,
+      "max": 0.5,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "输出宽度",
+        "en": "Output Width"
+      },
+      "kind": "Integer",
+      "default": 64,
+      "min": 8,
+      "max": 512,
+      "step": 1
+    },
+    {
+      "name": {
+        "zh-Hans": "输出高度",
+        "en": "Output Height"
+      },
+      "kind": "Integer",
+      "default": 64,
+      "min": 8,
+      "max": 512,
+      "step": 1
+    }
+  ],
+  "ai": {
+    "capabilities": ["pattern", "tiling", "sprite-sheet"],
+    "triggers": {
+      "zh-Hans": "九宫格, 九宫格缩放, 边框缩放",
+      "en": "nine slice, 9-slice, border scaling"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "对UI元素纹理应用九宫格缩放，保持四角不变拉伸边框。",
+      "en": "Apply 9-slice scaling to a UI element texture, preserving corners while stretching borders."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar src = inputs[0];\nvar borderRatio = Math.Clamp(GetFloat(parameters, \"borderRatio\", 0.2f), 0.01f, 0.49f);\nvar outW = Math.Max(2, GetInt(parameters, \"outputWidth\", 64));\nvar outH = Math.Max(2, GetInt(parameters, \"outputHeight\", 64));\nvar size = context.TileSize;\nvar result = new PixelBuffer(size, size);\nif (src == null) return result;\nvar srcSize = src.Width;\nvar border = (int)(srcSize * borderRatio);\n// Map output pixel to source using 9-slice logic\nresult.ParallelForEachPixel((x, y) =>\n{\n    var nx = x / (float)size * outW;\n    var ny = y / (float)size * outH;\n    int srcX, srcY;\n    // X mapping\n    if (nx < border) srcX = (int)nx;\n    else if (nx > outW - border) srcX = srcSize - (int)(outW - nx) - 1;\n    else\n    {\n        var t = (nx - border) / Math.Max(1, outW - 2 * border);\n        srcX = border + (int)(t * (srcSize - 2 * border));\n    }\n    // Y mapping\n    if (ny < border) srcY = (int)ny;\n    else if (ny > outH - border) srcY = srcSize - (int)(outH - ny) - 1;\n    else\n    {\n        var t = (ny - border) / Math.Max(1, outH - 2 * border);\n        srcY = border + (int)(t * (srcSize - 2 * border));\n    }\n    srcX = Math.Clamp(srcX, 0, srcSize - 1);\n    srcY = Math.Clamp(srcY, 0, srcSize - 1);\n    var (r, g, b, a) = src.GetPixel(srcX, srcY);\n    result.SetPixel(x, y, r, g, b, a);\n});\nreturn result;\n}"
+  }
+}

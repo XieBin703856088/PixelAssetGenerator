@@ -1,0 +1,121 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "Ripple",
+    "displayName": {
+      "zh-Hans": "波纹",
+      "en": "Ripple"
+    },
+    "category": "ImageProcess",
+    "description": {
+      "zh-Hans": "应用波纹（正弦波）扭曲效果。使用正弦波在水平、垂直或两个方向上位移像素。",
+      "en": "Applies a ripple (sine wave) distortion effect. Displaces pixels using a sine wave in horizontal, vertical, or both directions."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [
+      {
+        "name": {
+          "zh-Hans": "输入",
+          "en": "Input"
+        },
+        "type": "Image"
+      }
+    ],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "输出",
+          "en": "Output"
+        },
+        "type": "Image"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "振幅",
+        "en": "Amplitude"
+      },
+      "kind": "Number",
+      "default": 6.0,
+      "min": 1.0,
+      "max": 50.0,
+      "step": 1.0
+    },
+    {
+      "name": {
+        "zh-Hans": "频率",
+        "en": "Frequency"
+      },
+      "kind": "Number",
+      "default": 6.0,
+      "min": 1.0,
+      "max": 50.0,
+      "step": 1.0
+    },
+    {
+      "name": {
+        "zh-Hans": "速度",
+        "en": "Speed"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 10.0,
+      "step": 0.1
+    },
+    {
+      "name": {
+        "zh-Hans": "方向",
+        "en": "Direction"
+      },
+      "kind": "Choice",
+      "default": "horizontal",
+      "choices": [
+        {
+          "value": "horizontal",
+          "label": {
+            "zh-Hans": "水平",
+            "en": "horizontal"
+          }
+        },
+        {
+          "value": "vertical",
+          "label": {
+            "zh-Hans": "垂直",
+            "en": "vertical"
+          }
+        },
+        {
+          "value": "both",
+          "label": {
+            "zh-Hans": "双向",
+            "en": "both"
+          }
+        }
+      ]
+    }
+  ],
+  "ai": {
+    "capabilities": ["distort"],
+    "triggers": {
+      "zh-Hans": "波纹, 水波, 波浪变形, 波动效果",
+      "en": "ripple, water ripple, wave warp, wave effect"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "对图像应用水波纹扭曲效果。",
+      "en": "Apply a water ripple distortion effect to an image."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar src = inputs.Length > 0 ? inputs[0] : null;\nif (src == null)\n    return new PixelBuffer(context.TileSize, context.TileSize);\n\nvar amplitude = GetFloat(parameters, \"amplitude\", 10f);\nvar frequency = GetFloat(parameters, \"frequency\", 10f);\nvar speed = GetFloat(parameters, \"speed\", 0f);\nvar direction = GetChoice(parameters, \"direction\", \"horizontal\");\n\nvar size = src.Width;\nvar result = new PixelBuffer(size, size);\nvar phase = speed * (float)(Environment.TickCount % 100000) * 0.001f;\n\nresult.ParallelForEachPixel((x, y) =>\n{\n    var nx = x / (float)size;\n    var ny = y / (float)size;\n    var dx = 0f;\n    var dy = 0f;\n\n    switch (direction)\n    {\n        case \"vertical\":\n            dy = MathF.Sin(ny * frequency * MathF.Tau + phase) * amplitude;\n            break;\n        case \"both\":\n            dx = MathF.Sin(ny * frequency * MathF.Tau + phase) * amplitude;\n            dy = MathF.Sin(nx * frequency * MathF.Tau + phase) * amplitude;\n            break;\n        default: // horizontal\n            dx = MathF.Sin(ny * frequency * MathF.Tau + phase) * amplitude;\n            break;\n    }\n\n    var sx = x + dx;\n    var sy = y + dy;\n\n    var (r, g, b, a) = src.GetPixelWrapped((int)MathF.Round(sx), (int)MathF.Round(sy));\n    result.SetPixel(x, y, r, g, b, a);\n});\n\nreturn result;\n}"
+  }
+}

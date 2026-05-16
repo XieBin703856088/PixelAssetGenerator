@@ -1,0 +1,132 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "Rain",
+    "displayName": {
+      "zh-Hans": "雨水",
+      "en": "Rain"
+    },
+    "category": "Material",
+    "description": {
+      "zh-Hans": "使用哈希散列生成雨滴效果，支持Time参数驱动动画（0→1循环）。雨滴受重力和风力影响，可平铺。",
+      "en": "Generates rain using hash-distributed particles with Time-driven animation (0→1 loop). Raindrops fall with gravity and wind. Tileable."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "遮罩",
+          "en": "Mask"
+        },
+        "type": "Mask"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "种子",
+        "en": "Seed"
+      },
+      "kind": "Seed",
+      "default": 42,
+      "min": 0,
+      "max": 9999
+    },
+    {
+      "name": {
+        "zh-Hans": "时间",
+        "en": "Time"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "密度",
+        "en": "Density"
+      },
+      "kind": "Number",
+      "default": 0.6,
+      "min": 0.1,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "速度",
+        "en": "Speed"
+      },
+      "kind": "Number",
+      "default": 0.8,
+      "min": 0.1,
+      "max": 3.0,
+      "step": 0.1
+    },
+    {
+      "name": {
+        "zh-Hans": "风力",
+        "en": "Wind"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": -1.0,
+      "max": 1.0,
+      "step": 0.1
+    },
+    {
+      "name": {
+        "zh-Hans": "长度",
+        "en": "Length"
+      },
+      "kind": "Integer",
+      "default": 6,
+      "min": 2,
+      "max": 16,
+      "step": 1
+    },
+    {
+      "name": {
+        "zh-Hans": "像素大小",
+        "en": "Pixel Size"
+      },
+      "kind": "Integer",
+      "default": 1,
+      "min": 1,
+      "max": 4,
+      "step": 1
+    }
+  ],
+  "ai": {
+    "capabilities": ["material", "procedural-texture", "weather", "animated"],
+    "triggers": {
+      "zh-Hans": "下雨, 雨天, 暴风雨, 雨滴, 天气效果, 降水",
+      "en": "rain, raining, stormy, raindrop, weather effect, precipitation"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "生成下雨动画帧，用于场景天气效果或动态环境背景。",
+      "en": "Generate rain animation frames for scene weather effects or dynamic environment backgrounds."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar seed = GetInt(parameters, \"seed\", context.Seed);\nvar time = GetFloat(parameters, \"time\", 0f);\nvar density = GetFloat(parameters, \"density\", 0.6f);\nvar speed = GetFloat(parameters, \"speed\", 0.8f);\nvar wind = GetFloat(parameters, \"wind\", 0f);\nvar length = Math.Max(2, GetInt(parameters, \"length\", 6));\nvar pixelSize = Math.Max(1, GetInt(parameters, \"pixelSize\", 1));\n\nvar size = context.TileSize;\nvar result = new PixelBuffer(size, size);\n\n// Rain color\nvar cR = 150f/255f; var cG = 190f/255f; var cB = 230f/255f;\n\n// Hash grid for raindrop distribution — grid size scales with density\nvar gridSize = Math.Max(6, (int)(20f * density));\nvar cellW = size / (float)gridSize;\nvar cellH = size / (float)gridSize;\n\n// Time-driven vertical offset — wraps around seamlessly\nvar fallDist = time * speed * size;\nvar windOffset = wind * size * 0.15f;\n\nfor (var gy = 0; gy < gridSize; gy++)\n{\n    for (var gx = 0; gx < gridSize; gx++)\n    {\n        var h = HashToUnit(gx * 37 + gy * 19, seed, 111);\n        if (h > density) continue;\n\n        // X position: jitter within cell + wind shift\n        var xOff = HashToUnit(gx * 7 + gy * 13, seed + 50, 222);\n        var sx = (int)((gx + xOff) * cellW + windOffset) % size;\n        if (sx < 0) sx += size;\n        sx = (sx / pixelSize) * pixelSize;\n\n        // Y position: base + time offset, wrapped\n        var yOff = HashToUnit(gx * 11 + gy * 5, seed + 100, 333);\n        var rawY = (gy * cellH + yOff * cellH + fallDist) % (size + length);\n        var sy = (int)(rawY - length);\n\n        // Wind shear: slight horizontal spread along drop length\n        var windShear = wind * 0.5f;\n\n        // Draw the raindrop as a line\n        for (var l = 0; l < length; l += pixelSize)\n        {\n            var lx = sx + (int)(windShear * l);\n            var ly = sy + l;\n            // Wrap\n            lx = ((lx % size) + size) % size;\n            if (ly < 0 || ly >= size) continue;\n\n            var fade = 1f - l / (float)length * 0.4f;\n            result.SetPixel(lx, ly, cR * fade, cG * fade, cB * fade, Math.Clamp(fade * 0.8f, 0f, 1f));\n        }\n    }\n}\nreturn result;\n}"
+  }
+}

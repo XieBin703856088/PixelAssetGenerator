@@ -1,0 +1,687 @@
+<Window x:Class="PixelAssetGenerator.AiSettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:loc="clr-namespace:PixelAssetGenerator.Services.Localization"
+        xmlns:local="clr-namespace:PixelAssetGenerator"
+        Title="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[AI_SettingsTitle]}" Width="760" Height="640"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        Background="{DynamicResource WindowBackground}"
+        Foreground="{DynamicResource PrimaryText}">
+
+    <Window.Resources>
+        <ResourceDictionary>
+            <local:BoolToToggleBrushConverter x:Key="BoolToBrushConverter" />
+            <local:BoolToToggleAlignmentConverter x:Key="BoolToAlignmentConverter" />
+
+            <!-- ── Horizontal Slider style (for Temperature/ContextLimit) ── -->
+            <Style TargetType="Slider">
+                <Setter Property="Foreground" Value="{DynamicResource Accent}" />
+                <Setter Property="IsMoveToPointEnabled" Value="True" />
+                <Setter Property="SmallChange" Value="0.01" />
+                <Setter Property="LargeChange" Value="0.05" />
+                <Setter Property="BorderThickness" Value="0" />
+                <Setter Property="Height" Value="22" />
+                <Setter Property="IsHitTestVisible" Value="True" />
+                <EventSetter Event="PreviewMouseWheel" Handler="Slider_PreviewMouseWheel" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Slider">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" MinHeight="20" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <TickBar x:Name="TopTick" Grid.Row="0" Visibility="Collapsed" />
+
+                                <!-- 轨道 -->
+                                <Border x:Name="TrackBackground"
+                                        Grid.Row="1"
+                                        Height="6"
+                                        Margin="8,0"
+                                        CornerRadius="3"
+                                        Background="{DynamicResource ControlBackground}"
+                                        BorderThickness="1"
+                                        BorderBrush="{DynamicResource ControlBorder}">
+                                    <Border x:Name="SelectionRange"
+                                            CornerRadius="3"
+                                            HorizontalAlignment="Left"
+                                            Margin="0"
+                                            Background="{TemplateBinding Foreground}" />
+                                </Border>
+
+                                <Track x:Name="PART_Track" Grid.Row="1">
+                                    <Track.Thumb>
+                                        <Thumb x:Name="Thumb"
+                                               Width="18" Height="18"
+                                               Cursor="Hand">
+                                            <Thumb.Style>
+                                                <Style TargetType="Thumb">
+                                                    <Setter Property="Template">
+                                                        <Setter.Value>
+                                                            <ControlTemplate TargetType="Thumb">
+                                                                <Grid>
+                                                                    <Ellipse x:Name="Glow"
+                                                                             Width="28" Height="28"
+                                                                             Fill="{DynamicResource Accent}"
+                                                                             Opacity="0" />
+                                                                    <Ellipse x:Name="OuterRing"
+                                                                             Width="18" Height="18"
+                                                                             Fill="{DynamicResource Accent}" />
+                                                                    <Ellipse x:Name="InnerDot"
+                                                                             Width="8" Height="8"
+                                                                             Fill="{DynamicResource AccentForeground}" />
+                                                                </Grid>
+                                                                <ControlTemplate.Triggers>
+                                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                                        <Trigger.EnterActions>
+                                                                            <BeginStoryboard>
+                                                                                <Storyboard>
+                                                                                    <DoubleAnimation Storyboard.TargetName="Glow" Storyboard.TargetProperty="Opacity" To="0.2" Duration="0:0:0.15" />
+                                                                                    <DoubleAnimation Storyboard.TargetName="OuterRing" Storyboard.TargetProperty="Width" To="20" Duration="0:0:0.15" />
+                                                                                    <DoubleAnimation Storyboard.TargetName="OuterRing" Storyboard.TargetProperty="Height" To="20" Duration="0:0:0.15" />
+                                                                                </Storyboard>
+                                                                            </BeginStoryboard>
+                                                                        </Trigger.EnterActions>
+                                                                        <Trigger.ExitActions>
+                                                                            <BeginStoryboard>
+                                                                                <Storyboard>
+                                                                                    <DoubleAnimation Storyboard.TargetName="Glow" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.15" />
+                                                                                    <DoubleAnimation Storyboard.TargetName="OuterRing" Storyboard.TargetProperty="Width" To="18" Duration="0:0:0.15" />
+                                                                                    <DoubleAnimation Storyboard.TargetName="OuterRing" Storyboard.TargetProperty="Height" To="18" Duration="0:0:0.15" />
+                                                                                </Storyboard>
+                                                                            </BeginStoryboard>
+                                                                        </Trigger.ExitActions>
+                                                                    </Trigger>
+                                                                    <Trigger Property="IsDragging" Value="True">
+                                                                        <Trigger.EnterActions>
+                                                                            <BeginStoryboard>
+                                                                                <Storyboard>
+                                                                                    <DoubleAnimation Storyboard.TargetName="Glow" Storyboard.TargetProperty="Opacity" To="0.35" Duration="0:0:0.1" />
+                                                                                    <DoubleAnimation Storyboard.TargetName="OuterRing" Storyboard.TargetProperty="Width" To="22" Duration="0:0:0.1" />
+                                                                                    <DoubleAnimation Storyboard.TargetName="OuterRing" Storyboard.TargetProperty="Height" To="22" Duration="0:0:0.1" />
+                                                                                    <DoubleAnimation Storyboard.TargetName="InnerDot" Storyboard.TargetProperty="Width" To="10" Duration="0:0:0.1" />
+                                                                                    <DoubleAnimation Storyboard.TargetName="InnerDot" Storyboard.TargetProperty="Height" To="10" Duration="0:0:0.1" />
+                                                                                </Storyboard>
+                                                                            </BeginStoryboard>
+                                                                        </Trigger.EnterActions>
+                                                                        <Trigger.ExitActions>
+                                                                            <BeginStoryboard>
+                                                                                <Storyboard>
+                                                                                    <DoubleAnimation Storyboard.TargetName="Glow" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.15" />
+                                                                                    <DoubleAnimation Storyboard.TargetName="OuterRing" Storyboard.TargetProperty="Width" To="18" Duration="0:0:0.15" />
+                                                                                    <DoubleAnimation Storyboard.TargetName="OuterRing" Storyboard.TargetProperty="Height" To="18" Duration="0:0:0.15" />
+                                                                                    <DoubleAnimation Storyboard.TargetName="InnerDot" Storyboard.TargetProperty="Width" To="8" Duration="0:0:0.15" />
+                                                                                    <DoubleAnimation Storyboard.TargetName="InnerDot" Storyboard.TargetProperty="Height" To="8" Duration="0:0:0.15" />
+                                                                                </Storyboard>
+                                                                            </BeginStoryboard>
+                                                                        </Trigger.ExitActions>
+                                                                    </Trigger>
+                                                                </ControlTemplate.Triggers>
+                                                            </ControlTemplate>
+                                                        </Setter.Value>
+                                                    </Setter>
+                                                </Style>
+                                            </Thumb.Style>
+                                        </Thumb>
+                                    </Track.Thumb>
+                                </Track>
+                                <TickBar x:Name="BottomTick" Grid.Row="2" Visibility="Collapsed" />
+                            </Grid>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- ── Vertical Scroll Slider Style (side rail scroll thumb) ── -->
+            <Style x:Key="VerticalScrollSlider" TargetType="ScrollBar">
+                <Setter Property="Orientation" Value="Vertical" />
+                <Setter Property="Width" Value="20" />
+                <Setter Property="Margin" Value="0" />
+                <Setter Property="Background" Value="Transparent" />
+                <Setter Property="BorderThickness" Value="0" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ScrollBar">
+                            <Grid Background="{TemplateBinding Background}">
+                                <Track x:Name="PART_Track"
+                                       Grid.Row="0">
+                                    <Track.Thumb>
+                                        <Thumb x:Name="Thumb"
+                                               Cursor="Hand"
+                                               MinHeight="36">
+                                            <Thumb.Style>
+                                                <Style TargetType="Thumb">
+                                                    <Setter Property="Template">
+                                                        <Setter.Value>
+                                                            <ControlTemplate TargetType="Thumb">
+                                                                <Border x:Name="ThumbBorder"
+                                                                        Width="6"
+                                                                        CornerRadius="3"
+                                                                        Background="{DynamicResource ControlBorder}"
+                                                                        Opacity="0.6"
+                                                                        HorizontalAlignment="Center">
+                                                                    <Border.Style>
+                                                                        <Style TargetType="Border">
+                                                                            <Style.Triggers>
+                                                                                <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ScrollBar}, Path=IsEnabled}" Value="False">
+                                                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                                                </DataTrigger>
+                                                                            </Style.Triggers>
+                                                                        </Style>
+                                                                    </Border.Style>
+                                                                </Border>
+                                                                <ControlTemplate.Triggers>
+                                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                                        <Trigger.EnterActions>
+                                                                            <BeginStoryboard>
+                                                                                <Storyboard>
+                                                                                    <DoubleAnimation Storyboard.TargetName="ThumbBorder" Storyboard.TargetProperty="Width" To="10" Duration="0:0:0.12" />
+                                                                                    <DoubleAnimation Storyboard.TargetName="ThumbBorder" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.12" />
+                                                                                </Storyboard>
+                                                                            </BeginStoryboard>
+                                                                        </Trigger.EnterActions>
+                                                                        <Trigger.ExitActions>
+                                                                            <BeginStoryboard>
+                                                                                <Storyboard>
+                                                                                    <DoubleAnimation Storyboard.TargetName="ThumbBorder" Storyboard.TargetProperty="Width" To="6" Duration="0:0:0.25" />
+                                                                                    <DoubleAnimation Storyboard.TargetName="ThumbBorder" Storyboard.TargetProperty="Opacity" To="0.6" Duration="0:0:0.25" />
+                                                                                </Storyboard>
+                                                                            </BeginStoryboard>
+                                                                        </Trigger.ExitActions>
+                                                                    </Trigger>
+                                                                    <Trigger Property="IsDragging" Value="True">
+                                                                        <Trigger.EnterActions>
+                                                                            <BeginStoryboard>
+                                                                                <Storyboard>
+                                                                                    <DoubleAnimation Storyboard.TargetName="ThumbBorder" Storyboard.TargetProperty="Width" To="10" Duration="0:0:0.08" />
+                                                                                    <DoubleAnimation Storyboard.TargetName="ThumbBorder" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.08" />
+                                                                                </Storyboard>
+                                                                            </BeginStoryboard>
+                                                                        </Trigger.EnterActions>
+                                                                        <Trigger.ExitActions>
+                                                                            <BeginStoryboard>
+                                                                                <Storyboard>
+                                                                                    <DoubleAnimation Storyboard.TargetName="ThumbBorder" Storyboard.TargetProperty="Width" To="6" Duration="0:0:0.25" />
+                                                                                    <DoubleAnimation Storyboard.TargetName="ThumbBorder" Storyboard.TargetProperty="Opacity" To="0.6" Duration="0:0:0.25" />
+                                                                                </Storyboard>
+                                                                            </BeginStoryboard>
+                                                                        </Trigger.ExitActions>
+                                                                    </Trigger>
+                                                                </ControlTemplate.Triggers>
+                                                            </ControlTemplate>
+                                                        </Setter.Value>
+                                                    </Setter>
+                                                </Style>
+                                            </Thumb.Style>
+                                        </Thumb>
+                                    </Track.Thumb>
+                                </Track>
+                            </Grid>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- ── Labels ── -->
+            <Style x:Key="SectionLabel" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="11" />
+                <Setter Property="FontWeight" Value="SemiBold" />
+                <Setter Property="Margin" Value="0,0,0,4" />
+                <Setter Property="Foreground" Value="{DynamicResource MutedText}" />
+            </Style>
+
+            <Style x:Key="HintText" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="10.5" />
+                <Setter Property="Foreground" Value="{DynamicResource MutedText}" />
+                <Setter Property="Margin" Value="0,2,0,0" />
+            </Style>
+
+            <!-- ── Inputs ── -->
+            <Style x:Key="FlatInput" TargetType="TextBox">
+                <Setter Property="Background" Value="{DynamicResource ControlBackground}" />
+                <Setter Property="Foreground" Value="{DynamicResource PrimaryText}" />
+                <Setter Property="BorderBrush" Value="{DynamicResource ControlBorder}" />
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="Padding" Value="8,6" />
+                <Setter Property="FontSize" Value="12" />
+                <Setter Property="MinHeight" Value="30" />
+            </Style>
+
+            <Style x:Key="FlatPassword" TargetType="PasswordBox">
+                <Setter Property="Background" Value="{DynamicResource ControlBackground}" />
+                <Setter Property="Foreground" Value="{DynamicResource PrimaryText}" />
+                <Setter Property="BorderBrush" Value="{DynamicResource ControlBorder}" />
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="Padding" Value="8,6" />
+                <Setter Property="FontSize" Value="12" />
+                <Setter Property="MinHeight" Value="30" />
+            </Style>
+
+            <!-- ── Section Card ── -->
+            <Style x:Key="SectionCard" TargetType="Border">
+                <Setter Property="Background" Value="{DynamicResource PanelBackground}" />
+                <Setter Property="BorderBrush" Value="{DynamicResource PanelBorder}" />
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="CornerRadius" Value="8" />
+                <Setter Property="Padding" Value="16" />
+                <Setter Property="Margin" Value="0,0,0,12" />
+            </Style>
+
+            <!-- ── Profile list item ── -->
+            <Style x:Key="ProfileListItem" TargetType="Border">
+                <Setter Property="Height" Value="40" />
+                <Setter Property="Margin" Value="0,0,0,2" />
+                <Setter Property="Padding" Value="10,0" />
+                <Setter Property="Cursor" Value="Hand" />
+                <Setter Property="CornerRadius" Value="6" />
+            </Style>
+
+            <!-- ── Section title ── -->
+            <Style x:Key="SectionTitle" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="13" />
+                <Setter Property="FontWeight" Value="SemiBold" />
+                <Setter Property="Margin" Value="0,0,0,12" />
+            </Style>
+
+            <!-- ── Inline label ── -->
+            <Style x:Key="InlineLabel" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="12" />
+                <Setter Property="Foreground" Value="{DynamicResource MutedText}" />
+                <Setter Property="VerticalAlignment" Value="Center" />
+            </Style>
+        </ResourceDictionary>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- ══════ 顶栏 ══════ -->
+        <Border Grid.Row="0"
+                Background="{DynamicResource PanelBackground}"
+                BorderBrush="{DynamicResource PanelBorder}"
+                BorderThickness="0,0,0,1"
+                Padding="16,10,16,10">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Column="0"
+                           Text="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[AI_SettingsHeader]}"
+                           FontSize="15" FontWeight="Bold"
+                           VerticalAlignment="Center" />
+
+                <StackPanel Grid.Column="2" Orientation="Horizontal">
+                    <Button x:Name="CancelButton"
+                            Content="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[AI_Cancel]}"
+                            Padding="14,5" MinWidth="70" MinHeight="26"
+                            Margin="0,0,8,0"
+                            Click="CancelButton_Click" />
+                    <Button x:Name="OkButton"
+                            Content="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[AI_Save]}"
+                            Padding="14,5" MinWidth="70" MinHeight="26"
+                            IsDefault="True"
+                            Click="OkButton_Click"
+                            Style="{DynamicResource AccentButton}" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- ══════ 主体：左（配置列表）+ 分割 + 右（带侧边滚动滑块的内容区） ══════ -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="180" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <!-- ── 左侧：配置列表 ── -->
+            <Border Grid.Column="0"
+                    Background="{DynamicResource PanelBackgroundAlt}"
+                    BorderBrush="{DynamicResource PanelBorder}"
+                    BorderThickness="0,0,1,0">
+                <Grid Margin="0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <Grid Grid.Row="0" Margin="12,12,12,6">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0"
+                                   Text="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[AI_Profiles]}"
+                                   FontSize="12" FontWeight="SemiBold"
+                                   VerticalAlignment="Center" />
+                        <Button Grid.Column="1" x:Name="AddProfileButton"
+                                Content="＋" Width="24" Height="24" FontSize="13"
+                                Padding="0" FontWeight="Bold"
+                                ToolTip="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[AI_NewConfig]}"
+                                Click="AddProfileButton_Click"
+                                Style="{DynamicResource AccentButton}" />
+                    </Grid>
+
+                    <ScrollViewer Grid.Row="1" Margin="6,0,6,0"
+                                  VerticalScrollBarVisibility="Auto">
+                        <StackPanel x:Name="ProfileListPanel" />
+                    </ScrollViewer>
+
+                    <TextBlock Grid.Row="2"
+                               Text="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[AI_ClickToAdd]}"
+                               FontSize="10"
+                               Foreground="{DynamicResource MutedText}"
+                               HorizontalAlignment="Center"
+                               Margin="0,0,0,10" />
+                </Grid>
+            </Border>
+
+            <!-- ── 分割线 ── -->
+            <Border Grid.Column="1" Width="1" Background="{DynamicResource PanelBorder}" />
+
+            <!-- ── 右侧：内容区（带自定义侧面垂直滚动滑块） ── -->
+            <Grid Grid.Column="2">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <!-- 滚动内容 -->
+                <ScrollViewer x:Name="SettingsScrollViewer"
+                              Grid.Column="0"
+                              VerticalScrollBarVisibility="Hidden"
+                              Padding="16,12,4,16"
+                              BorderThickness="0"
+                              Background="Transparent">
+                    <StackPanel>
+
+                        <!-- ============ 配置名称 ============ -->
+                        <Border Style="{StaticResource SectionCard}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+
+                                <TextBlock Grid.Column="0"
+                                           Text="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[AI_ProfileName]}"
+                                           VerticalAlignment="Center"
+                                           FontSize="12" Foreground="{DynamicResource MutedText}"
+                                           Margin="0,0,10,0" />
+
+                                <TextBox Grid.Column="1" x:Name="ProfileNameBox"
+                                         FontSize="12" FontWeight="SemiBold"
+                                         MinHeight="28"
+                                         Background="{DynamicResource ControlBackground}"
+                                         Foreground="{DynamicResource PrimaryText}"
+                                         BorderBrush="{DynamicResource ControlBorder}"
+                                         Padding="8,4"
+                                         TextChanged="ProfileNameBox_TextChanged" />
+
+                                <Button Grid.Column="2" x:Name="DuplicateProfileButton"
+                                        Content="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[AI_Duplicate]}" FontSize="10.5"
+                                        Padding="8,3" MinHeight="26"
+                                        Margin="6,0,4,0"
+                                        ToolTip="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[AI_CopyConfig]}"
+                                        Click="DuplicateProfileButton_Click" />
+
+                                <Button Grid.Column="3" x:Name="DeleteProfileButton"
+                                        Content="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[AI_DeleteProfile]}" FontSize="10.5"
+                                        Padding="8,3" MinHeight="26"
+                                        ToolTip="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[AI_DeleteConfig]}"
+                                        Click="DeleteProfileButton_Click" />
+                            </Grid>
+                        </Border>
+
+                        <!-- ============ API 连接 ============ -->
+                        <Border Style="{StaticResource SectionCard}">
+                            <StackPanel>
+                                <TextBlock Text="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[AI_APIConnection]}" Style="{StaticResource SectionTitle}" />
+
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <StackPanel Grid.Column="0" Margin="0,0,6,0">
+                                        <TextBlock Style="{StaticResource SectionLabel}" Text="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[AI_APIProvider]}" />
+                                        <ComboBox x:Name="ProviderCombo" SelectedIndex="0" MinHeight="30"
+                                                  Background="{DynamicResource ControlBackground}"
+                                                  Foreground="{DynamicResource PrimaryText}"
+                                                  BorderBrush="{DynamicResource ControlBorder}"
+                                                  SelectionChanged="ProviderCombo_SelectionChanged">
+                                            <ComboBoxItem Content="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[AI_OpenAICompatible], Mode=OneTime}" />
+                                            <ComboBoxItem Content="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[AI_AnthropicClaude], Mode=OneTime}" />
+                                            <ComboBoxItem Content="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[AI_LocalOpenAI], Mode=OneTime}" />
+                                        </ComboBox>
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Column="1" Margin="6,0,0,0">
+                                        <TextBlock Style="{StaticResource SectionLabel}" Text="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[AI_Model]}" Margin="0,10,0,0" />
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <ComboBox Grid.Column="0" x:Name="ModelCombo"
+                                                      MinHeight="30" IsEditable="True"
+                                                      MaxDropDownHeight="300"
+                                                      Background="{DynamicResource ControlBackground}"
+                                                      Foreground="{DynamicResource PrimaryText}"
+                                                      BorderBrush="{DynamicResource ControlBorder}"
+                                                      SelectionChanged="ModelCombo_SelectionChanged"
+                                                      LostFocus="ModelCombo_LostFocus" />
+                                            <Button Grid.Column="1" x:Name="AddModelButton"
+                                                    Content="＋" Width="24" Height="24" FontSize="13"
+                                                    Padding="0" Margin="4,0,0,0" FontWeight="Bold"
+                                                    ToolTip="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[AI_AddModelToQuickSwitch]}"
+                                                    Click="AddModelButton_Click"
+                                                    Style="{DynamicResource AccentButton}" />
+                                        </Grid>
+                                        <ItemsControl x:Name="ModelChipList"
+                                                      Margin="0,4,0,0"
+                                                      Visibility="Collapsed">
+                                            <ItemsControl.ItemsPanel>
+                                                <ItemsPanelTemplate>
+                                                    <WrapPanel Orientation="Horizontal" />
+                                                </ItemsPanelTemplate>
+                                            </ItemsControl.ItemsPanel>
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Border Background="{DynamicResource ControlBackground}"
+                                                            BorderBrush="{DynamicResource PanelBorder}"
+                                                            BorderThickness="1"
+                                                            CornerRadius="4" Padding="6,2" Margin="0,0,4,4"
+                                                            Cursor="Hand">
+                                                        <Grid>
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="Auto" />
+                                                                <ColumnDefinition Width="Auto" />
+                                                            </Grid.ColumnDefinitions>
+                                                            <TextBlock Grid.Column="0"
+                                                                       Text="{Binding DisplayName}"
+                                                                       FontSize="11"
+                                                                       Foreground="{DynamicResource PrimaryText}"
+                                                                       VerticalAlignment="Center" />
+                                                            <Button Grid.Column="1"
+                                                                    Content="×" FontSize="10"
+                                                                    Padding="2,0" Margin="4,0,0,0"
+                                                                    BorderThickness="0"
+                                                                    Background="Transparent"
+                                                                    Foreground="{DynamicResource MutedText}"
+                                                                    Tag="{Binding ModelName}"
+                                                                    Click="RemoveModelChip_Click" />
+                                                        </Grid>
+                                                    </Border>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </StackPanel>
+                                </Grid>
+
+                                <TextBlock Style="{StaticResource SectionLabel}" Text="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[AI_BaseUrl]}" Margin="0,10,0,0" />
+                                <TextBox x:Name="BaseUrlBox" Text="https://api.openai.com/v1" Style="{StaticResource FlatInput}" />
+
+                                <TextBlock Style="{StaticResource SectionLabel}" Text="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[AI_ApiKey]}" Margin="0,10,0,0" />
+                                <PasswordBox x:Name="ApiKeyBox" Style="{StaticResource FlatPassword}" />
+                                <TextBlock Style="{StaticResource HintText}" Text="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[AI_ApiKeyHint]}" />
+                            </StackPanel>
+                        </Border>
+
+                        <!-- ============ 模型参数 ============ -->
+                        <Border Style="{StaticResource SectionCard}">
+                            <StackPanel>
+                                <TextBlock Text="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[AI_ModelParams]}" Style="{StaticResource SectionTitle}" />
+
+                                <!-- Temperature -->
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="80" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Style="{StaticResource SectionLabel}" Text="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[AI_Temperature]}" />
+                                        <Slider x:Name="TemperatureSlider" Minimum="0" Maximum="2"
+                                                TickFrequency="0.1" Value="0.7"
+                                                IsSnapToTickEnabled="True" />
+                                    </StackPanel>
+
+                                    <TextBlock Grid.Column="1"
+                                               Text="{Binding ElementName=TemperatureSlider, Path=Value, StringFormat={}{0:N1}}"
+                                               VerticalAlignment="Bottom"
+                                               Margin="10,0,0,2"
+                                               FontSize="13" FontWeight="SemiBold"
+                                               Foreground="{DynamicResource Accent}" />
+                                </Grid>
+
+                                <!-- Reasoning Effort -->
+                                <Grid Margin="0,12,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <StackPanel Grid.Column="0" Margin="0,0,6,0">
+                                        <TextBlock Style="{StaticResource SectionLabel}" Text="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[AI_ReasoningEffort]}" />
+                                        <ComboBox x:Name="ReasoningEffortCombo" MinHeight="30"
+                                                  Background="{DynamicResource ControlBackground}"
+                                                  Foreground="{DynamicResource PrimaryText}"
+                                                  BorderBrush="{DynamicResource ControlBorder}"
+                                                  SelectionChanged="ReasoningEffortCombo_SelectionChanged">
+                                            <ComboBoxItem Content="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[AI_ReasoningOff], Mode=OneTime}" Tag="off" />
+                                            <ComboBoxItem Content="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[AI_ReasoningMinimal], Mode=OneTime}" Tag="minimal" />
+                                            <ComboBoxItem Content="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[AI_ReasoningLow], Mode=OneTime}" Tag="low" />
+                                            <ComboBoxItem Content="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[AI_ReasoningMedium], Mode=OneTime}" Tag="medium" />
+                                            <ComboBoxItem Content="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[AI_ReasoningHigh], Mode=OneTime}" Tag="high" />
+                                            <ComboBoxItem Content="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[AI_ReasoningMax], Mode=OneTime}" Tag="max" />
+                                        </ComboBox>
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Column="1" Margin="6,0,0,0">
+                                        <TextBlock Style="{StaticResource SectionLabel}" Text="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[AI_MaxTokens]}" />
+                                        <TextBox Text="65536" Style="{StaticResource FlatInput}" />
+                                    </StackPanel>
+                                </Grid>
+
+                                <Grid Margin="0,12,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <StackPanel Grid.Column="0" Margin="0,0,6,0">
+                                        <TextBlock Style="{StaticResource SectionLabel}" Text="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[AI_MaxTokens]}" />
+                                        <TextBox x:Name="MaxTokensBox" Text="65536" Style="{StaticResource FlatInput}" />
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Column="1" Margin="6,0,0,0">
+                                        <TextBlock Style="{StaticResource SectionLabel}" Text="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[AI_ContextLimit]}" />
+                                        <TextBox x:Name="ContextLimitBox" Text="65536" Style="{StaticResource FlatInput}"
+                                                 LostFocus="ContextLimitBox_LostFocus"
+                                                 KeyDown="ContextLimitBox_KeyDown" />
+                                    </StackPanel>
+                                </Grid>
+
+                                <Slider x:Name="ContextLimitSlider" Minimum="4096" Maximum="1048576"
+                                        TickFrequency="4096" Value="65536"
+                                        IsSnapToTickEnabled="True"
+                                        Margin="0,6,0,0" />
+
+                                <TextBlock Style="{StaticResource HintText}" Margin="0,4,0,0">
+                                    <Run Text="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[AI_CompressHint], Mode=OneTime}" />
+                                    <Run Text="  ·  " />
+                                    <Run Text="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[AI_Current], Mode=OneTime}" />
+                                    <Run Text="{Binding ElementName=ContextLimitSlider, Path=Value, StringFormat={}{0:N0}}" />
+                                    <Run Text=" Token" />
+                                </TextBlock>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- ============ 连接测试 ============ -->
+                        <Border Style="{StaticResource SectionCard}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+
+                                <Button Grid.Column="0" x:Name="TestButton"
+                                        Content="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[AI_TestConnection]}" Padding="14,6" MinHeight="30"
+                                        Click="TestButton_Click"
+                                        Style="{DynamicResource AccentButton}" />
+
+                                <TextBlock Grid.Column="1" x:Name="TestResultText"
+                                           Margin="12,0,0,0"
+                                           VerticalAlignment="Center"
+                                           TextWrapping="Wrap" FontSize="11" />
+                            </Grid>
+                        </Border>
+
+                        <!-- ============ JSON 预览 ============ -->
+                        <Border Style="{StaticResource SectionCard}"
+                                Margin="0,0,0,4">
+                            <StackPanel>
+                                <TextBlock Text="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[AI_ConfigPreview]}"
+                                           FontSize="11" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource MutedText}"
+                                           Margin="0,0,0,6" />
+                                <TextBox x:Name="ConfigFileBox"
+                                         AcceptsReturn="True" TextWrapping="NoWrap"
+                                         MinHeight="60"
+                                         VerticalScrollBarVisibility="Disabled"
+                                         FontFamily="Consolas" FontSize="10"
+                                         Background="{DynamicResource ControlBackground}"
+                                         Foreground="{DynamicResource PrimaryText}"
+                                         BorderBrush="{DynamicResource ControlBorder}" />
+                            </StackPanel>
+                        </Border>
+
+                    </StackPanel>
+                </ScrollViewer>
+
+                <!-- ── 侧面垂直滚动滑块（自定义窄条，始终可见） ── -->
+                <ScrollBar Grid.Column="1"
+                           x:Name="SideScrollBar"
+                           Style="{StaticResource VerticalScrollSlider}"
+                           Minimum="0" Maximum="1"
+                           SmallChange="0.05" LargeChange="0.15"
+                           Visibility="Visible"
+                           ValueChanged="SideScrollBar_ValueChanged" />
+
+            </Grid>
+        </Grid>
+    </Grid>
+</Window>

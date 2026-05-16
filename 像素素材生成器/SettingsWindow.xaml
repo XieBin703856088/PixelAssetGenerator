@@ -1,0 +1,470 @@
+<Window x:Class="PixelAssetGenerator.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:loc="clr-namespace:PixelAssetGenerator.Services.Localization"
+        Title="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[Settings_Title]}"
+        Width="680" Height="580"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        Background="{DynamicResource WindowBackground}"
+        Foreground="{DynamicResource PrimaryText}">
+
+    <Window.Resources>
+        <ResourceDictionary>
+            <!-- ── Card Style ── -->
+            <Style x:Key="SectionCard" TargetType="Border">
+                <Setter Property="Background" Value="{DynamicResource PanelBackground}" />
+                <Setter Property="BorderBrush" Value="{DynamicResource PanelBorder}" />
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="CornerRadius" Value="8" />
+                <Setter Property="Padding" Value="16" />
+                <Setter Property="Margin" Value="0,0,0,12" />
+            </Style>
+
+            <Style x:Key="SectionTitle" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="13" />
+                <Setter Property="FontWeight" Value="SemiBold" />
+                <Setter Property="Margin" Value="0,0,0,12" />
+            </Style>
+
+            <Style x:Key="InlineLabel" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="11" />
+                <Setter Property="FontWeight" Value="SemiBold" />
+                <Setter Property="Foreground" Value="{DynamicResource MutedText}" />
+                <Setter Property="VerticalAlignment" Value="Center" />
+            </Style>
+
+            <Style x:Key="HintText" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="10.5" />
+                <Setter Property="Foreground" Value="{DynamicResource MutedText}" />
+                <Setter Property="TextWrapping" Value="Wrap" />
+                <Setter Property="Margin" Value="0,4,0,0" />
+            </Style>
+
+            <!-- ── Side nav item style ── -->
+            <Style x:Key="NavItem" TargetType="Border">
+                <Setter Property="Height" Value="36" />
+                <Setter Property="Cursor" Value="Hand" />
+                <Setter Property="CornerRadius" Value="6" />
+                <Setter Property="Padding" Value="12,0" />
+                <Setter Property="Margin" Value="6,1" />
+            </Style>
+
+            <!-- ── Theme Card style ── -->
+            <Style x:Key="ThemeCard" TargetType="Border">
+                <Setter Property="CornerRadius" Value="8" />
+                <Setter Property="BorderThickness" Value="2" />
+                <Setter Property="Width" Value="140" />
+                <Setter Property="Height" Value="84" />
+                <Setter Property="Cursor" Value="Hand" />
+            </Style>
+
+            <!-- ── Shortcut list header style ── -->
+            <Style x:Key="ShortcutHeader" TargetType="Border">
+                <Setter Property="Background" Value="{DynamicResource NodeHeaderBackground}" />
+                <Setter Property="CornerRadius" Value="6,6,0,0" />
+                <Setter Property="Padding" Value="12,7" />
+            </Style>
+
+            <!-- ── Shortcut row border ── -->
+            <Style x:Key="ShortcutRow" TargetType="Border">
+                <Setter Property="BorderBrush" Value="{DynamicResource ControlBorder}" />
+                <Setter Property="BorderThickness" Value="0,0,0,1" />
+                <Setter Property="Padding" Value="12,7" />
+            </Style>
+
+            <!-- ── Readonly path display ── -->
+            <Style x:Key="PathDisplay" TargetType="Border">
+                <Setter Property="Background" Value="{DynamicResource ControlBackground}" />
+                <Setter Property="BorderBrush" Value="{DynamicResource ControlBorder}" />
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="CornerRadius" Value="4" />
+                <Setter Property="Padding" Value="8,5" />
+                <Setter Property="Height" Value="28" />
+            </Style>
+        </ResourceDictionary>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- ══════ 顶栏 ══════ -->
+        <Border Grid.Row="0"
+                Background="{DynamicResource PanelBackground}"
+                BorderBrush="{DynamicResource PanelBorder}"
+                BorderThickness="0,0,0,1"
+                Padding="16,10,16,10">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Column="0"
+                           Text="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[Settings_Title]}"
+                           FontSize="15" FontWeight="Bold"
+                           VerticalAlignment="Center" />
+
+                <StackPanel Grid.Column="2" Orientation="Horizontal">
+                    <Button x:Name="ResetShortcutsButton"
+                            Content="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[Settings_ResetShortcuts]}"
+                            Padding="14,5" MinWidth="70" MinHeight="26"
+                            Margin="0,0,8,0"
+                            Click="ResetShortcuts_Click"
+                            Visibility="Collapsed" />
+                    <Button Content="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[Settings_Cancel]}"
+                            Padding="14,5" MinWidth="70" MinHeight="26"
+                            Margin="0,0,8,0"
+                            Click="Cancel_Click" />
+                    <Button Content="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[Settings_OK]}"
+                            Padding="14,5" MinWidth="70" MinHeight="26"
+                            IsDefault="True"
+                            Click="OK_Click"
+                            Style="{DynamicResource AccentButton}" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- ══════ 主体：左导航 + 右内容 ══════ -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="160" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <!-- ── 左侧导航 ── -->
+            <Border Grid.Column="0"
+                    Background="{DynamicResource PanelBackgroundAlt}"
+                    BorderBrush="{DynamicResource PanelBorder}"
+                    BorderThickness="0,0,1,0">
+                <StackPanel Margin="0,12,0,0">
+                    <Border x:Name="NavGeneral"
+                            Style="{StaticResource NavItem}"
+                            Background="{DynamicResource Accent}"
+                            MouseLeftButtonUp="NavGeneral_Click">
+                        <TextBlock Text="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[Settings_TabGeneral]}"
+                                   FontSize="12" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource AccentForeground}"
+                                   VerticalAlignment="Center" />
+                    </Border>
+                    <Border x:Name="NavShortcuts"
+                            Style="{StaticResource NavItem}"
+                            MouseLeftButtonUp="NavShortcuts_Click">
+                        <TextBlock Text="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[Settings_TabShortcuts]}"
+                                   FontSize="12"
+                                   Foreground="{DynamicResource PrimaryText}"
+                                   VerticalAlignment="Center" />
+                    </Border>
+                </StackPanel>
+            </Border>
+
+            <!-- ── 分割线 ── -->
+            <Border Grid.Column="1" Width="1" Background="{DynamicResource PanelBorder}" />
+
+            <!-- ── 右侧内容区 ── -->
+            <ScrollViewer Grid.Column="2"
+                          VerticalScrollBarVisibility="Hidden"
+                          Padding="16,12,16,16"
+                          Background="Transparent"
+                          BorderThickness="0">
+                <Grid>
+
+                <!-- ============ 常规设置 ============ -->
+                <StackPanel x:Name="GeneralPanel">
+
+                    <!-- ── 语言 ── -->
+                    <Border Style="{StaticResource SectionCard}">
+                        <StackPanel>
+                            <TextBlock Text="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[Lang_Language]}"
+                                       Style="{StaticResource SectionTitle}" />
+
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+
+                                <ComboBox x:Name="LanguageCombo"
+                                          Grid.Column="0"
+                                          Height="30"
+                                          MinWidth="220"
+                                          HorizontalAlignment="Left"
+                                          SelectionChanged="LanguageCombo_SelectionChanged">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding DisplayName}"
+                                                       Padding="4,3"
+                                                       VerticalAlignment="Center" />
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+
+                                <Button Grid.Column="1"
+                                        x:Name="OpenLangFolderButton"
+                                        Width="36" Height="30"
+                                        Padding="0"
+                                        Margin="6,0,0,0"
+                                        ToolTip="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[Settings_OpenLangFolder]}"
+                                        Click="OpenLangFolder_Click">
+                                    <TextBlock Text="📂" FontSize="16" VerticalAlignment="Center" HorizontalAlignment="Center" />
+                                </Button>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- ── 主题 ── -->
+                    <Border Style="{StaticResource SectionCard}">
+                        <StackPanel>
+                            <TextBlock Text="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[Settings_ThemeSection]}"
+                                       Style="{StaticResource SectionTitle}" />
+
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                <Border x:Name="DarkThemeCard"
+                                        Style="{StaticResource ThemeCard}"
+                                        BorderBrush="{DynamicResource Accent}"
+                                        Background="#1A1F2A"
+                                        Margin="0,0,16,0"
+                                        MouseLeftButtonUp="DarkThemeCard_Click">
+                                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                                        <TextBlock Text="🌙" FontSize="26" HorizontalAlignment="Center" />
+                                        <TextBlock Text="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[Settings_DarkTheme]}"
+                                                   FontSize="11" HorizontalAlignment="Center"
+                                                   Foreground="#E6E6E6" Margin="0,4,0,0" />
+                                    </StackPanel>
+                                </Border>
+                                <Border x:Name="LightThemeCard"
+                                        Style="{StaticResource ThemeCard}"
+                                        BorderBrush="{DynamicResource ControlBorder}"
+                                        Background="#F4F6FB"
+                                        MouseLeftButtonUp="LightThemeCard_Click">
+                                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                                        <TextBlock Text="☀" FontSize="26" HorizontalAlignment="Center" />
+                                        <TextBlock Text="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[Settings_LightTheme]}"
+                                                   FontSize="11" HorizontalAlignment="Center"
+                                                   Foreground="#181C28" Margin="0,4,0,0" />
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- ── 节点扩展路径 ── -->
+                    <Border Style="{StaticResource SectionCard}">
+                        <StackPanel>
+                            <TextBlock Text="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[Settings_NodesSection]}"
+                                       Style="{StaticResource SectionTitle}" />
+
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+
+                                <TextBlock Grid.Row="0" Grid.Column="0"
+                                           Style="{StaticResource InlineLabel}"
+                                           Text="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[Settings_NodesPath]}"
+                                           Margin="0,0,8,0" />
+
+                                <Border Grid.Row="0" Grid.Column="1" Style="{StaticResource PathDisplay}">
+                                    <TextBlock x:Name="NodesPathText"
+                                               FontSize="11"
+                                               VerticalAlignment="Center"
+                                               TextTrimming="CharacterEllipsis"
+                                               Foreground="{DynamicResource PrimaryText}" />
+                                </Border>
+
+                                <Button Grid.Row="0" Grid.Column="2"
+                                        x:Name="BrowseNodesButton"
+                                        Height="28" Padding="8,0"
+                                        Margin="6,0,0,0"
+                                        Content="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[Settings_BrowseNodes]}"
+                                        Click="BrowseNodes_Click" />
+
+                                <TextBlock Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3"
+                                           Style="{StaticResource HintText}"
+                                           Text="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[Settings_NodesPathHint]}" />
+
+                                <Button Grid.Row="2" Grid.Column="2"
+                                        x:Name="ResetNodesPathButton"
+                                        Height="24" Padding="6,0"
+                                        Margin="0,6,0,0"
+                                        FontSize="10"
+                                        Content="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[Settings_ResetNodesPath]}"
+                                        Click="ResetNodesPath_Click" />
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- ── 脚本缓存路径 ── -->
+                    <Border Style="{StaticResource SectionCard}" Margin="0,0,0,4">
+                        <StackPanel>
+                            <TextBlock Text="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[Settings_CacheSection]}"
+                                       Style="{StaticResource SectionTitle}" />
+
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+
+                                <TextBlock Grid.Column="0"
+                                           Style="{StaticResource InlineLabel}"
+                                           Text="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[Settings_CachePath]}"
+                                           Margin="0,0,8,0" />
+
+                                <Border Grid.Column="1" Style="{StaticResource PathDisplay}">
+                                    <TextBlock x:Name="CachePathText"
+                                               FontSize="11"
+                                               VerticalAlignment="Center"
+                                               TextTrimming="CharacterEllipsis"
+                                               Foreground="{DynamicResource PrimaryText}" />
+                                </Border>
+
+                                <Button Grid.Column="2"
+                                        x:Name="OpenCacheFolderButton"
+                                        Height="28" Padding="8,0"
+                                        Margin="6,0,0,0"
+                                        Content="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[Settings_OpenCacheFolder]}"
+                                        Click="OpenCacheFolder_Click" />
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                </StackPanel>
+
+                <!-- ============ 快捷键设置 ============ -->
+                <StackPanel x:Name="ShortcutsPanel" Visibility="Collapsed">
+
+                    <Border Style="{StaticResource SectionCard}" Margin="0,0,0,4">
+                        <StackPanel>
+                            <TextBlock Text="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[Settings_ShortcutSection]}"
+                                       Style="{StaticResource SectionTitle}" />
+
+                            <Border Style="{StaticResource ShortcutHeader}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="140" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="80" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0"
+                                               Text="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[Settings_Operation]}"
+                                               FontWeight="SemiBold" FontSize="11"
+                                               Foreground="{DynamicResource MutedText}" />
+                                    <TextBlock Grid.Column="1"
+                                               Text="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[Settings_Shortcut]}"
+                                               FontWeight="SemiBold" FontSize="11"
+                                               Foreground="{DynamicResource MutedText}" />
+                                </Grid>
+                            </Border>
+
+                            <Border BorderBrush="{DynamicResource ControlBorder}" BorderThickness="1,0,1,1"
+                                    CornerRadius="0,0,6,6">
+                                <ItemsControl x:Name="ShortcutList">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Style="{StaticResource ShortcutRow}">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="140" />
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="80" />
+                                                    </Grid.ColumnDefinitions>
+
+                                                    <TextBlock Grid.Column="0"
+                                                               Text="{Binding ActionName}"
+                                                               VerticalAlignment="Center"
+                                                               FontSize="11" />
+
+                                                    <Border Grid.Column="1" VerticalAlignment="Center">
+                                                        <TextBlock x:Name="BindingText"
+                                                                   Text="{Binding BindingText}"
+                                                                   VerticalAlignment="Center"
+                                                                   FontSize="11"
+                                                                   Foreground="{DynamicResource Accent}">
+                                                            <TextBlock.Style>
+                                                                <Style TargetType="TextBlock">
+                                                                    <Setter Property="Visibility" Value="Visible" />
+                                                                    <Style.Triggers>
+                                                                        <DataTrigger Binding="{Binding IsRecording}" Value="True">
+                                                                            <Setter Property="Visibility" Value="Collapsed" />
+                                                                        </DataTrigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </TextBlock.Style>
+                                                        </TextBlock>
+                                                    </Border>
+
+                                                    <TextBlock Grid.Column="1"
+                                                               Text="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[Settings_PressKey]}"
+                                                               VerticalAlignment="Center"
+                                                               FontSize="11"
+                                                               FontStyle="Italic"
+                                                               Foreground="{DynamicResource RecordingHighlight}">
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="TextBlock">
+                                                                <Setter Property="Visibility" Value="Collapsed" />
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding IsRecording}" Value="True">
+                                                                        <Setter Property="Visibility" Value="Visible" />
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </TextBlock.Style>
+                                                    </TextBlock>
+
+                                                    <Button Grid.Column="2"
+                                                            Tag="{Binding}"
+                                                            Height="24" FontSize="10"
+                                                            Padding="4,2"
+                                                            Click="EditShortcut_Click"
+                                                            VerticalAlignment="Center">
+                                                        <Button.Style>
+                                                            <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+                                                                <Setter Property="Content" Value="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[Settings_Edit]}" />
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding IsRecording}" Value="True">
+                                                                        <Setter Property="Content" Value="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[Settings_Cancel]}" />
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </Button.Style>
+                                                    </Button>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </Border>
+
+                            <TextBlock Style="{StaticResource HintText}"
+                                       Text="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[Settings_ShortcutHint]}"
+                                       Margin="0,8,0,0" />
+                        </StackPanel>
+                    </Border>
+
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,0,4">
+                        <Button Content="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[Settings_ResetShortcuts]}"
+                                Height="30" Padding="14,5"
+                                Click="ResetShortcuts_Click" />
+                    </StackPanel>
+
+                </StackPanel>
+
+                </Grid>
+            </ScrollViewer>
+        </Grid>
+    </Grid>
+</Window>

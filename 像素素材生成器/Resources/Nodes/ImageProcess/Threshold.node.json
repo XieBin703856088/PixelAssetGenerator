@@ -1,0 +1,215 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "Threshold",
+    "displayName": {
+      "zh-Hans": "阈值",
+      "en": "Threshold"
+    },
+    "category": "ImageProcess",
+    "description": {
+      "zh-Hans": "应用带有平滑过渡带和带通模式的阈值滤镜。",
+      "en": "Applies a threshold filter with smooth transition band and band-pass mode."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "遮罩",
+          "en": "Mask"
+        },
+        "type": "Mask"
+      }
+    ],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "遮罩",
+          "en": "Mask"
+        },
+        "type": "Mask"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "阈值",
+        "en": "Threshold"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "柔化",
+        "en": "Softness"
+      },
+      "kind": "Number",
+      "default": 0.1,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "模式",
+        "en": "Mode"
+      },
+      "kind": "Choice",
+      "default": "blackWhite",
+      "choices": [
+        {
+          "value": "blackWhite",
+          "label": {
+            "zh-Hans": "黑白",
+            "en": "blackWhite"
+          }
+        },
+        {
+          "value": "preserveColor",
+          "label": {
+            "zh-Hans": "保留颜色",
+            "en": "preserveColor"
+          }
+        },
+        {
+          "value": "bandPass",
+          "label": {
+            "zh-Hans": "带通",
+            "en": "bandPass"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "zh-Hans": "下限",
+        "en": "Lower"
+      },
+      "kind": "Number",
+      "default": 0.3,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "上限",
+        "en": "Upper"
+      },
+      "kind": "Number",
+      "default": 0.7,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "前景颜色",
+        "en": "Fg Color"
+      },
+      "kind": "Color",
+      "default": "#FFFFFFFF"
+    },
+    {
+      "name": {
+        "zh-Hans": "背景颜色",
+        "en": "Bg Color"
+      },
+      "kind": "Color",
+      "default": "#000000FF"
+    },
+    {
+      "name": {
+        "zh-Hans": "通道",
+        "en": "Channel"
+      },
+      "kind": "Choice",
+      "default": "luminance",
+      "choices": [
+        {
+          "value": "luminance",
+          "label": {
+            "zh-Hans": "亮度",
+            "en": "luminance"
+          }
+        },
+        {
+          "value": "R",
+          "label": {
+            "zh-Hans": "R通道",
+            "en": "R"
+          }
+        },
+        {
+          "value": "G",
+          "label": {
+            "zh-Hans": "G通道",
+            "en": "G"
+          }
+        },
+        {
+          "value": "B",
+          "label": {
+            "zh-Hans": "B通道",
+            "en": "B"
+          }
+        },
+        {
+          "value": "A",
+          "label": {
+            "zh-Hans": "Alpha通道",
+            "en": "A"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "zh-Hans": "反相",
+        "en": "Invert"
+      },
+      "kind": "Boolean",
+      "default": false
+    }
+  ],
+  "ai": {
+    "capabilities": ["mask", "effect"],
+    "triggers": {
+      "zh-Hans": "阈值, 二值化, 黑白阈值, 带通, 亮度阈值",
+      "en": "threshold, binary, black and white, band pass, luminance threshold"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "对图像应用阈值以创建黑白二值遮罩。",
+      "en": "Apply a threshold to an image to create a binary black-and-white mask."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar input = inputs.Length > 0 && inputs[0] != null ? inputs[0]! : new PixelBuffer(context.TileSize, context.TileSize);\nvar threshold = GetFloat(parameters, \"threshold\", 0.5f);\nvar softness = Math.Max(0.001f, GetFloat(parameters, \"softness\", 0.1f));\nvar mode = GetChoice(parameters, \"mode\", \"blackWhite\");\nvar lower = GetFloat(parameters, \"lower\", 0.3f);\nvar upper = GetFloat(parameters, \"upper\", 0.7f);\nvar fgColor = GetColor(parameters, \"fgColor\", Colors.White);\nvar bgColor = GetColor(parameters, \"bgColor\", Colors.Black);\nvar channel = GetChoice(parameters, \"channel\", \"luminance\");\nvar invert = GetBool(parameters, \"invert\", false);\n\nvar size = context.TileSize;\nvar buffer = new PixelBuffer(size, size);\n\nvar fgR = fgColor.R / 255f; var fgG = fgColor.G / 255f; var fgB = fgColor.B / 255f;\nvar bgR = bgColor.R / 255f; var bgG = bgColor.G / 255f; var bgB = bgColor.B / 255f;\n\nbuffer.ParallelForEachPixel((x, y) =>\n{\n    var (r, g, b, a) = input.GetPixel(x, y);\n\n    // Extract channel value\n    var val = channel switch\n    {\n        \"R\" => r,\n        \"G\" => g,\n        \"B\" => b,\n        \"A\" => a,\n        _ => r * 0.299f + g * 0.587f + b * 0.114f  // luminance\n    };\n\n    float t;\n    if (mode == \"bandPass\")\n    {\n        // Band-pass: smoothstep between lower and upper\n        var tLow = (val - lower + softness * 0.5f) / softness;\n        var tHigh = (upper - val + softness * 0.5f) / softness;\n        t = Math.Clamp(tLow, 0f, 1f) * Math.Clamp(tHigh, 0f, 1f);\n    }\n    else\n    {\n        t = (val - threshold + softness * 0.5f) / softness;\n        t = Math.Clamp(t, 0f, 1f);\n    }\n\n    if (invert) t = 1f - t;\n\n    if (mode == \"blackWhite\")\n    {\n        buffer.SetPixel(x, y,\n            Lerp(bgR, fgR, t),\n            Lerp(bgG, fgG, t),\n            Lerp(bgB, fgB, t), 1f);\n    }\n    else\n    {\n        // preserveColor: blend between original and foreground based on threshold\n        buffer.SetPixel(x, y,\n            Lerp(r, fgR, t),\n            Lerp(g, fgG, t),\n            Lerp(b, fgB, t), a);\n    }\n});\n\nreturn buffer;\n}"
+  }
+}

@@ -1,0 +1,264 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "Shape",
+    "displayName": {
+      "zh-Hans": "形状",
+      "en": "Shape"
+    },
+    "category": "Pattern",
+    "description": {
+      "zh-Hans": "生成适用于像素艺术的基础几何形状（圆形、矩形、菱形、多边形、自定义）。自定义绘制形状从导出的点列表解析并确定性栅格化，确保节点输出与绘制的几何形状一致。",
+      "en": "Generates basic geometric shapes (circle, rectangle, diamond, polygon, custom) suitable for pixel art. Custom-drawn shapes are interpreted from exported point lists and rasterized deterministically so node output matches the drawn geometry."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "遮罩",
+          "en": "Mask"
+        },
+        "type": "Mask"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "形状",
+        "en": "Shape"
+      },
+      "kind": "Choice",
+      "default": "circle",
+      "choices": [
+        {
+          "value": "circle",
+          "label": {
+            "zh-Hans": "圆形",
+            "en": "circle"
+          }
+        },
+        {
+          "value": "rectangle",
+          "label": {
+            "zh-Hans": "矩形",
+            "en": "rectangle"
+          }
+        },
+        {
+          "value": "diamond",
+          "label": {
+            "zh-Hans": "菱形",
+            "en": "diamond"
+          }
+        },
+        {
+          "value": "triangle",
+          "label": {
+            "zh-Hans": "三角形",
+            "en": "triangle"
+          }
+        },
+        {
+          "value": "pentagon",
+          "label": {
+            "zh-Hans": "pentagon",
+            "en": "pentagon"
+          }
+        },
+        {
+          "value": "hexagon",
+          "label": {
+            "zh-Hans": "六边形",
+            "en": "hexagon"
+          }
+        },
+        {
+          "value": "star",
+          "label": {
+            "zh-Hans": "星形",
+            "en": "star"
+          }
+        },
+        {
+          "value": "cross",
+          "label": {
+            "zh-Hans": "十字",
+            "en": "cross"
+          }
+        },
+        {
+          "value": "ring",
+          "label": {
+            "zh-Hans": "ring",
+            "en": "ring"
+          }
+        },
+        {
+          "value": "custom",
+          "label": {
+            "zh-Hans": "自定义",
+            "en": "custom"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "zh-Hans": "自定义形状",
+        "en": "Custom Shape"
+      },
+      "kind": "PointList",
+      "default": []
+    },
+    {
+      "name": {
+        "zh-Hans": "大小",
+        "en": "Size"
+      },
+      "kind": "Number",
+      "default": 0.6,
+      "min": 0.1,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "X缩放",
+        "en": "Scale X"
+      },
+      "kind": "Number",
+      "default": 1.0,
+      "min": 0.1,
+      "max": 5.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "Y缩放",
+        "en": "Scale Y"
+      },
+      "kind": "Number",
+      "default": 1.0,
+      "min": 0.1,
+      "max": 5.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "边缘硬度",
+        "en": "Edge Hardness"
+      },
+      "kind": "Number",
+      "default": 1.0,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "颜色",
+        "en": "Color"
+      },
+      "kind": "Color",
+      "default": "#FFFFFFFF"
+    },
+    {
+      "name": {
+        "zh-Hans": "旋转",
+        "en": "Rotation"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 360.0,
+      "step": 1.0
+    },
+    {
+      "name": {
+        "zh-Hans": "X偏移",
+        "en": "Offset X"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": -0.5,
+      "max": 0.5,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "Y偏移",
+        "en": "Offset Y"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": -0.5,
+      "max": 0.5,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "描边宽度",
+        "en": "Stroke Width"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 0.3,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "描边颜色",
+        "en": "Stroke Color"
+      },
+      "kind": "Color",
+      "default": "#000000FF"
+    },
+    {
+      "name": {
+        "zh-Hans": "抖动",
+        "en": "Dither"
+      },
+      "kind": "Boolean",
+      "default": false
+    },
+    {
+      "name": {
+        "zh-Hans": "反相",
+        "en": "Invert"
+      },
+      "kind": "Boolean",
+      "default": false
+    }
+  ],
+  "ai": {
+    "capabilities": ["pattern", "geometric", "tiling"],
+    "triggers": {
+      "zh-Hans": "形状, 几何形状, 圆形, 矩形, 多边形, 星形",
+      "en": "shape, geometric shape, circle, rectangle, polygon, star"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "生成一个带描边的圆形，用作像素艺术中的按钮或装饰元素。",
+      "en": "Generate a circle with stroke for use as a button or decorative element in pixel art."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar shape = GetChoice(parameters, \"shape\", \"circle\");\n        var sizeParam = GetFloat(parameters, \"size\", 0.6f);\n        var scaleX = GetFloat(parameters, \"scaleX\", 1f);\n        var scaleY = GetFloat(parameters, \"scaleY\", 1f);\n        var hardness = GetFloat(parameters, \"edgeHardness\", 1f);\n        var fillColor = GetColor(parameters, \"color\", Colors.White);\n        var r = fillColor.R / 255f;\n        var g = fillColor.G / 255f;\n        var b = fillColor.B / 255f;\n        var rotation = GetFloat(parameters, \"rotation\", 0f) * MathF.PI / 180f;\n        var offsetX = GetFloat(parameters, \"offsetX\", 0f);\n        var offsetY = GetFloat(parameters, \"offsetY\", 0f);\n        var strokeWidth = GetFloat(parameters, \"strokeWidth\", 0f);\n        var strokeColor = GetColor(parameters, \"strokeColor\", Colors.Black);\n        var strokeR = strokeColor.R / 255f;\n        var strokeG = strokeColor.G / 255f;\n        var strokeB = strokeColor.B / 255f;\n        var dither = GetBool(parameters, \"dither\");\n        var invert = GetBool(parameters, \"invert\");\n\n        // Parse exported point list for custom shapes into sub-paths.\n        List<(List<Point> sampled, bool closed, float width, Color color)>? sampledPaths = null;\n        if (shape == \"custom\" && parameters.TryGetValue(\"customShape\", out var ptObj) && ptObj is IReadOnlyList<Point> pts && pts.Count >= 1)\n        {\n            sampledPaths = new();\n            var segment = new List<Point>();\n            float segWidth = 1f;\n            var segColor = Colors.White;\n            foreach (var pt in pts)\n            {\n                // Editor state section marker — everything after (NaN, ≤-9000) is editor\n                // metadata used by ShapeDrawingWindow; stop raster processing here.\n                if (double.IsNaN(pt.X) && !double.IsNaN(pt.Y) && pt.Y <= -9000.0) break;\n\n                // Color marker: (NegativeInfinity, packedRgb) encodes the per-stroke draw color.\n                if (double.IsNegativeInfinity(pt.X))\n                {\n                    var packed = (long)Math.Max(0.0, pt.Y);\n                    segColor = Color.FromRgb((byte)(packed & 0xFF), (byte)((packed >> 8) & 0xFF), (byte)((packed >> 16) & 0xFF));\n                    continue;\n                }\n\n                // Fill polygon marker: (PositiveInfinity, packedRgb) — the preceding points form\n                // a closed filled polygon. Store with sentinel width = -1 to distinguish from strokes.\n                if (double.IsPositiveInfinity(pt.X))\n                {\n                    var packed = (long)Math.Max(0.0, pt.Y);\n                    var fillCol = Color.FromRgb((byte)(packed & 0xFF), (byte)((packed >> 8) & 0xFF), (byte)((packed >> 16) & 0xFF));\n                    if (segment.Count >= 3)\n                        sampledPaths.Add((new List<Point>(segment), true, -1f, fillCol));\n                    segment.Clear();\n                    segWidth = 1f;\n                    segColor = Colors.White;\n                    continue;\n                }\n\n                // Separator: (NaN, NaN) or (NaN, width)\n                if (double.IsNaN(pt.X) || double.IsNaN(pt.Y))\n                {\n                    if (double.IsNaN(pt.X) && !double.IsNaN(pt.Y)) segWidth = (float)pt.Y;\n                    if (segment.Count > 0)\n                    {\n                        // Only treat a path as \"closed\" if its first and last points actually match\n                        // (this avoids implicitly connecting freehand strokes when the drawing\n                        // surface didn't intend a closed polygon). This keeps the ShapeDrawingWindow\n                        // rendering and the node rasterization consistent.\n                        var closed = false;\n                        if (segment.Count >= 3)\n                        {\n                            var a = segment[0];\n                            var last = segment[segment.Count - 1];\n                            const double eps = 1e-6;\n                            if (Math.Abs(a.X - last.X) < eps && Math.Abs(a.Y - last.Y) < eps)\n                                closed = true;\n                        }\n\n\n                        sampledPaths.Add((new List<Point>(segment), closed, Math.Max(1f, segWidth), segColor));\n                        segment.Clear();\n                        segWidth = 1f;\n                        segColor = Colors.White;\n                    }\n                }\n                else\n                {\n                    segment.Add(pt);\n                }\n            }\n            if (segment.Count > 0)\n            {\n                var closed = false;\n                if (segment.Count >= 3)\n                {\n                    var a = segment[0];\n                    var last = segment[segment.Count - 1];\n                    const double eps = 1e-6;\n                    if (Math.Abs(a.X - last.X) < eps && Math.Abs(a.Y - last.Y) < eps)\n                        closed = true;\n                }\n                sampledPaths.Add((new List<Point>(segment), closed, Math.Max(1f, segWidth), segColor));\n            }\n        }\n\n        var size = context.TileSize;\n        var buffer = new PixelBuffer(size, size);\n        var halfSize = size * 0.5f;\n        var radius = halfSize * sizeParam * 1.4142f;\n        var cosR = MathF.Cos(rotation);\n        var sinR = MathF.Sin(rotation);\n\n        // Rasterize each stroke individually to build a combined boolean mask and a\n        // per-pixel color mask. Rendering each stroke separately preserves the draw\n        // colors from ShapeDrawingWindow so the node output matches the preview.\n        bool[,]? customMask = null;\n        Color[,]? customColorMask = null;\n        if (sampledPaths != null && sampledPaths.Count > 0)\n        {\n            customMask = new bool[size, size];\n            customColorMask = new Color[size, size];\n            foreach (var (sampled, closed, width, color) in sampledPaths)\n            {\n                bool[,] strokeMask;\n                if (width < 0f) // sentinel: filled polygon\n                {\n                    strokeMask = PixelRaster.RasterizeFillFromNormalizedPath(size, sampled);\n                }\n                else\n                {\n                    var strokePaths = new List<(List<Point>, bool, float)> { (sampled, closed, width) };\n                    strokeMask = PixelRaster.RasterizeFromNormalizedPaths(size, strokePaths);\n                }\n                for (var sy = 0; sy < size; sy++)\n                    for (var sx = 0; sx < size; sx++)\n                        if (strokeMask[sx, sy])\n                        {\n                            customMask[sx, sy] = true;\n                            customColorMask[sx, sy] = color;\n                        }\n            }\n        }\n\n        // Capture class-level dither pattern locally to avoid repeated closure lookups inside the hot loop.\n        var ditherPattern = s_ditherPattern;\n\n        buffer.ParallelForEachPixel((x, y) =>\n        {\n            float pixR = r, pixG = g, pixB = b;\n            var cx = x - halfSize + 0.5f - offsetX * size;\n            var cy = y - halfSize + 0.5f - offsetY * size;\n\n            // Apply rotation\n            if (MathF.Abs(rotation) > 0.001f)\n            {\n                var rcx = cx * cosR + cy * sinR;\n                var rcy = -cx * sinR + cy * cosR;\n                cx = rcx;\n                cy = rcy;\n            }\n\n            // Apply X/Y scale\n            cx /= MathF.Max(0.1f, scaleX);\n            cy /= MathF.Max(0.1f, scaleY);\n\n            float distance;\n            switch (shape)\n            {\n                case \"rectangle\":\n                    distance = MathF.Max(MathF.Abs(cx), MathF.Abs(cy));\n                    break;\n                case \"diamond\":\n                    distance = (MathF.Abs(cx) + MathF.Abs(cy)) * 0.7071f;\n                    break;\n                case \"triangle\":\n                    var tx = cx / radius;\n                    var ty = cy / radius;\n                    var k = MathF.Sqrt(3f);\n                    tx = MathF.Abs(tx) - 0.5f;\n                    ty = ty + 0.5f / k;\n                    if (tx + k * ty > 0f)\n                    {\n                        var ntx = (tx - k * ty) / 2f;\n                        var nty = (-k * tx - ty) / 2f;\n                        tx = ntx; ty = nty;\n                    }\n                    tx = Math.Clamp(tx, -1f, 0f);\n                    distance = -MathF.Sqrt(tx * tx + ty * ty) * MathF.Sign(ty) * radius;\n                    distance = MathF.Max(0f, -distance);\n                    break;\n                case \"pentagon\":\n                    distance = RegularPolygonDistance(cx, cy, 5) * 1.05f;\n                    break;\n                case \"hexagon\":\n                    distance = RegularPolygonDistance(cx, cy, 6);\n                    break;\n                case \"star\":\n                    distance = StarDistance(cx, cy, radius);\n                    break;\n                case \"cross\":\n                    var absCx = MathF.Abs(cx);\n                    var absCy = MathF.Abs(cy);\n                    var armWidth = radius * 0.35f;\n                    distance = MathF.Min(\n                        MathF.Max(absCx - armWidth, absCy),\n                        MathF.Max(absCy - armWidth, absCx));\n                    break;\n                case \"ring\":\n                    var ringDist = MathF.Sqrt(cx * cx + cy * cy);\n                    distance = MathF.Abs(ringDist - radius * 0.6f);\n                    distance *= 2.5f;\n                    break;\n                case \"custom\":\n                    if (customMask != null)\n                    {\n                        // Use truncating int cast (floor for non-negative values) so pixel x maps\n                        // exactly to mask index x, avoiding the banker's-rounding misalignment\n                        // that MathF.Round produces for half-integer positions (x+0.5).\n                        var ix = Math.Clamp((int)(cx + halfSize), 0, size - 1);\n                        var iy = Math.Clamp((int)(cy + halfSize), 0, size - 1);\n                        if (customMask[ix, iy])\n                        {\n                            distance = 0f;\n                            if (customColorMask != null)\n                            {\n                                var pc = customColorMask[ix, iy];\n                                pixR = pc.R / 255f;\n                                pixG = pc.G / 255f;\n                                pixB = pc.B / 255f;\n                            }\n                        }\n                        else\n                        {\n                            distance = float.MaxValue;\n                        }\n                    }\n                    else\n                    {\n                        distance = MathF.Sqrt(cx * cx + cy * cy);\n                    }\n                    break;\n                default: // circle\n                    distance = MathF.Sqrt(cx * cx + cy * cy);\n                    break;\n            }\n\n            float alpha;\n            if (hardness >= 0.99f)\n            {\n                alpha = distance <= radius ? 1f : 0f;\n            }\n            else\n            {\n                var feather = radius * (1f - hardness);\n                alpha = 1f - SmoothStep(radius - feather, radius, distance);\n            }\n\n            if (invert) alpha = 1f - alpha;\n\n            // Dithering — use shared precomputed pattern\n            if (dither && alpha > 0.01f && alpha < 0.99f)\n            {\n                var threshold = ditherPattern[y % 4, x % 4];\n                alpha = alpha > threshold ? 1f : 0f;\n            }\n\n            // Stroke (preserve previous semantics: stroke area is near shape boundary)\n            if (strokeWidth > 0f && alpha > 0.01f)\n            {\n                // compute stroke extents once per pixel but avoid allocating\n                var strokePixels = strokeWidth * size;\n                var innerDist = radius - strokePixels;\n                if (distance > innerDist && distance <= radius)\n                {\n                    buffer.SetPixel(x, y, strokeR, strokeG, strokeB, alpha);\n                    return;\n                }\n            }\n\n            buffer.SetPixel(x, y, pixR, pixG, pixB, alpha);\n        });\n\n        return buffer;\n\n\n    private static readonly float[,] s_ditherPattern = { { 0f, 0.5f, 0.125f, 0.625f }, { 0.75f, 0.25f, 0.875f, 0.375f }, { 0.1875f, 0.6875f, 0.0625f, 0.5625f }, { 0.9375f, 0.4375f, 0.8125f, 0.3125f } };\n\nprivate static float RegularPolygonDistance(float cx, float cy, int sides)\n    {\n        var angle = MathF.Atan2(cy, cx);\n        var segAngle = MathF.Tau / sides;\n        var halfSeg = segAngle * 0.5f;\n        var localAngle = MathF.Abs(((angle % segAngle) + segAngle) % segAngle - halfSeg);\n        var dist = MathF.Sqrt(cx * cx + cy * cy);\n        return dist * MathF.Cos(halfSeg) / MathF.Cos(localAngle);\n    }\n\nprivate static float StarDistance(float cx, float cy, float radius)\n    {\n        const int points = 10;\n        var verts = new (float x, float y)[points];\n        for (int k = 0; k < points; k++)\n        {\n            double angle = Math.PI * k / 5.0 - Math.PI / 2.0;\n            double r = k % 2 == 0 ? 1.0 : 0.38;\n            verts[k] = ((float)(Math.Cos(angle) * r), (float)(Math.Sin(angle) * r));\n        }\n\n        float px = cx / radius;\n        float py = cy / radius;\n        float minDist = float.MaxValue;\n        for (int i = 0; i < points; i++)\n        {\n            var (ax, ay) = verts[i];\n            var (bx, by) = verts[(i + 1) % points];\n            float abx = bx - ax;\n            float aby = by - ay;\n            float apx = px - ax;\n            float apy = py - ay;\n            float dot = apx * abx + apy * aby;\n            float lenSq = abx * abx + aby * aby;\n            float t = lenSq > 0f ? Math.Clamp(dot / lenSq, 0f, 1f) : 0f;\n            float cpx = ax + t * abx;\n            float cpy = ay + t * aby;\n            float dx = px - cpx;\n            float dy = py - cpy;\n            float d = MathF.Sqrt(dx * dx + dy * dy);\n            if (d < minDist) minDist = d;\n        }\n        return minDist * radius;\n    }\n}"
+  }
+}

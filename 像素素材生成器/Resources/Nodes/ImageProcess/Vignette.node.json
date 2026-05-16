@@ -1,0 +1,159 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "Vignette",
+    "displayName": {
+      "zh-Hans": "暗角",
+      "en": "Vignette"
+    },
+    "category": "ImageProcess",
+    "description": {
+      "zh-Hans": "对图像应用暗角（径向亮度衰减）效果。支持圆形和矩形暗角，带可调节羽化控制。",
+      "en": "Applies a vignette (radial brightness falloff) effect to an image. Supports circular and rectangular vignettes with adjustable feathering."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "遮罩",
+          "en": "Mask"
+        },
+        "type": "Mask"
+      }
+    ],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "结果",
+          "en": "Result"
+        },
+        "type": "Image"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "强度",
+        "en": "Strength"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "半径",
+        "en": "Radius"
+      },
+      "kind": "Number",
+      "default": 0.7,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "羽化",
+        "en": "Feather"
+      },
+      "kind": "Number",
+      "default": 0.25,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "形状",
+        "en": "Shape"
+      },
+      "kind": "Choice",
+      "default": "circle",
+      "choices": [
+        {
+          "value": "circle",
+          "label": {
+            "zh-Hans": "圆形",
+            "en": "circle"
+          }
+        },
+        {
+          "value": "rectangle",
+          "label": {
+            "zh-Hans": "矩形",
+            "en": "rectangle"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "zh-Hans": "中心 X",
+        "en": "Center X"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "中心 Y",
+        "en": "Center Y"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "反相",
+        "en": "Invert"
+      },
+      "kind": "Boolean",
+      "default": false
+    },
+    {
+      "name": {
+        "zh-Hans": "保留透明通道",
+        "en": "Preserve Alpha"
+      },
+      "kind": "Boolean",
+      "default": true
+    }
+  ],
+  "ai": {
+    "capabilities": ["effect"],
+    "triggers": {
+      "zh-Hans": "暗角, 渐晕, 边缘暗化, 镜头暗角",
+      "en": "vignette, dark corners, edge darken, lens vignette"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "为图像添加暗角效果以聚焦中心主体。",
+      "en": "Add a vignette effect to an image to focus attention on the center."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar src = inputs.Length > 0 ? inputs[0] : null;\nif (src == null)\n    return new PixelBuffer(context.TileSize, context.TileSize);\n\nvar strength = GetFloat(parameters, \"strength\", 0.5f);\nvar radius = Math.Max(0.01f, GetFloat(parameters, \"radius\", 0.7f));\nvar feather = Math.Max(0.001f, GetFloat(parameters, \"feather\", 0.3f));\nvar shape = GetChoice(parameters, \"shape\", \"circle\");\nvar centerX = GetFloat(parameters, \"centerX\", 0.5f);\nvar centerY = GetFloat(parameters, \"centerY\", 0.5f);\nvar invert = GetBool(parameters, \"invert\", false);\nvar preserveAlpha = GetBool(parameters, \"preserveAlpha\", true);\n\nvar size = context.TileSize;\nvar result = new PixelBuffer(size, size);\n\nvar cx = centerX * size;\nvar cy = centerY * size;\nvar maxDist = shape == \"circle\"\n    ? size * 0.5f * radius\n    : MathF.Max(cx, cy) * radius;\n\nresult.ParallelForEachPixel((x, y) =>\n{\n    var (r, g, b, a) = src.GetPixel(x, y);\n\n    float dist;\n    if (shape == \"rectangle\")\n    {\n        var dx = MathF.Abs(x - cx) / MathF.Max(cx, 1f);\n        var dy = MathF.Abs(y - cy) / MathF.Max(cy, 1f);\n        dist = MathF.Max(dx, dy);\n    }\n    else\n    {\n        dist = MathF.Sqrt((x - cx) * (x - cx) + (y - cy) * (y - cy)) / maxDist;\n    }\n\n    // Smoothstep falloff\n    var vignette = 1f - SmoothStep(1f - feather, 1f, dist);\n    vignette = 1f - (1f - vignette) * strength;\n\n    if (invert) vignette = 1f - vignette;\n\n    result.SetPixel(x, y,\n        Math.Clamp(r * vignette, 0f, 1f),\n        Math.Clamp(g * vignette, 0f, 1f),\n        Math.Clamp(b * vignette, 0f, 1f),\n        preserveAlpha ? a : vignette);\n});\n\nreturn result;\n}"
+  }
+}

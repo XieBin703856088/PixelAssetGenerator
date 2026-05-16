@@ -1,0 +1,169 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "Preview",
+    "displayName": {
+      "zh-Hans": "预览",
+      "en": "Preview"
+    },
+    "category": "Tool",
+    "description": {
+      "zh-Hans": "预览节点：直通输入以在画布上进行内联预览。",
+      "en": "Preview node: passes through input for inline preview on the canvas."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [
+      {
+        "name": {
+          "zh-Hans": "输入",
+          "en": "Input"
+        },
+        "type": "Any"
+      }
+    ],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "显示模式",
+        "en": "Display Mode"
+      },
+      "kind": "Choice",
+      "default": "color",
+      "choices": [
+        {
+          "value": "color",
+          "label": {
+            "zh-Hans": "颜色",
+            "en": "color"
+          }
+        },
+        {
+          "value": "R",
+          "label": {
+            "zh-Hans": "R通道",
+            "en": "R"
+          }
+        },
+        {
+          "value": "G",
+          "label": {
+            "zh-Hans": "G通道",
+            "en": "G"
+          }
+        },
+        {
+          "value": "B",
+          "label": {
+            "zh-Hans": "B通道",
+            "en": "B"
+          }
+        },
+        {
+          "value": "alpha",
+          "label": {
+            "zh-Hans": "透明通道",
+            "en": "alpha"
+          }
+        },
+        {
+          "value": "grayscale",
+          "label": {
+            "zh-Hans": "灰度",
+            "en": "grayscale"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "zh-Hans": "平铺预览",
+        "en": "Tile Preview"
+      },
+      "kind": "Integer",
+      "default": 1,
+      "min": 1,
+      "max": 4,
+      "step": 1
+    },
+    {
+      "name": {
+        "zh-Hans": "背景",
+        "en": "Background"
+      },
+      "kind": "Choice",
+      "default": "checkerboard",
+      "choices": [
+        {
+          "value": "checkerboard",
+          "label": {
+            "zh-Hans": "棋盘",
+            "en": "checkerboard"
+          }
+        },
+        {
+          "value": "black",
+          "label": {
+            "zh-Hans": "黑色",
+            "en": "black"
+          }
+        },
+        {
+          "value": "white",
+          "label": {
+            "zh-Hans": "白色",
+            "en": "white"
+          }
+        },
+        {
+          "value": "transparent",
+          "label": {
+            "zh-Hans": "透明",
+            "en": "transparent"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "zh-Hans": "缩放",
+        "en": "Scale"
+      },
+      "kind": "Number",
+      "default": 1.0,
+      "min": 0.5,
+      "max": 8.0,
+      "step": 0.5
+    }
+  ],
+  "ai": {
+    "capabilities": ["tool", "utility", "preview"],
+    "triggers": {
+      "zh-Hans": "预览, 图片预览, 内联预览, 检查节点",
+      "en": "preview, image preview, inline preview, inspect node"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "连接任意节点到此节点以在画布上预览其输出图像。",
+      "en": "Connect any node to this node to preview its output image on the canvas."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar input = inputs.Length > 0 ? inputs[0] : null;\n        return input?.Clone() ?? PixelBuffer.CreateSolid(context.TileSize, context.TileSize, 0, 0, 0);\n}"
+  }
+}

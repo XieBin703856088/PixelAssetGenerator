@@ -1,0 +1,140 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "ColorExtraction",
+    "displayName": {
+      "zh-Hans": "颜色提取",
+      "en": "Color Extraction"
+    },
+    "category": "ImageProcess",
+    "description": {
+      "zh-Hans": "分析输入图像并提取N种主要颜色。输出量化图像（每个像素映射到最近的调色板颜色）以及一个1行N列的调色板条带。",
+      "en": "Analyzes an input image and extracts the N most dominant colors. Outputs the quantized image (each pixel mapped to the nearest palette color) and a 1-row x N-column palette strip."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      }
+    ],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "调色板",
+          "en": "Palette"
+        },
+        "type": "Image"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "颜色数量",
+        "en": "Color Count"
+      },
+      "kind": "Integer",
+      "default": 8,
+      "min": 2,
+      "max": 16,
+      "step": 1
+    },
+    {
+      "name": {
+        "zh-Hans": "采样模式",
+        "en": "Sample Mode"
+      },
+      "kind": "Choice",
+      "default": "uniform",
+      "choices": [
+        {
+          "value": "uniform",
+          "label": {
+            "zh-Hans": "均匀采样",
+            "en": "uniform"
+          }
+        },
+        {
+          "value": "kmeans",
+          "label": {
+            "zh-Hans": "K-均值",
+            "en": "kmeans"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "zh-Hans": "排序模式",
+        "en": "Sort Mode"
+      },
+      "kind": "Choice",
+      "default": "luminance",
+      "choices": [
+        {
+          "value": "luminance",
+          "label": {
+            "zh-Hans": "亮度",
+            "en": "luminance"
+          }
+        },
+        {
+          "value": "hue",
+          "label": {
+            "zh-Hans": "色调",
+            "en": "hue"
+          }
+        },
+        {
+          "value": "saturation",
+          "label": {
+            "zh-Hans": "饱和度",
+            "en": "saturation"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "zh-Hans": "种子",
+        "en": "Seed"
+      },
+      "kind": "Seed",
+      "default": 42,
+      "min": 0,
+      "max": 9999
+    }
+  ],
+  "ai": {
+    "capabilities": ["color-adjust", "effect"],
+    "triggers": {
+      "zh-Hans": "颜色提取, 提取颜色, 主色调分析, 调色板生成",
+      "en": "color extraction, extract colors, dominant colors, palette generation"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "从输入图像中提取8种主要颜色生成调色板。",
+      "en": "Extract 8 dominant colors from an input image to generate a palette."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\n// ColorExtraction: sample N colors from input, display as palette swatches\nvar src = inputs[0];\nif (src == null) return PixelBuffer.CreateSolid(context.TileSize, context.TileSize, 0f, 0f, 0f, 1f);\nvar count = Math.Clamp(GetInt(parameters, \"colorCount\", 8), 1, 32);\nvar size = context.TileSize;\nvar seed = GetInt(parameters, \"seed\", context.Seed);\nvar result = new PixelBuffer(size, size);\n// Sample colors at seed-driven random positions for varied results\nvar colors = new (float r, float g, float b)[count];\nvar totalPixels = src.Width * src.Height;\nfor (var i = 0; i < count; i++)\n{\n    // Use hash to pick a deterministic random pixel per seed\n    var idx = (int)(HashToUnit(i, 0, seed) * totalPixels) % totalPixels;\n    var sx = idx % src.Width;\n    var sy = idx / src.Width;\n    var (r, g, b, _) = src.GetPixel(sx, sy);\n    colors[i] = (r, g, b);\n}\n// Draw swatches\nvar swatchW = size / count;\nresult.ParallelForEachPixel((x, y) =>\n{\n    var idx = Math.Min(x / Math.Max(1, swatchW), count - 1);\n    var (r, g, b) = colors[idx];\n    result.SetPixel(x, y, r, g, b, 1f);\n});\nreturn result;\n}"
+  }
+}

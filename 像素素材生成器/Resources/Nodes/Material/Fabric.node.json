@@ -1,0 +1,209 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "Fabric",
+    "displayName": {
+      "zh-Hans": "布料",
+      "en": "Fabric"
+    },
+    "category": "Material",
+    "description": {
+      "zh-Hans": "生成编织布料纹理，支持平纹、斜纹和缎纹编织图案。具有经线/纬线颜色、厚度控制、毛绒感、逐线颜色变化和表面细节等特性。",
+      "en": "Generates woven fabric textures supporting plain, twill, and satin weave patterns. Features warp/weft thread colors, thickness control, fuzziness, per-thread color variation, and surface detail."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "遮罩",
+          "en": "Mask"
+        },
+        "type": "Mask"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "种子",
+        "en": "Seed"
+      },
+      "kind": "Seed",
+      "default": 42,
+      "min": 0,
+      "max": 9999
+    },
+    {
+      "name": {
+        "zh-Hans": "密度",
+        "en": "Density"
+      },
+      "kind": "Integer",
+      "default": 8,
+      "min": 4,
+      "max": 20,
+      "step": 1
+    },
+    {
+      "name": {
+        "zh-Hans": "线宽",
+        "en": "Thread Thickness"
+      },
+      "kind": "Number",
+      "default": 0.4,
+      "min": 0.1,
+      "max": 0.9,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "编织类型",
+        "en": "Weave Type"
+      },
+      "kind": "Choice",
+      "default": "plain",
+      "choices": [
+        {
+          "value": "plain",
+          "label": {
+            "zh-Hans": "平纹",
+            "en": "plain"
+          }
+        },
+        {
+          "value": "twill",
+          "label": {
+            "zh-Hans": "斜纹",
+            "en": "twill"
+          }
+        },
+        {
+          "value": "satin",
+          "label": {
+            "zh-Hans": "缎纹",
+            "en": "satin"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "zh-Hans": "经线颜色",
+        "en": "Warp Color"
+      },
+      "kind": "Color",
+      "default": "#A0643CFF"
+    },
+    {
+      "name": {
+        "zh-Hans": "纬线颜色",
+        "en": "Weft Color"
+      },
+      "kind": "Color",
+      "default": "#8C5032FF"
+    },
+    {
+      "name": {
+        "zh-Hans": "颜色变化",
+        "en": "Color Variation"
+      },
+      "kind": "Number",
+      "default": 0.15,
+      "min": 0.0,
+      "max": 0.5,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "柔化",
+        "en": "Softness"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "模糊感",
+        "en": "Fuzziness"
+      },
+      "kind": "Number",
+      "default": 0.3,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "光泽度",
+        "en": "Glossiness"
+      },
+      "kind": "Number",
+      "default": 0.2,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "亮度",
+        "en": "Brightness"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": -0.3,
+      "max": 0.3,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "对比度",
+        "en": "Contrast"
+      },
+      "kind": "Number",
+      "default": 0.15,
+      "min": -0.5,
+      "max": 0.5,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "反相",
+        "en": "Invert"
+      },
+      "kind": "Boolean",
+      "default": false
+    }
+  ],
+  "ai": {
+    "capabilities": ["material", "procedural-texture", "fabric", "tileable", "weave"],
+    "triggers": {
+      "zh-Hans": "布料, 织物, 编织, 纺织, 平纹, 斜纹, 缎纹",
+      "en": "fabric, cloth, textile, weave, twill, satin"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "生成编织布料纹理，用于角色服装、旗帜或家具材质。",
+      "en": "Generate a woven fabric texture for character clothing, banners, or furniture materials."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar seed = GetInt(parameters, \"seed\", context.Seed);\nvar density = Math.Clamp(GetInt(parameters, \"density\", 8), 4, 20);\nvar threadThickness = GetFloat(parameters, \"threadThickness\", 0.4f);\nvar weaveType = GetChoice(parameters, \"weaveType\", \"plain\");\nvar warpColor = GetColor(parameters, \"warpColor\", Color.FromRgb(160, 100, 60));\nvar weftColor = GetColor(parameters, \"weftColor\", Color.FromRgb(140, 80, 50));\nvar colorVar = GetFloat(parameters, \"colorVariation\", 0.15f);\nvar softness = GetFloat(parameters, \"softness\", 0.5f);\nvar fuzziness = GetFloat(parameters, \"fuzziness\", 0.3f);\nvar glossiness = GetFloat(parameters, \"glossiness\", 0.2f);\nvar brightness = GetFloat(parameters, \"brightness\", 0f);\nvar contrast = GetFloat(parameters, \"contrast\", 0f);\nvar invert = GetBool(parameters, \"invert\", false);\n\nvar size = context.TileSize;\nvar buffer = new PixelBuffer(size, size);\n\nvar wR = warpColor.R / 255f; var wG = warpColor.G / 255f; var wB = warpColor.B / 255f;\nvar fR = weftColor.R / 255f; var fG = weftColor.G / 255f; var fB = weftColor.B / 255f;\n\n// Thread spacing (UV units)\nvar threadSpacing = 1f / density;\n\n// Pre-compute thread colors with per-thread variation\nvar warpThreads = new (float r, float g, float b)[density];\nvar weftThreads = new (float r, float g, float b)[density];\nfor (var i = 0; i < density; i++)\n{\n    var wv = (HashToUnit(i, seed, 111) - 0.5f) * colorVar;\n    var fv = (HashToUnit(i * 7, seed + 50, 222) - 0.5f) * colorVar;\n    warpThreads[i] = (\n        Math.Clamp(wR + wv, 0f, 1f),\n        Math.Clamp(wG + wv * 0.85f, 0f, 1f),\n        Math.Clamp(wB + wv * 0.7f, 0f, 1f)\n    );\n    weftThreads[i] = (\n        Math.Clamp(fR + fv, 0f, 1f),\n        Math.Clamp(fG + fv * 0.85f, 0f, 1f),\n        Math.Clamp(fB + fv * 0.7f, 0f, 1f)\n    );\n}\n\n// Build weave pattern lookup\n// true = warp on top, false = weft on top\nvar pattern = new bool[density, density];\nfor (var y = 0; y < density; y++)\n{\n    for (var x = 0; x < density; x++)\n    {\n        pattern[x, y] = weaveType switch\n        {\n            \"twill\" => (x + y) % 3 == 0,       // Diagonal twill\n            \"satin\" => (x * 3 + y * 5) % 7 < 3, // Irregular satin\n            _ => (x + y) % 2 == 0              // Plain weave\n        };\n    }\n}\n\n// Thread cross-section profile (smooth bump)\nstatic float ThreadProfile(float t, float thickness, float softness)\n{\n    // t is distance from thread center in [0, 1]\n    // Returns 1 at center, 0 outside thread\n    var halfThick = thickness * 0.5f;\n    if (t > halfThick) return 0f;\n    var normalized = t / halfThick;\n    var smooth = normalized * normalized * (3f - 2f * normalized); // smoothstep\n    var soft = 1f - smooth;\n    return Lerp(soft, 1f - normalized, 1f - softness * 0.5f);\n}\n\nbuffer.ParallelForEachPixel((x, y) =>\n{\n    var u = (x + 0.5f) / size;\n    var v = (y + 0.5f) / size;\n\n    // Thread coordinates\n    var threadX = u * density;\n    var threadY = v * density;\n\n    // Current thread indices (with wrapping for tiling)\n    var tx = ((int)MathF.Floor(threadX) % density + density) % density;\n    var ty = ((int)MathF.Floor(threadY) % density + density) % density;\n\n    // Local position within a thread cell (0..1)\n    var localX = threadX - MathF.Floor(threadX);\n    var localY = threadY - MathF.Floor(threadY);\n\n    // Distance to thread centers\n    var distWarp = MathF.Abs(localX - 0.5f); // warp runs vertically\n    var distWeft = MathF.Abs(localY - 0.5f); // weft runs horizontally\n\n    // Normalize by spacing (so thickness is relative to cell size)\n    var warpProfile = ThreadProfile(distWarp, threadThickness, softness);\n    var weftProfile = ThreadProfile(distWeft, threadThickness, softness);\n\n    // Determine which thread is on top based on weave pattern\n    var warpOnTop = pattern[tx, ty];\n\n    // Fuzziness: add noise to thread edges\n    if (fuzziness > 0f)\n    {\n        var fuzzNoise = TileableFractalNoise(\n            u * density * 4f, v * density * 4f,\n            Math.Max(1, size / 2), 2, 0.5f, 2f, seed + 100);\n        var fuzzOffset = (fuzzNoise - 0.5f) * fuzziness * 0.15f;\n\n        if (warpOnTop)\n            warpProfile = Math.Clamp(warpProfile + fuzzOffset, 0f, 1f);\n        else\n            weftProfile = Math.Clamp(weftProfile + fuzzOffset, 0f, 1f);\n    }\n\n    // Sample thread colors\n    var warpCol = warpThreads[tx];\n    var weftCol = weftThreads[ty];\n\n    float r, g, b;\n\n    if (warpOnTop && warpProfile > 0f)\n    {\n        // Warp thread visible on top\n        var coverage = warpProfile;\n\n        // Weft shows through slightly\n        var weftThrough = weftProfile * (1f - coverage) * 0.5f;\n\n        r = Math.Clamp(warpCol.r * coverage + weftCol.r * weftThrough, 0f, 1f);\n        g = Math.Clamp(warpCol.g * coverage + weftCol.g * weftThrough, 0f, 1f);\n        b = Math.Clamp(warpCol.b * coverage + weftCol.b * weftThrough, 0f, 1f);\n    }\n    else if (!warpOnTop && weftProfile > 0f)\n    {\n        // Weft thread visible on top\n        var coverage = weftProfile;\n\n        // Warp shows through slightly\n        var warpThrough = warpProfile * (1f - coverage) * 0.5f;\n\n        r = Math.Clamp(weftCol.r * coverage + warpCol.r * warpThrough, 0f, 1f);\n        g = Math.Clamp(weftCol.g * coverage + warpCol.g * warpThrough, 0f, 1f);\n        b = Math.Clamp(weftCol.b * coverage + warpCol.b * warpThrough, 0f, 1f);\n    }\n    else\n    {\n        // Gap between threads or hidden thread — show blended under-thread\n        var totalWarp = warpProfile * (warpOnTop ? 0.3f : 1f);\n        var totalWeft = weftProfile * (warpOnTop ? 1f : 0.3f);\n        var total = totalWarp + totalWeft;\n\n        if (total > 0f)\n        {\n            r = (warpCol.r * totalWarp + weftCol.r * totalWeft) / total;\n            g = (warpCol.g * totalWarp + weftCol.g * totalWeft) / total;\n            b = (warpCol.b * totalWarp + weftCol.b * totalWeft) / total;\n        }\n        else\n        {\n            // Background between threads — interpolate between thread colors\n            r = Lerp(warpCol.r, weftCol.r, 0.5f) * 0.6f;\n            g = Lerp(warpCol.g, weftCol.g, 0.5f) * 0.6f;\n            b = Lerp(warpCol.b, weftCol.b, 0.5f) * 0.6f;\n        }\n    }\n\n    // Gloss / sheen effect\n    if (glossiness > 0f)\n    {\n        var sheenNoise = TileableFractalNoise(\n            u * density * 2f, v * density * 2f,\n            Math.Max(1, size / 2), 1, 0.5f, 2f, seed + 200);\n        var sheen = sheenNoise * glossiness * 0.15f;\n        r = Math.Clamp(r + sheen, 0f, 1f);\n        g = Math.Clamp(g + sheen * 0.9f, 0f, 1f);\n        b = Math.Clamp(b + sheen * 0.8f, 0f, 1f);\n    }\n\n    // Surface detail\n    var detailNoise = TileableFractalNoise(\n        u * density * 6f, v * density * 6f,\n        Math.Max(1, size / 3), 2, 0.5f, 2.5f, seed + 300);\n    var detail = (detailNoise - 0.5f) * 0.06f;\n    r = Math.Clamp(r + detail, 0f, 1f);\n    g = Math.Clamp(g + detail * 0.9f, 0f, 1f);\n    b = Math.Clamp(b + detail * 0.85f, 0f, 1f);\n\n    // Brightness and contrast\n    r = Math.Clamp(r + brightness, 0f, 1f);\n    g = Math.Clamp(g + brightness, 0f, 1f);\n    b = Math.Clamp(b + brightness, 0f, 1f);\n\n    if (MathF.Abs(contrast) > 0.001f)\n    {\n        var factor = 1f + contrast;\n        r = (r - 0.5f) * factor + 0.5f;\n        g = (g - 0.5f) * factor + 0.5f;\n        b = (b - 0.5f) * factor + 0.5f;\n    }\n\n    if (invert) { r = 1f - r; g = 1f - g; b = 1f - b; }\n\n    buffer.SetPixel(x, y, Math.Clamp(r, 0f, 1f), Math.Clamp(g, 0f, 1f), Math.Clamp(b, 0f, 1f), 1f);\n});\n\nreturn buffer;\n}"
+  }
+}

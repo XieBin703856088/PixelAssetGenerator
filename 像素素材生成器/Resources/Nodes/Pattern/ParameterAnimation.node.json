@@ -1,0 +1,157 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "ParameterAnimation",
+    "displayName": {
+      "zh-Hans": "参数动画",
+      "en": "Parameter Animation"
+    },
+    "category": "Pattern",
+    "description": {
+      "zh-Hans": "生成可视化的低频振荡波形图，以像素图形显示。根据归一化帧时间渲染由频率、振幅和偏移参数调制的选定波形（正弦、锯齿、三角、方波）。输出波形可视化效果，可用于预览动画曲线。",
+      "en": "Generates a visual LFO waveform display as a pixel graph. Renders the selected waveform (sine, sawtooth, triangle, square) modulated by frequency, amplitude, and offset parameters, driven by a normalized frame time. The output is a waveform visualization useful for previewing animation curves."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "遮罩",
+          "en": "Mask"
+        },
+        "type": "Mask"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "波形",
+        "en": "Waveform"
+      },
+      "kind": "Choice",
+      "default": "sine",
+      "choices": [
+        {
+          "value": "sine",
+          "label": {
+            "zh-Hans": "正弦",
+            "en": "sine"
+          }
+        },
+        {
+          "value": "sawtooth",
+          "label": {
+            "zh-Hans": "锯齿",
+            "en": "sawtooth"
+          }
+        },
+        {
+          "value": "triangle",
+          "label": {
+            "zh-Hans": "三角形",
+            "en": "triangle"
+          }
+        },
+        {
+          "value": "square",
+          "label": {
+            "zh-Hans": "正方形",
+            "en": "square"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "zh-Hans": "频率",
+        "en": "Frequency"
+      },
+      "kind": "Number",
+      "default": 1.0,
+      "min": 0.1,
+      "max": 10.0,
+      "step": 0.1
+    },
+    {
+      "name": {
+        "zh-Hans": "振幅",
+        "en": "Amplitude"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "偏移",
+        "en": "Offset"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "帧",
+        "en": "Frame"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "颜色",
+        "en": "Color"
+      },
+      "kind": "Color",
+      "default": "#FFFFFFFF"
+    },
+    {
+      "name": {
+        "zh-Hans": "厚度",
+        "en": "Thickness"
+      },
+      "kind": "Number",
+      "default": 1.0,
+      "min": 0.5,
+      "max": 4.0,
+      "step": 0.5
+    }
+  ],
+  "ai": {
+    "capabilities": ["pattern", "frame-animation", "gradient"],
+    "triggers": {
+      "zh-Hans": "参数动画, 波形, LFO, 振荡, 波形可视化",
+      "en": "parameter animation, waveform, LFO, oscillation, wave visualization"
+    },
+    "suggestedInputs": ["FrameSequence"],
+    "exampleUsage": {
+      "zh-Hans": "预览正弦波动画曲线，配合帧序列节点用于像素动画调试。",
+      "en": "Preview a sine wave animation curve, paired with FrameSequence node for pixel animation debugging."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nreturn ProcessMultiImpl(inputs, parameters, context)[0];\n\nprivate static PixelBuffer[] ProcessMultiImpl(PixelBuffer?[] inputs, IReadOnlyDictionary<string, object> parameters, PixelGraphContext context)\n{\n    var waveform = GetChoice(parameters, \"waveform\", \"sine\");\n    var frequency = GetFloat(parameters, \"frequency\", 1f);\n    var amplitude = GetFloat(parameters, \"amplitude\", 0.5f);\n    var offset = GetFloat(parameters, \"offset\", 0f);\n    var frame = GetFloat(parameters, \"frame\", 0f);\n    var lineColor = GetColor(parameters, \"color\", Colors.Cyan);\n    var thickness = GetFloat(parameters, \"thickness\", 1f);\n\n    var size = context.TileSize;\n    var image = new PixelBuffer(size, size);\n    var mask = new PixelBuffer(size, size);\n\n    var invSize = 1f / size;\n    var colR = lineColor.R / 255f;\n    var colG = lineColor.G / 255f;\n    var colB = lineColor.B / 255f;\n\n    image.ParallelForEachPixel((x, y) =>\n    {\n        var u = (x + 0.5f) * invSize; // Phase position 0-1\n        var v = (y + 0.5f) * invSize; // Amplitude position 0-1\n\n        // Effective phase: frequency * horizontal position + frame + offset\n        var phase = frequency * u + frame + offset;\n        var waveValue = ComputeWaveform(waveform, phase);\n\n        // Apply amplitude and center in [0, 1] range\n        var centered = (waveValue - 0.5f) * amplitude * 2f + 0.5f;\n        centered = Math.Clamp(centered, 0f, 1f);\n\n        // Draw waveform as a bright line on dark background\n        // The line has a core (1 pixel) and a soft glow\n        var dy = MathF.Abs(v - centered);\n\n        // Core line intensity, scaled by thickness\n        var core = MathF.Max(0f, 1f - dy * size * 4f / thickness);\n        // Glow falloff, scaled by thickness\n        var glow = MathF.Max(0f, 1f - dy * size * 1.2f / thickness);\n        glow = glow * glow * 0.6f;\n\n        // Grid lines (subtle but more visible)\n        var gridX = MathF.Abs((u * 4f) % 1f - 0.5f) * 2f;\n        var gridY = MathF.Abs((v * 4f) % 1f - 0.5f) * 2f;\n        var grid = MathF.Max(gridX, gridY);\n        var gridLine = grid > 0.97f ? 0f : (1f - grid * 20f) * 0.10f;\n\n        // Center line (zero-crossing reference at v=0.5)\n        var centerLine = MathF.Abs(v - 0.5f) * size < 1.5f ? 0.18f : 0f;\n\n        // Compose using selected color\n        var r = core * colR + glow * colR + gridLine + centerLine;\n        var g = core * colG + glow * colG + gridLine + centerLine;\n        var b = core * colB + glow * colB + gridLine + centerLine;\n\n        // Current frame indicator (vertical line) — orange-highlight to distinguish from waveform color\n        var frameLine = MathF.Abs(u - frame) * size < 1.5f ? 0.6f : 0f;\n        r += frameLine;\n        g += frameLine * 0.3f;\n        b += frameLine * 0.1f;\n\n        image.SetPixel(x, y,\n            Math.Clamp(r, 0f, 1f),\n            Math.Clamp(g, 0f, 1f),\n            Math.Clamp(b, 0f, 1f),\n            1f);\n\n        // Mask: waveform value as grayscale\n        mask.SetPixel(x, y,\n            Math.Clamp(centered, 0f, 1f),\n            Math.Clamp(centered, 0f, 1f),\n            Math.Clamp(centered, 0f, 1f),\n            1f);\n    });\n\n    return [image, mask];\n}\n\n/// <summary>\n/// Computes the raw waveform value at a given phase, normalized to [0, 1].\n/// </summary>\nprivate static float ComputeWaveform(string waveform, float phase)\n{\n    // Wrap phase to [0, 1)\n    var t = phase - MathF.Floor(phase);\n    if (t < 0f) t += 1f;\n\n    return waveform switch\n    {\n        \"sawtooth\" => t,\n        \"triangle\" => 1f - MathF.Abs(t * 2f - 1f),\n        \"square\" => t < 0.5f ? 1f : 0f,\n        _ => MathF.Sin(t * MathF.PI * 2f) * 0.5f + 0.5f  // sine\n    };\n    }\n}"
+  }
+}

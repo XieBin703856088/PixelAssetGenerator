@@ -1,0 +1,150 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "TileSand",
+    "displayName": {
+      "zh-Hans": "沙地",
+      "en": "Sand"
+    },
+    "category": "Generate",
+    "description": {
+      "zh-Hans": "沙地图块",
+      "en": "Sand tile"
+    },
+    "tags": [
+      "tile",
+      "sand"
+    ],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "种子",
+        "en": "Seed"
+      },
+      "kind": "Integer",
+      "default": 42,
+      "min": 0,
+      "max": 9999
+    },
+    {
+      "name": {
+        "zh-Hans": "颜色变化",
+        "en": "Color Variation"
+      },
+      "kind": "Number",
+      "default": 0.3,
+      "min": 0,
+      "max": 1,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "沙丘尺度",
+        "en": "Dune Scale"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0,
+      "max": 1,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "沙丘锐度",
+        "en": "Dune Sharpness"
+      },
+      "kind": "Number",
+      "default": 0.3,
+      "min": 0,
+      "max": 1,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "波纹强度",
+        "en": "Ripple Strength"
+      },
+      "kind": "Number",
+      "default": 0.3,
+      "min": 0,
+      "max": 1,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "波纹尺度",
+        "en": "Ripple Scale"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0,
+      "max": 1,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "波纹方向",
+        "en": "Ripple Direction"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0,
+      "max": 1,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "卵石密度",
+        "en": "Pebble Density"
+      },
+      "kind": "Number",
+      "default": 0.2,
+      "min": 0,
+      "max": 1,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "卵石大小",
+        "en": "Pebble Size"
+      },
+      "kind": "Number",
+      "default": 0.3,
+      "min": 0,
+      "max": 1,
+      "step": 0.01
+    }
+  ],
+  "ai": {
+    "capabilities": ["generate-tile", "organic", "procedural-texture", "tileable"],
+    "triggers": {
+      "zh-Hans": "沙地, 沙漠, 沙子, 沙丘",
+      "en": "sand, desert, dune, sandy"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "生成一块可平铺的像素艺术沙地图块，带有沙丘、波纹和卵石细节。",
+      "en": "Generates a tileable pixel-art sand tile with dunes, ripples, and pebble details."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "float DirBands(float px, float py, float dir, int hc, float po)\n{\n    var wd = dir - MathF.Floor(dir);\n    var sec = Math.Min(3, (int)MathF.Floor(wd * 4f));\n    var bl = SmoothStep(wd * 4f - sec);\n    var h = Math.Max(1, hc);\n    var hz = 0.5f + 0.5f * MathF.Sin(px * h + po);\n    var dd = 0.5f + 0.5f * MathF.Sin((px + py) * h + po);\n    var vt = 0.5f + 0.5f * MathF.Sin(py * h + po);\n    var du = 0.5f + 0.5f * MathF.Sin((px - py) * h + po);\n    return sec switch\n    {\n        0 => Lerp(hz, dd, bl),\n        1 => Lerp(dd, vt, bl),\n        2 => Lerp(vt, du, bl),\n        _ => Lerp(du, hz, bl)\n    };\n}\n\nfloat Sel(float t, float c0, float c1, float c2, float c3, float c4)\n{\n    if (t < 0.18f) return Lerp(c0, c1, SmoothStep(0.02f, 0.18f, t));\n    if (t < 0.45f) return Lerp(c1, c2, SmoothStep(0.18f, 0.45f, t));\n    if (t < 0.75f) return Lerp(c2, c3, SmoothStep(0.45f, 0.75f, t));\n    return Lerp(c3, c4, SmoothStep(0.75f, 0.95f, t));\n}\n\nvar size = context.TileSize;\nvar seed = GetInt(parameters, \"seed\", 42);\nvar variation = GetFloat(parameters, \"colorVariation\", 0.3f);\nvar ds = GetFloat(parameters, \"duneScale\", 0.5f);\nvar dsh = GetFloat(parameters, \"duneSharpness\", 0.3f);\nvar rs = GetFloat(parameters, \"rippleStrength\", 0.3f);\nvar rsc = GetFloat(parameters, \"rippleScale\", 0.5f);\nvar rd = GetFloat(parameters, \"rippleDirection\", 0.5f);\nvar pd = GetFloat(parameters, \"pebbleDensity\", 0.2f);\nvar psz = GetFloat(parameters, \"pebbleSize\", 0.3f);\n\n// Sand palette (RGBA floats)\nvar deep = (R: 170f / 255f, G: 122f / 255f, B: 70f / 255f);\nvar shadow = (R: 198f / 255f, G: 152f / 255f, B: 86f / 255f);\nvar mid = (R: 222f / 255f, G: 184f / 255f, B: 112f / 255f);\nvar light = (R: 238f / 255f, G: 206f / 255f, B: 136f / 255f);\nvar highlight = (R: 252f / 255f, G: 232f / 255f, B: 170f / 255f);\nvar warmTint = (R: 232f / 255f, G: 180f / 255f, B: 104f / 255f);\nvar coolTint = (R: 204f / 255f, G: 184f / 255f, B: 136f / 255f);\nvar pebCol = (R: 156f / 255f, G: 118f / 255f, B: 84f / 255f);\nvar pebHi = (R: 222f / 255f, G: 196f / 255f, B: 148f / 255f);\n\nvar result = new PixelBuffer(size, size);\nresult.ParallelForEachPixel((x, y) =>\n{\n    var px = x / (float)size * MathF.Tau;\n    var py = y / (float)size * MathF.Tau;\n\n    // Dune and contour noise\n    var duneFreq = 0.82f + ds * 1.2f;\n    var dp = Math.Max(2, (int)(size * duneFreq / MathF.Tau));\n    var dune = TileableFractalNoise(x * duneFreq / size * MathF.Tau, y * duneFreq / size * MathF.Tau, dp, 2, 0.56f, 2f, seed);\n\n    var cf = 1.45f + ds * 1.95f;\n    var cp = Math.Max(2, (int)(size * cf / MathF.Tau));\n    var contour = TileableFractalNoise(x * cf / size * MathF.Tau, y * cf / size * MathF.Tau, cp, 2, 0.54f, 2f, seed + 17);\n\n    // Patch\n    var cs = Math.Max(4, size / 6);\n    var pp = Math.Max(1, size / cs);\n    var patch = TileableValueNoise((float)x / cs, (float)y / cs, pp, seed + 43);\n\n    // Ripples\n    var hc = 3 + (int)MathF.Round(rsc * 6f);\n    var dr = DirBands(px, py, rd, hc, (contour - 0.5f) * (1.1f + rs * 1.5f));\n    var cr = DirBands(px, py, rd + 0.25f, 1 + (int)MathF.Round(ds * 2f), patch * MathF.Tau);\n\n    // Checker\n    var chk = ((x + y) & 1) == 0 ? -0.011f : 0.011f;\n\n    // Tone\n    var tone = dune * 0.5f + contour * 0.22f + patch * 0.28f;\n    tone = Lerp(tone, patch, 0.18f + dsh * 0.22f);\n    tone += (dr - 0.5f) * (0.12f + rs * 0.16f);\n    tone += (cr - 0.5f) * 0.05f;\n    tone = Math.Clamp(tone + chk * (0.36f + rs * 0.58f), 0f, 1f);\n\n    // Base color\n    var r = Sel(tone, deep.R, shadow.R, mid.R, light.R, highlight.R);\n    var g = Sel(tone, deep.G, shadow.G, mid.G, light.G, highlight.G);\n    var b = Sel(tone, deep.B, shadow.B, mid.B, light.B, highlight.B);\n\n    // Color variation\n    if (variation > 0.01f)\n    {\n        var wm = SmoothStep(0.56f, 0.92f, patch) * variation;\n        var cm = SmoothStep(0.58f, 0.9f, 1f - contour) * variation * 0.65f;\n        r = Lerp(r, warmTint.R, wm * 0.18f);\n        g = Lerp(g, warmTint.G, wm * 0.18f);\n        b = Lerp(b, warmTint.B, wm * 0.18f);\n        r = Lerp(r, coolTint.R, cm * 0.12f);\n        g = Lerp(g, coolTint.G, cm * 0.12f);\n        b = Lerp(b, coolTint.B, cm * 0.12f);\n    }\n\n    // Ripple relief\n    if (rs > 0.01f)\n    {\n        var ridge = SmoothStep(0.76f - rs * 0.08f, 0.98f, dr);\n        var trough = SmoothStep(0.02f, 0.2f + rs * 0.1f, 1f - dr);\n        r = Lerp(r, highlight.R, ridge * (0.1f + rs * 0.12f));\n        g = Lerp(g, highlight.G, ridge * (0.1f + rs * 0.12f));\n        b = Lerp(b, highlight.B, ridge * (0.1f + rs * 0.12f));\n        r = Lerp(r, deep.R, trough * (0.08f + rs * 0.1f));\n        g = Lerp(g, deep.G, trough * (0.08f + rs * 0.1f));\n        b = Lerp(b, deep.B, trough * (0.08f + rs * 0.1f));\n    }\n\n    // Pebbles\n    if (pd > 0.01f)\n    {\n        var cl = Math.Max(6, (int)MathF.Round(size / (2.8f + pd * 3.2f)));\n        var prd = Math.Max(1, size / cl);\n        var cx = x / cl;\n        var cy = y / cl;\n        var lx = x % cl;\n        var ly = y % cl;\n        var wx = Mod(cx, prd);\n        var wy = Mod(cy, prd);\n\n        var roll = HashToUnit(wx, wy, seed + 137);\n        if (roll >= 0.94f - pd * 0.22f)\n        {\n            var pcx = Math.Min(cl - 2, 1 + (int)(HashToUnit(wx, wy, seed + 149) * Math.Max(1, cl - 2)));\n            var pcy = Math.Min(cl - 2, 1 + (int)(HashToUnit(wx, wy, seed + 151) * Math.Max(1, cl - 2)));\n            var rad = psz >= 0.7f ? 2 : psz >= 0.28f ? 1 : 0;\n            var dx = Math.Abs(lx - pcx);\n            var dy = Math.Abs(ly - pcy);\n            var dist = dx + dy;\n\n            if (dist == 0)\n                { r = pebCol.R; g = pebCol.G; b = pebCol.B; }\n            else if (rad > 0 && dist <= rad)\n            {\n                if (dx <= dy)\n                    { r = pebHi.R; g = pebHi.G; b = pebHi.B; }\n                else\n                    { r = pebCol.R; g = pebCol.G; b = pebCol.B; }\n            }\n        }\n    }\n\n    result.SetPixel(x, y, r, g, b, 1f);\n});\n\nreturn result;"
+  }
+}

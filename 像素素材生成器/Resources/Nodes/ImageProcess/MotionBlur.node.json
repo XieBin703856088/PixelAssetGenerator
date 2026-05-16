@@ -1,0 +1,90 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "MotionBlur",
+    "displayName": {
+      "zh-Hans": "运动模糊",
+      "en": "Motion Blur"
+    },
+    "category": "ImageProcess",
+    "description": {
+      "zh-Hans": "通过沿方向向量采样应用运动模糊。每个输出像素为沿指定角度采集的N个样本的平均值。",
+      "en": "Applies motion blur by sampling along a direction vector. Each output pixel is the average of N samples taken along the specified angle."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [
+      {
+        "name": {
+          "zh-Hans": "输入",
+          "en": "Input"
+        },
+        "type": "Image"
+      }
+    ],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "输出",
+          "en": "Output"
+        },
+        "type": "Image"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "角度",
+        "en": "Angle"
+      },
+      "kind": "Number",
+      "default": 45.0,
+      "min": 0.0,
+      "max": 360.0,
+      "step": 1.0
+    },
+    {
+      "name": {
+        "zh-Hans": "距离",
+        "en": "Distance"
+      },
+      "kind": "Number",
+      "default": 5.0,
+      "min": 1.0,
+      "max": 50.0,
+      "step": 1.0
+    },
+    {
+      "name": {
+        "zh-Hans": "质量",
+        "en": "Quality"
+      },
+      "kind": "Integer",
+      "default": 8,
+      "min": 1,
+      "max": 16,
+      "step": 1
+    }
+  ],
+  "ai": {
+    "capabilities": ["blur"],
+    "triggers": {
+      "zh-Hans": "运动模糊, 方向模糊, 动态模糊",
+      "en": "motion blur, directional blur, movement blur"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "为快速移动的角色添加运动模糊效果。",
+      "en": "Add motion blur to a fast-moving character."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar src = inputs.Length > 0 ? inputs[0] : null;\nif (src == null)\n    return new PixelBuffer(context.TileSize, context.TileSize);\n\nvar angleDeg = GetFloat(parameters, \"angle\", 0f);\nvar distance = GetFloat(parameters, \"distance\", 10f);\nvar quality = GetInt(parameters, \"quality\", 8);\n\nvar angleRad = angleDeg * MathF.PI / 180f;\nvar cosA = MathF.Cos(angleRad);\nvar sinA = MathF.Sin(angleRad);\n\nvar size = src.Width;\nvar result = new PixelBuffer(size, size);\n\nvar samples = Math.Max(2, quality);\n\nresult.ParallelForEachPixel((x, y) =>\n{\n    var sumR = 0f; var sumG = 0f; var sumB = 0f; var sumA = 0f;\n\n    for (var i = 0; i < samples; i++)\n    {\n        var t = (i / (float)(samples - 1)) - 0.5f;\n        var sx = x + cosA * t * distance;\n        var sy = y + sinA * t * distance;\n        var (pr, pg, pb, pa) = src.GetPixelWrapped((int)MathF.Round(sx), (int)MathF.Round(sy));\n        sumR += pr; sumG += pg; sumB += pb; sumA += pa;\n    }\n\n    var inv = 1f / samples;\n    result.SetPixel(x, y, sumR * inv, sumG * inv, sumB * inv, sumA * inv);\n});\n\nreturn result;\n}"
+  }
+}

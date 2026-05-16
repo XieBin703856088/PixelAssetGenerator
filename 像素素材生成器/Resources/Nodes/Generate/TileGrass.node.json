@@ -1,0 +1,97 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "TileGrass",
+    "displayName": {
+      "zh-Hans": "草地",
+      "en": "Grass"
+    },
+    "category": "Generate",
+    "description": {
+      "zh-Hans": "草地图块",
+      "en": "Grass tile"
+    },
+    "tags": [
+      "tile",
+      "grass"
+    ],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "种子",
+        "en": "Seed"
+      },
+      "kind": "Integer",
+      "default": 42,
+      "min": 0,
+      "max": 9999
+    },
+    {
+      "name": {
+        "zh-Hans": "颜色变化",
+        "en": "Color Variation"
+      },
+      "kind": "Number",
+      "default": 0.4,
+      "min": 0,
+      "max": 1,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "补丁强度",
+        "en": "Patch Strength"
+      },
+      "kind": "Number",
+      "default": 0.3,
+      "min": 0,
+      "max": 1,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "草种类型",
+        "en": "Grass Type"
+      },
+      "kind": "Choice",
+      "default": "StandardGrass",
+      "choices": [
+        "StandardGrass",
+        "GrassB",
+        "ForestGrass"
+      ]
+    }
+  ],
+  "ai": {
+    "capabilities": ["generate-tile", "organic", "procedural-texture", "tileable"],
+    "triggers": {
+      "zh-Hans": "草地, 草坪, 草丛, 绿地",
+      "en": "grass, lawn, meadow, grassland"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "生成一块可平铺的像素艺术草地图块，适用于RPG地图的场景绘制。",
+      "en": "Generates a tileable pixel-art grass tile for RPG map scenes."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "static float Sel(float t, float c0, float c1, float c2, float c3, float c4)\n{\n    if (t < 0.24f) return Lerp(c0, c1, SmoothStep(0.02f, 0.24f, t));\n    if (t < 0.5f) return Lerp(c1, c2, SmoothStep(0.24f, 0.5f, t));\n    if (t < 0.78f) return Lerp(c2, c3, SmoothStep(0.5f, 0.78f, t));\n    if (t < 0.92f) return Lerp(c3, c4, SmoothStep(0.78f, 0.92f, t));\n    return Lerp(c3, c4, SmoothStep(0.92f, 1f, t));\n}\n\nvar size = context.TileSize;\nvar seed = GetInt(parameters, \"seed\", 42);\nvar variation = GetFloat(parameters, \"colorVariation\", 0.4f);\nvar patchiness = GetFloat(parameters, \"patchStrength\", 0.3f);\nvar grassType = GetChoice(parameters, \"grassType\", \"StandardGrass\");\n\n// Grass palette (0..1 floats): Shadow, Dark, Mid, Light, Highlight\nfloat sR, sG, sB, dR, dG, dB, mR, mG, mB, lR, lG, lB, hR, hG, hB;\nfloat baseTone;\nfloat coolR, coolG, coolB, warmR, warmG, warmB, lushR, lushG, lushB;\nfloat macroFreq, meadowFreq, colorRegionFreq, accentRegionFreq;\nfloat patchBlendVal, checkerStrength, hlMix, shMix;\nfloat warmStr, coolStr, lushStr;\n\nif (grassType == \"GrassB\")\n{\n    sR=60f/255f; sG=102f/255f; sB=52f/255f;\n    dR=88f/255f; dG=132f/255f; dB=66f/255f;\n    mR=118f/255f; mG=158f/255f; mB=82f/255f;\n    lR=154f/255f; lG=186f/255f; lB=106f/255f;\n    hR=202f/255f; hG=220f/255f; hB=146f/255f;\n    baseTone=0.62f;\n    coolR=82f/255f; coolG=138f/255f; coolB=96f/255f;\n    warmR=172f/255f; warmG=164f/255f; warmB=92f/255f;\n    lushR=114f/255f; lushG=176f/255f; lushB=92f/255f;\n    macroFreq=1.1f; meadowFreq=1.75f; colorRegionFreq=0.72f; accentRegionFreq=1.55f;\n    patchBlendVal=0.24f; checkerStrength=0.012f; hlMix=0.44f; shMix=0.18f;\n    warmStr=0.28f; coolStr=0.22f; lushStr=0.24f;\n}\nelse if (grassType == \"ForestGrass\")\n{\n    sR=30f/255f; sG=54f/255f; sB=36f/255f;\n    dR=42f/255f; dG=76f/255f; dB=46f/255f;\n    mR=58f/255f; mG=106f/255f; mB=62f/255f;\n    lR=82f/255f; lG=138f/255f; lB=82f/255f;\n    hR=118f/255f; hG=176f/255f; hB=108f/255f;\n    baseTone=0.56f;\n    coolR=42f/255f; coolG=88f/255f; coolB=66f/255f;\n    warmR=90f/255f; warmG=124f/255f; warmB=72f/255f;\n    lushR=64f/255f; lushG=132f/255f; lushB=74f/255f;\n    macroFreq=1.35f; meadowFreq=2.45f; colorRegionFreq=0.8f; accentRegionFreq=1.9f;\n    patchBlendVal=0.28f; checkerStrength=0.009f; hlMix=0.38f; shMix=0.24f;\n    warmStr=0.16f; coolStr=0.24f; lushStr=0.2f;\n}\nelse\n{\n    sR=40f/255f; sG=94f/255f; sB=52f/255f;\n    dR=64f/255f; dG=126f/255f; dB=66f/255f;\n    mR=92f/255f; mG=160f/255f; mB=82f/255f;\n    lR=132f/255f; lG=194f/255f; lB=108f/255f;\n    hR=188f/255f; hG=228f/255f; hB=144f/255f;\n    baseTone=0.68f;\n    coolR=70f/255f; coolG=142f/255f; coolB=94f/255f;\n    warmR=176f/255f; warmG=170f/255f; warmB=96f/255f;\n    lushR=96f/255f; lushG=188f/255f; lushB=88f/255f;\n    macroFreq=1.05f; meadowFreq=1.95f; colorRegionFreq=0.68f; accentRegionFreq=1.48f;\n    patchBlendVal=0.2f; checkerStrength=0.014f; hlMix=0.48f; shMix=0.16f;\n    warmStr=0.26f; coolStr=0.18f; lushStr=0.28f;\n}\n\nvar variationBlend = 0.04f + variation * 0.96f;\n\nvar result = new PixelBuffer(size, size);\nresult.ParallelForEachPixel((x, y) =>\n{\n    var macro = TileableFractalNoise(x * macroFreq / (float)size * 6.2832f, y * macroFreq / (float)size * 6.2832f, Math.Max(2, (int)((float)size * macroFreq / 6.2832f)), 2, 0.55f, 2f, seed);\n    var meadow = TileableFractalNoise(x * meadowFreq / (float)size * 6.2832f, y * meadowFreq / (float)size * 6.2832f, Math.Max(2, (int)((float)size * meadowFreq / 6.2832f)), 1, 0.5f, 2f, seed + 17);\n    var patchCell = Math.Max(2, size / 8);\n    var patchPeriod = Math.Max(1, size / patchCell);\n    var patch = TileableValueNoise((float)x / patchCell, (float)y / patchCell, patchPeriod, seed + 31);\n    var broadColor = TileableFractalNoise(x * colorRegionFreq * 0.58f / (float)size * 6.2832f, y * colorRegionFreq * 0.58f / (float)size * 6.2832f, Math.Max(2, (int)((float)size * colorRegionFreq * 0.58f / 6.2832f)), 2, 0.56f, 1.9f, seed + 97);\n    var mediumColor = TileableFractalNoise(x * colorRegionFreq / (float)size * 6.2832f, y * colorRegionFreq / (float)size * 6.2832f, Math.Max(2, (int)((float)size * colorRegionFreq / 6.2832f)), 2, 0.52f, 2f, seed + 109);\n    var colorRegion = Lerp(broadColor, mediumColor, 0.3f + variation * 0.18f);\n    var accentRegion = Lerp(colorRegion, TileableFractalNoise(x * accentRegionFreq / (float)size * 6.2832f, y * accentRegionFreq / (float)size * 6.2832f, Math.Max(2, (int)((float)size * accentRegionFreq / 6.2832f)), 2, 0.58f, 2.2f, seed + 131), 0.26f + variation * 0.16f);\n    var checker = ((x + y) & 1) == 0 ? -checkerStrength : checkerStrength;\n\n    var tone = macro * 0.5f + meadow * 0.22f + patch * (0.28f + variation * 0.08f);\n    tone = Lerp(tone, patch, (patchBlendVal + patchiness * 0.18f + variation * 0.05f) * variationBlend);\n\n    if (grassType == \"ForestGrass\")\n    {\n        var canopy = TileableFractalNoise(x * 1.15f / (float)size * 6.2832f, y * 1.15f / (float)size * 6.2832f, Math.Max(2, (int)((float)size * 1.15f / 6.2832f)), 2, 0.55f, 2f, seed + 101);\n        tone = Lerp(tone, canopy * 0.68f, 0.28f * variationBlend);\n    }\n    else if (grassType == \"GrassB\")\n    {\n        tone = Lerp(tone, patch, 0.08f * variationBlend);\n    }\n\n    tone = Lerp(baseTone, tone, variationBlend);\n    tone = Math.Clamp(tone + checker * (0.18f + variation * 0.46f), 0f, 1f);\n\n    var r = Sel(tone, sR, dR, mR, lR, hR);\n    var g = Sel(tone, sG, dG, mG, lG, hG);\n    var b = Sel(tone, sB, dB, mB, lB, hB);\n\n    // Color variation\n    if (variation > 0.01f)\n    {\n        var varStr = variation * variation;\n        var warmBias = Math.Clamp((colorRegion - 0.5f) * 1.7f + (accentRegion - 0.5f) * 0.35f, -1f, 1f);\n        var coolBias = Math.Clamp((0.5f - colorRegion) * 1.55f + (0.58f - accentRegion) * 0.22f, -1f, 1f);\n        var lushBias = Math.Clamp((accentRegion - 0.5f) * 1.6f - warmBias * 0.22f, -1f, 1f);\n\n        var warmMask = SmoothStep(0.1f, 0.78f, warmBias);\n        var coolMask = SmoothStep(0.12f, 0.8f, coolBias);\n        var lushMask = SmoothStep(0.08f, 0.74f, lushBias) * (1f - tone * 0.24f);\n\n        var wb = varStr * warmStr * warmMask * (0.55f + (1f - tone) * 0.45f);\n        var cb = varStr * coolStr * coolMask * (0.45f + tone * 0.35f);\n        var lb = variation * lushStr * lushMask * (0.4f + tone * 0.35f);\n\n        r = Lerp(r, warmR, wb);\n        g = Lerp(g, warmG, wb);\n        b = Lerp(b, warmB, wb);\n        r = Lerp(r, coolR, cb * (1f - wb * 0.45f));\n        g = Lerp(g, coolG, cb * (1f - wb * 0.45f));\n        b = Lerp(b, coolB, cb * (1f - wb * 0.45f));\n        r = Lerp(r, lushR, lb * (1f - wb * 0.35f));\n        g = Lerp(g, lushG, lb * (1f - wb * 0.35f));\n        b = Lerp(b, lushB, lb * (1f - wb * 0.35f));\n\n        var localContrast = (accentRegion - 0.5f) * variation * 0.04f;\n        if (localContrast > 0f)\n        {\n            r = Lerp(r, hR, localContrast);\n            g = Lerp(g, hG, localContrast);\n            b = Lerp(b, hB, localContrast);\n        }\n        else\n        {\n            var nc = -localContrast;\n            r = Lerp(r, sR, nc);\n            g = Lerp(g, sG, nc);\n            b = Lerp(b, sB, nc);\n        }\n    }\n\n    result.SetPixel(x, y, Math.Clamp(r, 0f, 1f), Math.Clamp(g, 0f, 1f), Math.Clamp(b, 0f, 1f), 1f);\n});\n\nreturn result;"
+  }
+}

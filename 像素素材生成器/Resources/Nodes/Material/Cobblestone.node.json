@@ -1,0 +1,211 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "Cobblestone",
+    "displayName": {
+      "zh-Hans": "鹅卵石",
+      "en": "Cobblestone"
+    },
+    "category": "Material",
+    "description": {
+      "zh-Hans": "使用抖动网格Voronoi单元生成鹅卵石/石板铺装图案，具有逐石颜色变化、3D边缘着色、砂浆缝隙和边缘粗糙度控制。",
+      "en": "Generates a cobblestone/flagstone paving pattern using jittered grid Voronoi cells with per-stone color variation, 3D edge shading, mortar gaps, and edge roughness control."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "遮罩",
+          "en": "Mask"
+        },
+        "type": "Mask"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "种子",
+        "en": "Seed"
+      },
+      "kind": "Seed",
+      "default": 42,
+      "min": 0,
+      "max": 9999
+    },
+    {
+      "name": {
+        "zh-Hans": "列数",
+        "en": "Columns"
+      },
+      "kind": "Integer",
+      "default": 5,
+      "min": 3,
+      "max": 12,
+      "step": 1
+    },
+    {
+      "name": {
+        "zh-Hans": "行数",
+        "en": "Rows"
+      },
+      "kind": "Integer",
+      "default": 5,
+      "min": 3,
+      "max": 12,
+      "step": 1
+    },
+    {
+      "name": {
+        "zh-Hans": "不规则度",
+        "en": "Irregularity"
+      },
+      "kind": "Number",
+      "default": 0.4,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "缝隙宽度",
+        "en": "Gap Width"
+      },
+      "kind": "Number",
+      "default": 0.08,
+      "min": 0.01,
+      "max": 0.25,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "圆润度",
+        "en": "Roundness"
+      },
+      "kind": "Number",
+      "default": 0.3,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "石头颜色",
+        "en": "Stone Color"
+      },
+      "kind": "Color",
+      "default": "#A0968CFF"
+    },
+    {
+      "name": {
+        "zh-Hans": "间隙颜色",
+        "en": "Gap Color"
+      },
+      "kind": "Color",
+      "default": "#46413CFF"
+    },
+    {
+      "name": {
+        "zh-Hans": "颜色变化",
+        "en": "Color Variation"
+      },
+      "kind": "Number",
+      "default": 0.15,
+      "min": 0.0,
+      "max": 0.5,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "高光",
+        "en": "Highlight"
+      },
+      "kind": "Number",
+      "default": 0.3,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "阴影",
+        "en": "Shadow"
+      },
+      "kind": "Number",
+      "default": 0.25,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "凹凸深度",
+        "en": "Bump Depth"
+      },
+      "kind": "Number",
+      "default": 0.3,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "边缘粗糙度",
+        "en": "Edge Roughness"
+      },
+      "kind": "Number",
+      "default": 0.2,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "表面细节",
+        "en": "Surface Detail"
+      },
+      "kind": "Number",
+      "default": 0.3,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "反相",
+        "en": "Invert"
+      },
+      "kind": "Boolean",
+      "default": false
+    }
+  ],
+  "ai": {
+    "capabilities": ["material", "procedural-texture", "stone", "tileable", "architectural"],
+    "triggers": {
+      "zh-Hans": "鹅卵石, 石板路, 石铺地面, 街道, 中世纪",
+      "en": "cobblestone, paving, flagstone, stone path, street"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "生成鹅卵石铺装纹理，用于街道、城堡或古风场景的地面材质。",
+      "en": "Generate a cobblestone paving texture for streets, castles, or ancient scene ground materials."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar seed = GetInt(parameters, \"seed\", context.Seed);\nvar cols = Math.Clamp(GetInt(parameters, \"columns\", 5), 3, 12);\nvar rows = Math.Clamp(GetInt(parameters, \"rows\", 5), 3, 12);\nvar irregularity = GetFloat(parameters, \"irregularity\", 0.4f);\nvar gapWidth = GetFloat(parameters, \"gapWidth\", 0.08f);\nvar roundness = GetFloat(parameters, \"roundness\", 0.3f);\nvar stoneColor = GetColor(parameters, \"stoneColor\", Color.FromRgb(160, 150, 140));\nvar gapColor = GetColor(parameters, \"gapColor\", Color.FromRgb(70, 65, 60));\nvar colorVar = GetFloat(parameters, \"colorVariation\", 0.15f);\nvar highlight = GetFloat(parameters, \"highlight\", 0.3f);\nvar shadow = GetFloat(parameters, \"shadow\", 0.25f);\nvar bumpDepth = GetFloat(parameters, \"bumpDepth\", 0.3f);\nvar edgeRoughness = GetFloat(parameters, \"edgeRoughness\", 0.2f);\nvar surfaceDetail = GetFloat(parameters, \"surfaceDetail\", 0.3f);\nvar invert = GetBool(parameters, \"invert\", false);\n\nvar size = context.TileSize;\nvar buffer = new PixelBuffer(size, size);\n\nvar sR = stoneColor.R / 255f; var sG = stoneColor.G / 255f; var sB = stoneColor.B / 255f;\nvar gR = gapColor.R / 255f; var gG = gapColor.G / 255f; var gB = gapColor.B / 255f;\n\n// Pre-generate stone centers with jitter\nvar cellW = 1f / cols;\nvar cellH = 1f / rows;\nvar maxJitterX = cellW * irregularity * 0.4f;\nvar maxJitterY = cellH * irregularity * 0.4f;\n\n// Store jittered centers: [row, col] -> (cx, cy, hash)\nvar centers = new (float cx, float cy, float hash)[rows, cols];\nfor (var r = 0; r < rows; r++)\n{\n    for (var c = 0; c < cols; c++)\n    {\n        var baseCx = (c + 0.5f) * cellW;\n        var baseCy = (r + 0.5f) * cellH;\n        var jx = (HashToUnit(c * 13 + r * 7, seed, 111) - 0.5f) * 2f * maxJitterX;\n        var jy = (HashToUnit(c * 7 + r * 13, seed + 50, 222) - 0.5f) * 2f * maxJitterY;\n        var h = HashToUnit(c * 23 + r * 17, seed + 100, 333);\n        centers[r, c] = (\n            Math.Clamp(baseCx + jx, cellW * 0.1f, 1f - cellW * 0.1f),\n            Math.Clamp(baseCy + jy, cellH * 0.1f, 1f - cellH * 0.1f),\n            h\n        );\n    }\n}\n\nbuffer.ParallelForEachPixel((x, y) =>\n{\n    var u = (x + 0.5f) / size;\n    var v = (y + 0.5f) / size;\n\n    // Edge roughness perturbation\n    var erU = u;\n    var erV = v;\n    if (edgeRoughness > 0f)\n    {\n        var erNoise = TileableFractalNoise(u * cols * 2f, v * rows * 2f,\n            Math.Max(1, size / 2), 2, 0.5f, 2f, seed + 200);\n        var erOffset = (erNoise - 0.5f) * edgeRoughness * cellW * 0.3f;\n        erU += erOffset;\n        erV += erOffset * 0.8f;\n    }\n\n    // Find nearest stone center (with wraparound for tiling)\n    var minDistSq = float.MaxValue;\n    var bestR = 0;\n    var bestC = 0;\n    var bestHash = 0f;\n    var nearCenterX = 0f;\n    var nearCenterY = 0f;\n\n    // Check 3x3 neighborhood for wrap-around\n    var baseRow = (int)MathF.Floor(erV / cellH);\n    var baseCol = (int)MathF.Floor(erU / cellW);\n\n    for (var dr = -1; dr <= 1; dr++)\n    {\n        for (var dc = -1; dc <= 1; dc++)\n        {\n            var nr = ((baseRow + dr) % rows + rows) % rows;\n            var nc = ((baseCol + dc) % cols + cols) % cols;\n            var (ccx, ccy, ch) = centers[nr, nc];\n\n            // Wrapped distance\n            var dx = erU - ccx;\n            var dy = erV - ccy;\n            if (dx > 0.5f) dx -= 1f; else if (dx < -0.5f) dx += 1f;\n            if (dy > 0.5f) dy -= 1f; else if (dy < -0.5f) dy += 1f;\n\n            var distSq = dx * dx + dy * dy;\n            if (distSq < minDistSq)\n            {\n                minDistSq = distSq;\n                bestR = nr;\n                bestC = nc;\n                bestHash = ch;\n                nearCenterX = ccx;\n                nearCenterY = ccy;\n            }\n        }\n    }\n\n    var dist = MathF.Sqrt(minDistSq);\n\n    // Normalize distance relative to expected cell size\n    var normCellSize = MathF.Sqrt(cellW * cellH) * 0.5f;\n    var normDist = dist / normCellSize;\n\n    // Distance to nearest edge of the stone (for gap and shading)\n    var dxToCenter = erU - nearCenterX;\n    var dyToCenter = erV - nearCenterY;\n    if (dxToCenter > 0.5f) dxToCenter -= 1f; else if (dxToCenter < -0.5f) dxToCenter += 1f;\n    if (dyToCenter > 0.5f) dyToCenter -= 1f; else if (dyToCenter < -0.5f) dyToCenter += 1f;\n\n    // Elliptical distance scaled by cell aspect ratio\n    var elDist = MathF.Sqrt(\n        (dxToCenter / (cellW * 0.5f)) * (dxToCenter / (cellW * 0.5f)) +\n        (dyToCenter / (cellH * 0.5f)) * (dyToCenter / (cellH * 0.5f))\n    );\n\n    // Apply roundness: blend between elliptical and Manhattan distance\n    var circularDist = MathF.Sqrt(\n        (dxToCenter * dxToCenter + dyToCenter * dyToCenter) / (0.5f * 0.5f));\n    var effectiveDist = Lerp(elDist, circularDist, roundness);\n\n    // Apply noise for organic stone shape\n    if (irregularity > 0f)\n    {\n        var shapeNoise = TileableFractalNoise(\n            u * cols * 1.5f + bestHash * 10f,\n            v * rows * 1.5f + bestHash * 20f,\n            Math.Max(1, size / 2), 2, 0.5f, 2f, seed + 300 + bestC * 7 + bestR * 13);\n        effectiveDist += (shapeNoise - 0.5f) * irregularity * 0.3f;\n    }\n\n    // Gap + stone determination\n    var gapThreshold = 1f - gapWidth * 2f;\n    var isGap = effectiveDist > gapThreshold;\n\n    float r, g, b;\n\n    if (isGap)\n    {\n        // Mortar/gap: dark with slight variation\n        var gapNoise = TileableFractalNoise(\n            u * 5f + 100f, v * 5f + 100f,\n            Math.Max(1, size / 2), 2, 0.5f, 2f, seed + 400);\n        var gapVar = (gapNoise - 0.5f) * 0.1f;\n        r = Math.Clamp(gR + gapVar, 0f, 1f);\n        g = Math.Clamp(gG + gapVar * 0.9f, 0f, 1f);\n        b = Math.Clamp(gB + gapVar * 0.8f, 0f, 1f);\n\n        // Depth shading in gap (darker near stone edges)\n        if (bumpDepth > 0f)\n        {\n            var depthFactor = (effectiveDist - gapThreshold) / (gapWidth * 2f);\n            depthFactor = Math.Clamp(depthFactor, 0f, 1f);\n            var depthDark = depthFactor * bumpDepth * 0.4f;\n            r *= 1f - depthDark;\n            g *= 1f - depthDark * 0.95f;\n            b *= 1f - depthDark * 0.9f;\n        }\n    }\n    else\n    {\n        // Stone surface\n        var varAmt = (bestHash - 0.5f) * colorVar;\n        r = Math.Clamp(sR + varAmt, 0f, 1f);\n        g = Math.Clamp(sG + varAmt * 0.85f, 0f, 1f);\n        b = Math.Clamp(sB + varAmt * 0.7f, 0f, 1f);\n\n        // 3D edge shading: highlight on top-left, shadow on bottom-right\n        var edgeT = 1f - effectiveDist / gapThreshold;\n        edgeT = MathF.Max(0f, edgeT);\n\n        // Light direction: top-left\n        var lightDot = (-dxToCenter * 0.7f + -dyToCenter * 0.7f) / normCellSize;\n        var hl = MathF.Max(0f, lightDot) * highlight * edgeT;\n        var sh = MathF.Max(0f, -lightDot) * shadow * edgeT;\n\n        r = Math.Clamp(r + hl - sh, 0f, 1f);\n        g = Math.Clamp(g + hl * 0.85f - sh * 0.85f, 0f, 1f);\n        b = Math.Clamp(b + hl * 0.7f - sh * 0.7f, 0f, 1f);\n\n        // Surface detail noise\n        if (surfaceDetail > 0f)\n        {\n            var detailNoise = TileableFractalNoise(\n                u * cols * 4f, v * rows * 4f,\n                Math.Max(1, size / 2), 2, 0.5f, 2.5f, seed + 500 + bestC * 11 + bestR * 17);\n            var detail = (detailNoise - 0.5f) * surfaceDetail * 0.12f;\n            r = Math.Clamp(r + detail, 0f, 1f);\n            g = Math.Clamp(g + detail * 0.9f, 0f, 1f);\n            b = Math.Clamp(b + detail * 0.8f, 0f, 1f);\n        }\n\n        // Subtle bump at stone center\n        if (bumpDepth > 0f)\n        {\n            var centerBump = 1f - effectiveDist / gapThreshold;\n            centerBump = MathF.Max(0f, centerBump);\n            centerBump = centerBump * centerBump * bumpDepth * 0.08f;\n            r = Math.Clamp(r + centerBump, 0f, 1f);\n            g = Math.Clamp(g + centerBump * 0.9f, 0f, 1f);\n            b = Math.Clamp(b + centerBump * 0.85f, 0f, 1f);\n        }\n    }\n\n    if (invert) { r = 1f - r; g = 1f - g; b = 1f - b; }\n\n    buffer.SetPixel(x, y, Math.Clamp(r, 0f, 1f), Math.Clamp(g, 0f, 1f), Math.Clamp(b, 0f, 1f), 1f);\n});\n\nreturn buffer;\n}"
+  }
+}

@@ -1,0 +1,254 @@
+<Window x:Class="PixelAssetGenerator.ColorWheelWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:loc="clr-namespace:PixelAssetGenerator.Services.Localization"
+        Title="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[ColorWheel_Title]}"
+        SizeToContent="WidthAndHeight"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False"
+        Background="{DynamicResource PanelBackground}"
+        Foreground="{DynamicResource PrimaryText}"
+        FontFamily="Segoe UI"
+        Loaded="Window_Loaded">
+
+    <Window.Resources>
+        <Style TargetType="TextBox">
+            <Setter Property="Background" Value="{DynamicResource ControlBackground}" />
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryText}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource ControlBorder}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Padding" Value="4,2" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="4">
+                            <ScrollViewer x:Name="PART_ContentHost"
+                                          Margin="{TemplateBinding Padding}"
+                                          VerticalAlignment="Center" />
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style TargetType="Button">
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="4">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.85" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- ===== 色环 + SV 方块 ===== -->
+        <Border Grid.Row="0"
+                Background="{DynamicResource WindowBackground}"
+                CornerRadius="6"
+                Padding="12"
+                Margin="0,0,0,12"
+                HorizontalAlignment="Center">
+            <Canvas x:Name="WheelCanvas"
+                    Width="280" Height="280"
+                    Background="Transparent"
+                    ClipToBounds="True"
+                    Cursor="Cross"
+                    MouseLeftButtonDown="WheelCanvas_MouseLeftButtonDown"
+                    MouseMove="WheelCanvas_MouseMove"
+                    MouseLeftButtonUp="WheelCanvas_MouseLeftButtonUp">
+                <!-- 色相环位图 -->
+                <Image x:Name="HueRingImage"
+                       Width="280" Height="280"
+                       IsHitTestVisible="False"
+                       RenderOptions.BitmapScalingMode="HighQuality" />
+                <!-- SV 方块位图 -->
+                <Image x:Name="SVSquareImage"
+                       IsHitTestVisible="False"
+                       RenderOptions.BitmapScalingMode="HighQuality" />
+                <!-- SV 方块边框 -->
+                <Border x:Name="SVSquareBorder"
+                        BorderBrush="{DynamicResource ControlBorder}"
+                        BorderThickness="0.5"
+                        IsHitTestVisible="False" />
+                <!-- 色相环选择标记 -->
+                <Ellipse x:Name="RingMarker"
+                         Width="18" Height="18"
+                         Stroke="White"
+                         StrokeThickness="2.5"
+                         IsHitTestVisible="False">
+                    <Ellipse.Effect>
+                        <DropShadowEffect Color="Black" BlurRadius="4" ShadowDepth="0" Opacity="0.8" />
+                    </Ellipse.Effect>
+                </Ellipse>
+                <!-- SV 选择标记 -->
+                <Ellipse x:Name="SVMarker"
+                         Width="14" Height="14"
+                         Stroke="White"
+                         StrokeThickness="2"
+                         Fill="Transparent"
+                         IsHitTestVisible="False">
+                    <Ellipse.Effect>
+                        <DropShadowEffect Color="Black" BlurRadius="3" ShadowDepth="0" Opacity="0.9" />
+                    </Ellipse.Effect>
+                </Ellipse>
+            </Canvas>
+        </Border>
+
+        <!-- ===== 预览 + HEX ===== -->
+        <Grid Grid.Row="1" Margin="0,0,0,10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="12" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <StackPanel Grid.Column="0">
+                <TextBlock Text="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[ColorWheel_Preview]}" FontSize="10"
+                           Foreground="{DynamicResource MutedText}"
+                           Margin="0,0,0,3" />
+                <Border Width="64" Height="48"
+                        BorderBrush="{DynamicResource ControlBorder}"
+                        BorderThickness="1"
+                        CornerRadius="4"
+                        ClipToBounds="True">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Rectangle x:Name="OldColorRect" Grid.Column="0" ToolTip="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[ColorWheel_OldColor]}" />
+                        <Rectangle x:Name="NewColorRect" Grid.Column="1" ToolTip="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[ColorWheel_NewColor]}" />
+                    </Grid>
+                </Border>
+            </StackPanel>
+            <StackPanel Grid.Column="2" VerticalAlignment="Bottom">
+                <TextBlock Text="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[ColorWheel_HEX]}" FontSize="10"
+                           Foreground="{DynamicResource MutedText}"
+                           Margin="0,0,0,3" />
+                <TextBox x:Name="HexTextBox"
+                         Height="28"
+                         FontSize="13"
+                         FontFamily="Consolas"
+                         VerticalContentAlignment="Center"
+                         Padding="6,2"
+                         KeyDown="HexTextBox_KeyDown"
+                         LostFocus="HexTextBox_LostFocus" />
+            </StackPanel>
+        </Grid>
+
+        <!-- ===== R G B ===== -->
+        <Grid Grid.Row="2" Margin="0,0,0,6">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="8" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="8" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <StackPanel Grid.Column="0">
+                <TextBlock Text="R" FontSize="10" Foreground="#FF6B6B" Margin="0,0,0,2" />
+                <TextBox x:Name="RTextBox" Height="26" FontSize="11"
+                         VerticalContentAlignment="Center"
+                         HorizontalContentAlignment="Center"
+                         KeyDown="RGBTextBox_KeyDown"
+                         LostFocus="RGBTextBox_LostFocus" />
+            </StackPanel>
+            <StackPanel Grid.Column="2">
+                <TextBlock Text="G" FontSize="10" Foreground="#6BFF6B" Margin="0,0,0,2" />
+                <TextBox x:Name="GTextBox" Height="26" FontSize="11"
+                         VerticalContentAlignment="Center"
+                         HorizontalContentAlignment="Center"
+                         KeyDown="RGBTextBox_KeyDown"
+                         LostFocus="RGBTextBox_LostFocus" />
+            </StackPanel>
+            <StackPanel Grid.Column="4">
+                <TextBlock Text="B" FontSize="10" Foreground="#6B9FFF" Margin="0,0,0,2" />
+                <TextBox x:Name="BTextBox" Height="26" FontSize="11"
+                         VerticalContentAlignment="Center"
+                         HorizontalContentAlignment="Center"
+                         KeyDown="RGBTextBox_KeyDown"
+                         LostFocus="RGBTextBox_LostFocus" />
+            </StackPanel>
+        </Grid>
+
+        <!-- ===== H S V ===== -->
+        <Grid Grid.Row="3" Margin="0,0,0,14">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="8" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="8" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <StackPanel Grid.Column="0">
+                <TextBlock Text="H°" FontSize="10"
+                           Foreground="{DynamicResource MutedText}"
+                           Margin="0,0,0,2" />
+                <TextBox x:Name="HTextBox" Height="26" FontSize="11"
+                         VerticalContentAlignment="Center"
+                         HorizontalContentAlignment="Center"
+                         KeyDown="HSVTextBox_KeyDown"
+                         LostFocus="HSVTextBox_LostFocus" />
+            </StackPanel>
+            <StackPanel Grid.Column="2">
+                <TextBlock Text="S%" FontSize="10"
+                           Foreground="{DynamicResource MutedText}"
+                           Margin="0,0,0,2" />
+                <TextBox x:Name="STextBox" Height="26" FontSize="11"
+                         VerticalContentAlignment="Center"
+                         HorizontalContentAlignment="Center"
+                         KeyDown="HSVTextBox_KeyDown"
+                         LostFocus="HSVTextBox_LostFocus" />
+            </StackPanel>
+            <StackPanel Grid.Column="4">
+                <TextBlock Text="V%" FontSize="10"
+                           Foreground="{DynamicResource MutedText}"
+                           Margin="0,0,0,2" />
+                <TextBox x:Name="VTextBox" Height="26" FontSize="11"
+                         VerticalContentAlignment="Center"
+                         HorizontalContentAlignment="Center"
+                         KeyDown="HSVTextBox_KeyDown"
+                         LostFocus="HSVTextBox_LostFocus" />
+            </StackPanel>
+        </Grid>
+
+        <!-- ===== 按钮 ===== -->
+        <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button Content="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[ColorWheel_Cancel]}" Width="72" Height="30" Margin="0,0,8,0"
+                    Click="Cancel_Click"
+                    Background="{DynamicResource ControlBackground}"
+                    Foreground="{DynamicResource PrimaryText}"
+                    BorderBrush="{DynamicResource ControlBorder}" />
+            <Button Content="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[ColorWheel_OK]}" Width="72" Height="30"
+                    Click="Ok_Click"
+                    Background="{DynamicResource Accent}"
+                    Foreground="{DynamicResource AccentForeground}"
+                    BorderBrush="{DynamicResource Accent}" />
+        </StackPanel>
+    </Grid>
+</Window>

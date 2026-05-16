@@ -1,0 +1,74 @@
+{
+  "formatVersion": 2,
+  "processorType": "InteractiveForce",
+  "identity": {
+    "typeName": "InteractiveForce",
+    "displayName": {
+      "zh-Hans": "交互力场",
+      "en": "Interactive Force"
+    },
+    "category": "Particle",
+    "description": {
+      "zh-Hans": "创建鼠标/触摸驱动的交互式力场，实时影响粒子运动（吸引/排斥/漩涡）",
+      "en": "Creates mouse/touch-driven interactive force fields that affect particle motion in real-time (attract/repel/vortex)"
+    },
+    "tags": ["particle", "interactive", "force"],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [
+      {
+        "name": { "zh-Hans": "粒子", "en": "Particles" },
+        "type": "Particle"
+      },
+      {
+        "name": { "zh-Hans": "位置X", "en": "Position X" },
+        "type": "Float"
+      },
+      {
+        "name": { "zh-Hans": "位置Y", "en": "Position Y" },
+        "type": "Float"
+      }
+    ],
+    "outputs": [
+      {
+        "name": { "zh-Hans": "粒子", "en": "Particles" },
+        "type": "Particle"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": { "zh-Hans": "交互类型", "en": "Interaction Type" },
+      "kind": "Choice",
+      "default": "attract",
+      "choices": ["attract", "repel", "vortex", "gravity"],
+      "displayChoices": ["吸引", "排斥", "漩涡", "重力"]
+    },
+    { "name": { "zh-Hans": "强度", "en": "Strength" }, "kind": "Number", "default": 2.0, "min": -10.0, "max": 10.0, "step": 0.1 },
+    { "name": { "zh-Hans": "作用半径", "en": "Radius" }, "kind": "Number", "default": 0.2, "min": 0.01, "max": 0.5, "step": 0.01 },
+    {
+      "name": { "zh-Hans": "衰减方式", "en": "Falloff" },
+      "kind": "Choice",
+      "default": "inverseSquare",
+      "choices": ["constant", "linear", "inverseSquare"],
+      "displayChoices": ["恒定", "线性", "平方反比"]
+    },
+    { "name": { "zh-Hans": "使用鼠标位置", "en": "Use Pointer" }, "kind": "Boolean", "default": true },
+    { "name": { "zh-Hans": "默认位置X", "en": "Default X" }, "kind": "Number", "default": 0.5, "min": 0, "max": 1, "step": 0.01 },
+    { "name": { "zh-Hans": "默认位置Y", "en": "Default Y" }, "kind": "Number", "default": 0.5, "min": 0, "max": 1, "step": 0.01 }
+  ],
+  "ai": {
+    "capabilities": ["particle", "force", "interactive"],
+    "triggers": {
+      "zh-Hans": "交互力场, 鼠标交互, 粒子吸引, 粒子排斥, 漩涡力",
+      "en": "interactive force, mouse interaction, particle attract, particle repel, vortex force"
+    },
+    "suggestedInputs": ["ParticleEmitter"],
+    "exampleUsage": {
+      "zh-Hans": "创建鼠标驱动的吸引交互力场，强度2.0，作用半径0.2，粒子靠近鼠标时被吸引",
+      "en": "Create a mouse-driven attract force field with strength 2.0 and radius 0.2, attracting particles toward the pointer"
+    }
+  }
+}

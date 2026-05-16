@@ -1,0 +1,123 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "Honeycomb",
+    "displayName": {
+      "zh-Hans": "蜂窝",
+      "en": "Honeycomb"
+    },
+    "category": "Pattern",
+    "description": {
+      "zh-Hans": "生成规则六边形蜂窝图案，支持单元格壁、内部着色和可选的倒角效果。",
+      "en": "Generates a regular hexagonal honeycomb pattern with cell walls, interior coloring, and optional bevel effect."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "遮罩",
+          "en": "Mask"
+        },
+        "type": "Mask"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "种子",
+        "en": "Seed"
+      },
+      "kind": "Seed",
+      "default": 42,
+      "min": 0,
+      "max": 9999
+    },
+    {
+      "name": {
+        "zh-Hans": "缩放",
+        "en": "Scale"
+      },
+      "kind": "Number",
+      "default": 0.18,
+      "min": 0.05,
+      "max": 0.5,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "墙厚",
+        "en": "Wall Thickness"
+      },
+      "kind": "Number",
+      "default": 0.15,
+      "min": 0.02,
+      "max": 0.5,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "斜面",
+        "en": "Bevel"
+      },
+      "kind": "Number",
+      "default": 0.3,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "内部颜色",
+        "en": "Inner Color"
+      },
+      "kind": "Color",
+      "default": "#FFFFFFFF"
+    },
+    {
+      "name": {
+        "zh-Hans": "墙壁颜色",
+        "en": "Wall Color"
+      },
+      "kind": "Color",
+      "default": "#000000FF"
+    },
+    {
+      "name": {
+        "zh-Hans": "反相",
+        "en": "Invert"
+      },
+      "kind": "Boolean",
+      "default": false
+    }
+  ],
+  "ai": {
+    "capabilities": ["pattern", "geometric", "grid", "tiling"],
+    "triggers": {
+      "zh-Hans": "蜂窝, 六边形, 蜂巢",
+      "en": "honeycomb, hexagon, hexagonal"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "生成六边形蜂窝图案，适用于科幻或自然风格的像素艺术墙面。",
+      "en": "Generate a hexagonal honeycomb pattern suitable for sci-fi or nature-themed pixel art walls."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar seed = GetInt(parameters, \"seed\", context.Seed);\nvar scale = GetFloat(parameters, \"scale\", 0.15f);\nvar wallThick = GetFloat(parameters, \"wallThickness\", 0.15f);\nvar bevel = GetFloat(parameters, \"bevel\", 0.3f);\nvar innerColor = GetColor(parameters, \"innerColor\", System.Windows.Media.Color.FromRgb(220, 180, 80));\nvar wallColor = GetColor(parameters, \"wallColor\", System.Windows.Media.Color.FromRgb(100, 70, 30));\nvar invert = GetBool(parameters, \"invert\", false);\n\nvar size = context.TileSize;\nvar buffer = new PixelBuffer(size, size);\n\nvar iR = innerColor.R / 255f; var iG = innerColor.G / 255f; var iB = innerColor.B / 255f;\nvar wR = wallColor.R / 255f; var wG = wallColor.G / 255f; var wB = wallColor.B / 255f;\n\n// Hexagonal grid constants\nvar sqrt3 = 1.7320508f;\nvar hX = scale * 1.5f;\nvar hY = scale * sqrt3;\n\nbuffer.ParallelForEachPixel((x, y) =>\n{\n    var u = (x + 0.5f) / size;\n    var v = (y + 0.5f) / size;\n\n    // Convert to hex grid coordinates\n    var q = u / hX;\n    var r2 = v / hY - q * 0.5f;\n\n    // Round to nearest hex center\n    var qr = MathF.Round(q);\n    var rr = MathF.Round(r2);\n\n    var dq = q - qr;\n    var dr = r2 - rr;\n\n    // Correct for the skewed grid\n    if (MathF.Abs(dq) + MathF.Abs(dr) > 0.5f)\n    {\n        var dqr = -MathF.Sign(dq);\n        var drr = -MathF.Sign(dr);\n        if (MathF.Abs(dqr) < MathF.Abs(drr))\n            qr += dqr * 0.5f;\n        else\n            rr += drr * 0.5f;\n    }\n\n    // Distance to nearest hex center in hex-space\n    var distQ = u / hX - qr;\n    var distR = v / hY - qr * 0.5f - rr;\n\n    // Convert to Cartesian distance\n    var cx = distQ * hX;\n    var cy = distR * hY;\n    var dist = MathF.Sqrt(cx * cx + cy * cy);\n\n    // Distance to hex edge (approximate)\n    var hexRadius = scale;\n    var edgeDist = (hexRadius - dist) / hexRadius;\n\n    // Per-hex hash for color variation\n    var hashVal = HashToUnit((int)(qr * 1000 + rr), seed, 999);\n\n    // Determine if inside cell or wall\n    float r, g, b;\n    if (edgeDist > wallThick)\n    {\n        // Inside cell — inner color with slight variation\n        var var_ = (hashVal - 0.5f) * 0.08f;\n        r = Math.Clamp(iR + var_, 0f, 1f);\n        g = Math.Clamp(iG + var_ * 0.8f, 0f, 1f);\n        b = Math.Clamp(iB + var_ * 0.6f, 0f, 1f);\n\n        // Bevel shading near edges\n        if (bevel > 0f && edgeDist < wallThick + scale * bevel * 0.3f)\n        {\n            var bevelFactor = (edgeDist - wallThick) / (scale * bevel * 0.3f);\n            bevelFactor = Math.Clamp(bevelFactor, 0f, 1f);\n            r = r * (1f - bevelFactor * 0.2f);\n            g = g * (1f - bevelFactor * 0.2f);\n            b = b * (1f - bevelFactor * 0.15f);\n        }\n    }\n    else\n    {\n        // Wall\n        r = wR; g = wG; b = wB;\n    }\n\n    if (invert) { r = 1f - r; g = 1f - g; b = 1f - b; }\n\n    buffer.SetPixel(x, y, Math.Clamp(r, 0f, 1f), Math.Clamp(g, 0f, 1f), Math.Clamp(b, 0f, 1f), 1f);\n});\n\nreturn buffer;\n}"
+  }
+}

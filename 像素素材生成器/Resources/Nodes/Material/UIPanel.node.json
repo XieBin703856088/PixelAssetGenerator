@@ -1,0 +1,162 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "UIPanel",
+    "displayName": {
+      "zh-Hans": "UI面板",
+      "en": "UI Panel"
+    },
+    "category": "Material",
+    "description": {
+      "zh-Hans": "生成像素艺术UI面板，支持可配置边框、圆角半径、背景填充和可选标题栏。适用于游戏HUD和菜单原型设计。",
+      "en": "Generates pixel art UI panels with configurable border, corner radius, background fill, and optional title bar. Suitable for game HUD and menu mockups."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [
+      {
+        "name": {
+          "zh-Hans": "背景",
+          "en": "Background"
+        },
+        "type": "Image"
+      }
+    ],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "遮罩",
+          "en": "Mask"
+        },
+        "type": "Mask"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "宽度",
+        "en": "Width"
+      },
+      "kind": "Number",
+      "default": 0.8,
+      "min": 0.2,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "高度",
+        "en": "Height"
+      },
+      "kind": "Number",
+      "default": 0.6,
+      "min": 0.2,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "边框宽度",
+        "en": "Border Width"
+      },
+      "kind": "Number",
+      "default": 0.03,
+      "min": 0.0,
+      "max": 0.1,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "圆角",
+        "en": "Corner Radius"
+      },
+      "kind": "Number",
+      "default": 0.08,
+      "min": 0.0,
+      "max": 0.2,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "背景颜色",
+        "en": "Bg Color"
+      },
+      "kind": "Color",
+      "default": "#2D2837FF"
+    },
+    {
+      "name": {
+        "zh-Hans": "边框颜色",
+        "en": "Border Color"
+      },
+      "kind": "Color",
+      "default": "#A08CB4FF"
+    },
+    {
+      "name": {
+        "zh-Hans": "内部高光",
+        "en": "Inner Highlight"
+      },
+      "kind": "Color",
+      "default": "#463C55FF"
+    },
+    {
+      "name": {
+        "zh-Hans": "标题栏",
+        "en": "Title Bar"
+      },
+      "kind": "Boolean",
+      "default": true
+    },
+    {
+      "name": {
+        "zh-Hans": "X偏移",
+        "en": "Offset X"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": -0.5,
+      "max": 0.5,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "Y偏移",
+        "en": "Offset Y"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": -0.5,
+      "max": 0.5,
+      "step": 0.01
+    }
+  ],
+  "ai": {
+    "capabilities": ["material", "procedural-texture", "ui-element", "game-ui", "hud"],
+    "triggers": {
+      "zh-Hans": "面板, UI面板, 窗口, 对话框, 游戏界面, HUD面板",
+      "en": "panel, UI panel, window, dialog, game UI, HUD panel"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "生成像素艺术UI面板，用于游戏HUD窗口和菜单原型。",
+      "en": "Generate pixel-art UI panels for game HUD windows and menu mockups."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar bgInput = inputs.Length > 0 ? inputs[0] : null;\nvar width = GetFloat(parameters, \"width\", 0.8f);\nvar height = GetFloat(parameters, \"height\", 0.6f);\nvar borderW = GetFloat(parameters, \"borderWidth\", 0.03f);\nvar cornerR = GetFloat(parameters, \"cornerRadius\", 0.08f);\nvar bgColor = GetColor(parameters, \"bgColor\", Color.FromRgb(45, 40, 55));\nvar borderColor = GetColor(parameters, \"borderColor\", Color.FromRgb(160, 140, 180));\nvar innerHL = GetColor(parameters, \"innerHighlight\", Color.FromRgb(70, 60, 85));\nvar titleBar = GetBool(parameters, \"titleBar\", true);\nvar offsetX = GetFloat(parameters, \"offsetX\", 0f);\nvar offsetY = GetFloat(parameters, \"offsetY\", 0f);\n\nvar tileSize = context.TileSize;\nvar buffer = bgInput != null ? bgInput.Clone() : new PixelBuffer(tileSize, tileSize);\n\nvar bgR = bgColor.R / 255f; var bgG = bgColor.G / 255f; var bgB = bgColor.B / 255f;\nvar bR = borderColor.R / 255f; var bG = borderColor.G / 255f; var bB = borderColor.B / 255f;\nvar hlR = innerHL.R / 255f; var hlG = innerHL.G / 255f; var hlB = innerHL.B / 255f;\n\nvar halfSize = tileSize * 0.5f;\nvar panelW = tileSize * width * 0.5f;\nvar panelH = tileSize * height * 0.5f;\nvar cornerPx = tileSize * cornerR;\nvar borderPx = tileSize * borderW;\nvar cx = halfSize + offsetX * tileSize;\nvar cy = halfSize + offsetY * tileSize;\n\nvar titleH = titleBar ? panelH * 0.18f : 0f;\n\nbuffer.ParallelForEachPixel((x, y) =>\n{\n    var px = MathF.Abs(x + 0.5f - cx);\n    var py = MathF.Abs(y + 0.5f - cy);\n\n    if (px > panelW || py > panelH) return;\n\n    // Signed distance to rounded rectangle\n    var rx = Math.Max(0f, px - (panelW - cornerPx));\n    var ry = Math.Max(0f, py - (panelH - cornerPx));\n    var cornerDist = MathF.Sqrt(rx * rx + ry * ry);\n\n    var body = false;\n    var border = false;\n    var titleFill = false;\n\n    if (cornerDist > cornerPx + borderPx || px > panelW || py > panelH)\n        return;\n\n    if (cornerDist > cornerPx)\n    {\n        // Border corner\n        border = true;\n    }\n    else if (px > panelW - borderPx || py > panelH - borderPx)\n    {\n        // Border edge\n        border = true;\n    }\n    else if (titleBar && py < titleH)\n    {\n        titleFill = true;\n    }\n    else\n    {\n        body = true;\n    }\n\n    if (border)\n    {\n        // Border with 3D bevel\n        var bevel = 1f;\n        if (px < panelW * 0.5f && py < panelH * 0.5f)\n            bevel = 1.3f; // top-left highlight\n        else if (px > panelW * 0.5f || py > panelH * 0.5f)\n            bevel = 0.7f; // bottom-right shadow\n        buffer.SetPixel(x, y,\n            Math.Clamp(bR * bevel, 0f, 1f),\n            Math.Clamp(bG * bevel, 0f, 1f),\n            Math.Clamp(bB * bevel, 0f, 1f), 1f);\n    }\n    else if (titleFill)\n    {\n        // Title bar: slightly brighter background\n        var t = 1f - py / titleH * 0.3f;\n        buffer.SetPixel(x, y,\n            Math.Clamp(hlR * t, 0f, 1f),\n            Math.Clamp(hlG * t, 0f, 1f),\n            Math.Clamp(hlB * t, 0f, 1f), 1f);\n    }\n    else if (body)\n    {\n        // Body: subtle gradient from center\n        var dark = 1f - (py / panelH) * 0.15f;\n        buffer.SetPixel(x, y,\n            Math.Clamp(bgR * dark, 0f, 1f),\n            Math.Clamp(bgG * dark, 0f, 1f),\n            Math.Clamp(bgB * dark, 0f, 1f), 1f);\n    }\n});\n\nreturn buffer;\n}"
+  }
+}

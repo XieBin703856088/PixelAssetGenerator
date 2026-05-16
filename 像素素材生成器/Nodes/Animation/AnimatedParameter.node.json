@@ -1,0 +1,185 @@
+{
+  "formatVersion": 2,
+  "processorType": "AnimatedParameter",
+  "identity": {
+    "typeName": "AnimatedParameter",
+    "displayName": {
+      "zh-Hans": "参数动画",
+      "en": "Animated Parameter"
+    },
+    "category": "Animation",
+    "description": {
+      "zh-Hans": "通过关键帧输出随时间变化的动画值，可连接到其他节点参数。支持最多10个关键帧，每个关键帧可配置时间、值和缓动类型。缓出适合自然减速，弹跳/弹性适合生动效果。",
+      "en": "Outputs animated values over time via keyframes, connectable to other node parameters. Supports up to 10 keyframes with per-keyframe time, value, and easing type. Ease out for natural deceleration, bounce/elastic for lively effects."
+    },
+    "tags": ["animation", "parameter"],
+    "author": "BuiltIn",
+    "version": "1.1"
+  },
+  "ports": {
+    "inputs": [],
+    "outputs": [
+      {
+        "name": { "zh-Hans": "值", "en": "Value" },
+        "type": "Float"
+      }
+    ]
+  },
+  "parameters": [
+    { "name": { "zh-Hans": "持续时间", "en": "Duration" }, "kind": "Number", "default": 1.0, "min": 0.1, "max": 30, "step": 0.1 },
+    { "name": { "zh-Hans": "循环", "en": "Loop" }, "kind": "Boolean", "default": true },
+    { "name": { "zh-Hans": "关键帧数", "en": "Keyframe Count" }, "kind": "Integer", "default": 2, "min": 2, "max": 10, "step": 1 },
+
+    { "name": { "zh-Hans": "关键帧1时间", "en": "KF1 Time" }, "kind": "Number", "default": 0.0, "min": 0, "max": 1, "step": 0.01 },
+    { "name": { "zh-Hans": "关键帧1值", "en": "KF1 Value" }, "kind": "Number", "default": 0.0, "min": -10, "max": 10, "step": 0.01 },
+    { "name": { "zh-Hans": "关键帧1缓动", "en": "KF1 Easing" }, "kind": "Choice", "default": "linear",
+      "choices": [
+        { "value": "linear", "label": { "zh-Hans": "线性", "en": "Linear" } },
+        { "value": "easeIn", "label": { "zh-Hans": "缓入", "en": "Ease In" } },
+        { "value": "easeOut", "label": { "zh-Hans": "缓出", "en": "Ease Out" } },
+        { "value": "easeInOut", "label": { "zh-Hans": "缓入缓出", "en": "Ease In Out" } },
+        { "value": "bounceOut", "label": { "zh-Hans": "弹跳", "en": "Bounce Out" } },
+        { "value": "elasticOut", "label": { "zh-Hans": "弹性", "en": "Elastic Out" } },
+        { "value": "step", "label": { "zh-Hans": "阶跃", "en": "Step" } }
+      ]
+    },
+
+    { "name": { "zh-Hans": "关键帧2时间", "en": "KF2 Time" }, "kind": "Number", "default": 1.0, "min": 0, "max": 1, "step": 0.01 },
+    { "name": { "zh-Hans": "关键帧2值", "en": "KF2 Value" }, "kind": "Number", "default": 1.0, "min": -10, "max": 10, "step": 0.01 },
+    { "name": { "zh-Hans": "关键帧2缓动", "en": "KF2 Easing" }, "kind": "Choice", "default": "linear",
+      "choices": [
+        { "value": "linear", "label": { "zh-Hans": "线性", "en": "Linear" } },
+        { "value": "easeIn", "label": { "zh-Hans": "缓入", "en": "Ease In" } },
+        { "value": "easeOut", "label": { "zh-Hans": "缓出", "en": "Ease Out" } },
+        { "value": "easeInOut", "label": { "zh-Hans": "缓入缓出", "en": "Ease In Out" } },
+        { "value": "bounceOut", "label": { "zh-Hans": "弹跳", "en": "Bounce Out" } },
+        { "value": "elasticOut", "label": { "zh-Hans": "弹性", "en": "Elastic Out" } },
+        { "value": "step", "label": { "zh-Hans": "阶跃", "en": "Step" } }
+      ]
+    },
+
+    { "name": { "zh-Hans": "关键帧3时间", "en": "KF3 Time" }, "kind": "Number", "default": 0.25, "min": 0, "max": 1, "step": 0.01 },
+    { "name": { "zh-Hans": "关键帧3值", "en": "KF3 Value" }, "kind": "Number", "default": 0.5, "min": -10, "max": 10, "step": 0.01 },
+    { "name": { "zh-Hans": "关键帧3缓动", "en": "KF3 Easing" }, "kind": "Choice", "default": "linear",
+      "choices": [
+        { "value": "linear", "label": { "zh-Hans": "线性", "en": "Linear" } },
+        { "value": "easeIn", "label": { "zh-Hans": "缓入", "en": "Ease In" } },
+        { "value": "easeOut", "label": { "zh-Hans": "缓出", "en": "Ease Out" } },
+        { "value": "easeInOut", "label": { "zh-Hans": "缓入缓出", "en": "Ease In Out" } },
+        { "value": "bounceOut", "label": { "zh-Hans": "弹跳", "en": "Bounce Out" } },
+        { "value": "elasticOut", "label": { "zh-Hans": "弹性", "en": "Elastic Out" } },
+        { "value": "step", "label": { "zh-Hans": "阶跃", "en": "Step" } }
+      ]
+    },
+
+    { "name": { "zh-Hans": "关键帧4时间", "en": "KF4 Time" }, "kind": "Number", "default": 0.5, "min": 0, "max": 1, "step": 0.01 },
+    { "name": { "zh-Hans": "关键帧4值", "en": "KF4 Value" }, "kind": "Number", "default": 0.5, "min": -10, "max": 10, "step": 0.01 },
+    { "name": { "zh-Hans": "关键帧4缓动", "en": "KF4 Easing" }, "kind": "Choice", "default": "linear",
+      "choices": [
+        { "value": "linear", "label": { "zh-Hans": "线性", "en": "Linear" } },
+        { "value": "easeIn", "label": { "zh-Hans": "缓入", "en": "Ease In" } },
+        { "value": "easeOut", "label": { "zh-Hans": "缓出", "en": "Ease Out" } },
+        { "value": "easeInOut", "label": { "zh-Hans": "缓入缓出", "en": "Ease In Out" } },
+        { "value": "bounceOut", "label": { "zh-Hans": "弹跳", "en": "Bounce Out" } },
+        { "value": "elasticOut", "label": { "zh-Hans": "弹性", "en": "Elastic Out" } },
+        { "value": "step", "label": { "zh-Hans": "阶跃", "en": "Step" } }
+      ]
+    },
+
+    { "name": { "zh-Hans": "关键帧5时间", "en": "KF5 Time" }, "kind": "Number", "default": 0.75, "min": 0, "max": 1, "step": 0.01 },
+    { "name": { "zh-Hans": "关键帧5值", "en": "KF5 Value" }, "kind": "Number", "default": 0.5, "min": -10, "max": 10, "step": 0.01 },
+    { "name": { "zh-Hans": "关键帧5缓动", "en": "KF5 Easing" }, "kind": "Choice", "default": "linear",
+      "choices": [
+        { "value": "linear", "label": { "zh-Hans": "线性", "en": "Linear" } },
+        { "value": "easeIn", "label": { "zh-Hans": "缓入", "en": "Ease In" } },
+        { "value": "easeOut", "label": { "zh-Hans": "缓出", "en": "Ease Out" } },
+        { "value": "easeInOut", "label": { "zh-Hans": "缓入缓出", "en": "Ease In Out" } },
+        { "value": "bounceOut", "label": { "zh-Hans": "弹跳", "en": "Bounce Out" } },
+        { "value": "elasticOut", "label": { "zh-Hans": "弹性", "en": "Elastic Out" } },
+        { "value": "step", "label": { "zh-Hans": "阶跃", "en": "Step" } }
+      ]
+    },
+
+    { "name": { "zh-Hans": "关键帧6时间", "en": "KF6 Time" }, "kind": "Number", "default": 0.8, "min": 0, "max": 1, "step": 0.01 },
+    { "name": { "zh-Hans": "关键帧6值", "en": "KF6 Value" }, "kind": "Number", "default": 0.5, "min": -10, "max": 10, "step": 0.01 },
+    { "name": { "zh-Hans": "关键帧6缓动", "en": "KF6 Easing" }, "kind": "Choice", "default": "linear",
+      "choices": [
+        { "value": "linear", "label": { "zh-Hans": "线性", "en": "Linear" } },
+        { "value": "easeIn", "label": { "zh-Hans": "缓入", "en": "Ease In" } },
+        { "value": "easeOut", "label": { "zh-Hans": "缓出", "en": "Ease Out" } },
+        { "value": "easeInOut", "label": { "zh-Hans": "缓入缓出", "en": "Ease In Out" } },
+        { "value": "bounceOut", "label": { "zh-Hans": "弹跳", "en": "Bounce Out" } },
+        { "value": "elasticOut", "label": { "zh-Hans": "弹性", "en": "Elastic Out" } },
+        { "value": "step", "label": { "zh-Hans": "阶跃", "en": "Step" } }
+      ]
+    },
+
+    { "name": { "zh-Hans": "关键帧7时间", "en": "KF7 Time" }, "kind": "Number", "default": 0.85, "min": 0, "max": 1, "step": 0.01 },
+    { "name": { "zh-Hans": "关键帧7值", "en": "KF7 Value" }, "kind": "Number", "default": 0.5, "min": -10, "max": 10, "step": 0.01 },
+    { "name": { "zh-Hans": "关键帧7缓动", "en": "KF7 Easing" }, "kind": "Choice", "default": "linear",
+      "choices": [
+        { "value": "linear", "label": { "zh-Hans": "线性", "en": "Linear" } },
+        { "value": "easeIn", "label": { "zh-Hans": "缓入", "en": "Ease In" } },
+        { "value": "easeOut", "label": { "zh-Hans": "缓出", "en": "Ease Out" } },
+        { "value": "easeInOut", "label": { "zh-Hans": "缓入缓出", "en": "Ease In Out" } },
+        { "value": "bounceOut", "label": { "zh-Hans": "弹跳", "en": "Bounce Out" } },
+        { "value": "elasticOut", "label": { "zh-Hans": "弹性", "en": "Elastic Out" } },
+        { "value": "step", "label": { "zh-Hans": "阶跃", "en": "Step" } }
+      ]
+    },
+
+    { "name": { "zh-Hans": "关键帧8时间", "en": "KF8 Time" }, "kind": "Number", "default": 0.9, "min": 0, "max": 1, "step": 0.01 },
+    { "name": { "zh-Hans": "关键帧8值", "en": "KF8 Value" }, "kind": "Number", "default": 0.5, "min": -10, "max": 10, "step": 0.01 },
+    { "name": { "zh-Hans": "关键帧8缓动", "en": "KF8 Easing" }, "kind": "Choice", "default": "linear",
+      "choices": [
+        { "value": "linear", "label": { "zh-Hans": "线性", "en": "Linear" } },
+        { "value": "easeIn", "label": { "zh-Hans": "缓入", "en": "Ease In" } },
+        { "value": "easeOut", "label": { "zh-Hans": "缓出", "en": "Ease Out" } },
+        { "value": "easeInOut", "label": { "zh-Hans": "缓入缓出", "en": "Ease In Out" } },
+        { "value": "bounceOut", "label": { "zh-Hans": "弹跳", "en": "Bounce Out" } },
+        { "value": "elasticOut", "label": { "zh-Hans": "弹性", "en": "Elastic Out" } },
+        { "value": "step", "label": { "zh-Hans": "阶跃", "en": "Step" } }
+      ]
+    },
+
+    { "name": { "zh-Hans": "关键帧9时间", "en": "KF9 Time" }, "kind": "Number", "default": 0.95, "min": 0, "max": 1, "step": 0.01 },
+    { "name": { "zh-Hans": "关键帧9值", "en": "KF9 Value" }, "kind": "Number", "default": 0.5, "min": -10, "max": 10, "step": 0.01 },
+    { "name": { "zh-Hans": "关键帧9缓动", "en": "KF9 Easing" }, "kind": "Choice", "default": "linear",
+      "choices": [
+        { "value": "linear", "label": { "zh-Hans": "线性", "en": "Linear" } },
+        { "value": "easeIn", "label": { "zh-Hans": "缓入", "en": "Ease In" } },
+        { "value": "easeOut", "label": { "zh-Hans": "缓出", "en": "Ease Out" } },
+        { "value": "easeInOut", "label": { "zh-Hans": "缓入缓出", "en": "Ease In Out" } },
+        { "value": "bounceOut", "label": { "zh-Hans": "弹跳", "en": "Bounce Out" } },
+        { "value": "elasticOut", "label": { "zh-Hans": "弹性", "en": "Elastic Out" } },
+        { "value": "step", "label": { "zh-Hans": "阶跃", "en": "Step" } }
+      ]
+    },
+
+    { "name": { "zh-Hans": "关键帧10时间", "en": "KF10 Time" }, "kind": "Number", "default": 1.0, "min": 0, "max": 1, "step": 0.01 },
+    { "name": { "zh-Hans": "关键帧10值", "en": "KF10 Value" }, "kind": "Number", "default": 0.5, "min": -10, "max": 10, "step": 0.01 },
+    { "name": { "zh-Hans": "关键帧10缓动", "en": "KF10 Easing" }, "kind": "Choice", "default": "linear",
+      "choices": [
+        { "value": "linear", "label": { "zh-Hans": "线性", "en": "Linear" } },
+        { "value": "easeIn", "label": { "zh-Hans": "缓入", "en": "Ease In" } },
+        { "value": "easeOut", "label": { "zh-Hans": "缓出", "en": "Ease Out" } },
+        { "value": "easeInOut", "label": { "zh-Hans": "缓入缓出", "en": "Ease In Out" } },
+        { "value": "bounceOut", "label": { "zh-Hans": "弹跳", "en": "Bounce Out" } },
+        { "value": "elasticOut", "label": { "zh-Hans": "弹性", "en": "Elastic Out" } },
+        { "value": "step", "label": { "zh-Hans": "阶跃", "en": "Step" } }
+      ]
+    }
+  ],
+  "ai": {
+    "capabilities": ["animation", "parameter-animation"],
+    "triggers": {
+      "zh-Hans": "参数动画, 关键帧动画, 缓动曲线, 时间插值",
+      "en": "parameter animation, keyframe animation, easing curve, time interpolation"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "创建从0到1的2秒淡入动画，使用缓出使效果更自然",
+      "en": "Create a 2-second fade-in animation from 0 to 1 with ease-out for natural deceleration"
+    }
+  }
+}

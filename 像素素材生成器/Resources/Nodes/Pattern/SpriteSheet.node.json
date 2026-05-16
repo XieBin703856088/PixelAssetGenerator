@@ -1,0 +1,86 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "SpriteSheet",
+    "displayName": {
+      "zh-Hans": "精灵表",
+      "en": "Sprite Sheet"
+    },
+    "category": "Pattern",
+    "description": {
+      "zh-Hans": "生成装饰性的精灵表模板，显示带有彩色单元格参考线的网格布局。",
+      "en": "Generates a decorative sprite sheet template showing grid layout with colored cell guides."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "遮罩",
+          "en": "Mask"
+        },
+        "type": "Mask"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "列数",
+        "en": "Columns"
+      },
+      "kind": "Integer",
+      "default": 4,
+      "min": 1,
+      "max": 8,
+      "step": 1
+    },
+    {
+      "name": {
+        "zh-Hans": "行数",
+        "en": "Rows"
+      },
+      "kind": "Integer",
+      "default": 4,
+      "min": 1,
+      "max": 8,
+      "step": 1
+    },
+    {
+      "name": {
+        "zh-Hans": "背景颜色",
+        "en": "Bg Color"
+      },
+      "kind": "Color",
+      "default": "#404040FF"
+    }
+  ],
+  "ai": {
+    "capabilities": ["pattern", "sprite-sheet", "grid", "tiling"],
+    "triggers": {
+      "zh-Hans": "精灵表, 精灵图, 精灵表模板, 网格布局",
+      "en": "sprite sheet, spritesheet, sprite template, grid layout"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "生成4x4的精灵表模板，用于规划像素角色动画帧的布局。",
+      "en": "Generate a 4x4 sprite sheet template for planning pixel character animation frame layouts."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar cols = Math.Max(1, GetInt(parameters, \"columns\", 4));\nvar rows = Math.Max(1, GetInt(parameters, \"rows\", 4));\nvar bgColor = GetColor(parameters, \"bgColor\", System.Windows.Media.Color.FromRgb(64, 64, 64));\nvar size = context.TileSize;\nvar result = new PixelBuffer(size, size);\nvar bgR=bgColor.R/255f; var bgG=bgColor.G/255f; var bgB=bgColor.B/255f;\nvar cellW = size / (float)cols;\nvar cellH = size / (float)rows;\nresult.ParallelForEachPixel((x, y) =>\n{\n    var col = (int)(x / cellW);\n    var row = (int)(y / cellH);\n    var localX = x / cellW - col;\n    var localY = y / cellH - row;\n    // Checkerboard tint for alternating cells\n    var checker = (col + row) % 2 == 0;\n    var cellR = checker ? bgR * 1.2f : bgR * 0.8f;\n    var cellG = checker ? bgG * 1.2f : bgG * 0.8f;\n    var cellB2 = checker ? bgB * 1.2f : bgB * 0.8f;\n    // Grid lines\n    var lineW = Math.Max(1f, size * 0.008f);\n    var onLineX = x % (size / cols) < lineW || x % (size / cols) > (size / cols) - lineW;\n    var onLineY = y % (size / rows) < lineW || y % (size / rows) > (size / rows) - lineW;\n    if (onLineX || onLineY)\n    {\n        result.SetPixel(x, y, 1f, 1f, 1f, 0.6f);\n    }\n    else\n    {\n        // Corner markers for center\n        var distC = MathF.Sqrt((localX-0.5f)*(localX-0.5f) + (localY-0.5f)*(localY-0.5f));\n        var dot = distC < 0.08f ? 0.5f : 0f;\n        result.SetPixel(x, y, Math.Clamp(cellR + dot, 0,1), Math.Clamp(cellG + dot, 0,1), Math.Clamp(cellB2 + dot, 0,1), 1f);\n    }\n});\nreturn result;\n}"
+  }
+}

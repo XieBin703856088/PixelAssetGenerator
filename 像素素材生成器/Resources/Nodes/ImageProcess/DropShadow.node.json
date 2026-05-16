@@ -1,0 +1,151 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "DropShadow",
+    "displayName": {
+      "zh-Hans": "投影",
+      "en": "Drop Shadow"
+    },
+    "category": "ImageProcess",
+    "description": {
+      "zh-Hans": "为带有Alpha遮罩的图像添加投影、内阴影或发光效果。",
+      "en": "Adds drop shadow, inner shadow, or glow effects to alpha-matted images."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      }
+    ],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "X偏移",
+        "en": "Offset X"
+      },
+      "kind": "Number",
+      "default": 0.1,
+      "min": -0.5,
+      "max": 0.5,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "Y偏移",
+        "en": "Offset Y"
+      },
+      "kind": "Number",
+      "default": 0.1,
+      "min": -0.5,
+      "max": 0.5,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "模糊半径",
+        "en": "Blur Radius"
+      },
+      "kind": "Integer",
+      "default": 3,
+      "min": 0,
+      "max": 16,
+      "step": 1
+    },
+    {
+      "name": {
+        "zh-Hans": "阴影颜色",
+        "en": "Shadow Color"
+      },
+      "kind": "Color",
+      "default": "#00000099"
+    },
+    {
+      "name": {
+        "zh-Hans": "不透明度",
+        "en": "Opacity"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "扩散",
+        "en": "Spread"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "模式",
+        "en": "Mode"
+      },
+      "kind": "Choice",
+      "default": "dropShadow",
+      "choices": [
+        {
+          "value": "dropShadow",
+          "label": {
+            "zh-Hans": "投影",
+            "en": "dropShadow"
+          }
+        },
+        {
+          "value": "innerShadow",
+          "label": {
+            "zh-Hans": "内阴影",
+            "en": "innerShadow"
+          }
+        },
+        {
+          "value": "glow",
+          "label": {
+            "zh-Hans": "发光",
+            "en": "glow"
+          }
+        }
+      ]
+    }
+  ],
+  "ai": {
+    "capabilities": ["lighting-effect", "filter"],
+    "triggers": {
+      "zh-Hans": "投影, 内阴影, 发光, 阴影效果, 下落阴影",
+      "en": "drop shadow, inner shadow, glow, shadow effect"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "为精灵添加投影以增强深度感。",
+      "en": "Add a drop shadow to a sprite to enhance depth perception."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar input = inputs.Length > 0 && inputs[0] != null ? inputs[0]! :\n        new PixelBuffer(context.TileSize, context.TileSize);\n    var offsetX = GetFloat(parameters, \"offsetX\", 0.1f);\n    var offsetY = GetFloat(parameters, \"offsetY\", 0.1f);\n    var blurRadius = GetInt(parameters, \"blurRadius\", 2);\n    var shadowColor = GetColor(parameters, \"shadowColor\", Color.FromRgb(0, 0, 0));\n    var opacity = GetFloat(parameters, \"opacity\", 0.5f);\n    var spread = GetFloat(parameters, \"spread\", 0f);\n    var mode = GetChoice(parameters, \"mode\", \"dropShadow\");\n\n    var size = context.TileSize;\n    var buffer = input.Clone();\n\n    var sR = shadowColor.R / 255f * opacity;\n    var sG = shadowColor.G / 255f * opacity;\n    var sB = shadowColor.B / 255f * opacity;\n\n    var offsetPixelsX = (int)(offsetX * size);\n    var offsetPixelsY = (int)(offsetY * size);\n\n    // Extract alpha channel\n    var alpha = new float[size * size];\n    for (var y = 0; y < size; y++)\n    {\n        for (var x = 0; x < size; x++)\n        {\n            var (_, _, _, aVal) = input.GetPixel(x, y);\n            alpha[y * size + x] = aVal;\n\n            // Apply spread: increase opaque region\n            if (spread > 0f && aVal > 0.1f)\n            {\n                alpha[y * size + x] = Math.Clamp(aVal + spread * 0.3f, 0f, 1f);\n            }\n        }\n    }\n\n    // Apply Gaussian blur to alpha\n    var blurred = blurRadius > 0 ? GaussianBlur(alpha, size, blurRadius) : alpha;\n\n    if (mode == \"dropShadow\")\n    {\n        // Composite shadow behind original\n        buffer.ParallelForEachPixel((x, y) =>\n        {\n            var sx = (x - offsetPixelsX + size) % size;\n            var sy = (y - offsetPixelsY + size) % size;\n            var shadowAlpha = blurred[sy * size + sx] * opacity;\n\n            var (r, g, b, a) = buffer.GetPixel(x, y);\n\n            if (shadowAlpha > 0f)\n            {\n                // Composite shadow behind: shadow * (1 - origAlpha) + orig\n                var composited = shadowAlpha * (1f - a);\n                buffer.SetPixel(x, y,\n                    r + sR * composited,\n                    g + sG * composited,\n                    b + sB * composited,\n                    Math.Clamp(a + composited, 0f, 1f));\n            }\n        });\n    }\n    else if (mode == \"glow\")\n    {\n        // Glow: shadow only where alpha is low, colored with shadow color\n        buffer.ParallelForEachPixel((x, y) =>\n        {\n            var glowAlpha = blurred[y * size + x] * opacity;\n            var (glowR, glowG, glowB, glowA) = buffer.GetPixel(x, y);\n\n            // Glow shows through transparent areas\n            if (glowAlpha > glowA)\n            {\n                var t = (glowAlpha - glowA) / glowAlpha;\n                buffer.SetPixel(x, y,\n                    Lerp(glowR, sR, t * 0.7f),\n                    Lerp(glowG, sG, t * 0.7f),\n                    Lerp(glowB, sB, t * 0.7f),\n                    glowAlpha);\n            }\n        });\n    }\n    else // innerShadow\n    {\n        // Inner shadow: inset shadow on the interior of opaque regions\n        buffer.ParallelForEachPixel((x, y) =>\n        {\n            var sx = (x + offsetPixelsX + size) % size;\n            var sy = (y + offsetPixelsY + size) % size;\n            var innerShadow = (1f - blurred[sy * size + sx]) * opacity;\n\n            // Only apply to opaque interior\n            var (innerR, innerG, innerB, innerA) = buffer.GetPixel(x, y);\n            if (innerA > 0f && innerShadow > 0f)\n            {\n                var darken = 1f - innerShadow * 0.6f;\n                buffer.SetPixel(x, y, innerR * darken, innerG * darken, innerB * darken, innerA);\n            }\n        });\n    }\n\n    return buffer;\n\nprivate static float[] GaussianBlur(float[] input, int size, int radius)\n{\n    if (radius <= 0) return input;\n\n    // Compute 1D Gaussian kernel\n    var kernelSize = radius * 2 + 1;\n    var kernel = new float[kernelSize];\n    var sigma = radius / 2f;\n    var sum = 0f;\n\n    for (var i = 0; i < kernelSize; i++)\n    {\n        var x = i - radius;\n        kernel[i] = MathF.Exp(-(x * x) / (2f * sigma * sigma));\n        sum += kernel[i];\n    }\n    for (var i = 0; i < kernelSize; i++) kernel[i] /= sum;\n\n    // Horizontal blur\n    var temp = new float[size * size];\n    for (var y = 0; y < size; y++)\n    {\n        for (var x = 0; x < size; x++)\n        {\n            var val = 0f;\n            for (var k = 0; k < kernelSize; k++)\n            {\n                var sx = (x + k - radius + size) % size;\n                val += input[y * size + sx] * kernel[k];\n            }\n            temp[y * size + x] = val;\n        }\n    }\n\n    // Vertical blur\n    var result = new float[size * size];\n    for (var y = 0; y < size; y++)\n    {\n        for (var x = 0; x < size; x++)\n        {\n            var val = 0f;\n            for (var k = 0; k < kernelSize; k++)\n            {\n                var sy = (y + k - radius + size) % size;\n                val += temp[sy * size + x] * kernel[k];\n            }\n            result[y * size + x] = val;\n        }\n    }\n\n    return result;\n    }\n}"
+  }
+}

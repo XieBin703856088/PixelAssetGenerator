@@ -1,0 +1,69 @@
+{
+  "formatVersion": 2,
+  "processorType": "ParticleLight",
+  "identity": {
+    "typeName": "ParticleLight",
+    "displayName": {
+      "zh-Hans": "粒子光照",
+      "en": "Particle Light"
+    },
+    "category": "Particle",
+    "description": {
+      "zh-Hans": "将粒子渲染为2D光源，对背景产生光照/光晕效果，支持叠加、滤色等合成模式",
+      "en": "Renders particles as 2D light sources with glow effects on the background, supports additive/screen/alpha composite modes"
+    },
+    "tags": ["particle", "light", "glow"],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [
+      {
+        "name": { "zh-Hans": "粒子", "en": "Particles" },
+        "type": "Particle"
+      },
+      {
+        "name": { "zh-Hans": "背景", "en": "Background" },
+        "type": "Image"
+      }
+    ],
+    "outputs": [
+      {
+        "name": { "zh-Hans": "图像", "en": "Image" },
+        "type": "Image"
+      }
+    ]
+  },
+  "parameters": [
+    { "name": { "zh-Hans": "光晕半径", "en": "Glow Radius" }, "kind": "Number", "default": 0.05, "min": 0.005, "max": 0.3, "step": 0.005 },
+    { "name": { "zh-Hans": "光照强度", "en": "Intensity" }, "kind": "Number", "default": 1.0, "min": 0.0, "max": 5.0, "step": 0.1 },
+    {
+      "name": { "zh-Hans": "合成模式", "en": "Composite Mode" },
+      "kind": "Choice",
+      "default": "additive",
+      "choices": ["additive", "screen", "alpha"],
+      "displayChoices": ["叠加", "滤色", "透明混合"]
+    },
+    {
+      "name": { "zh-Hans": "光源颜色", "en": "Color Source" },
+      "kind": "Choice",
+      "default": "particle",
+      "choices": ["particle", "white", "rainbow"],
+      "displayChoices": ["粒子颜色", "白色", "彩虹"]
+    },
+    { "name": { "zh-Hans": "启用衰减", "en": "Falloff" }, "kind": "Boolean", "default": true },
+    { "name": { "zh-Hans": "衰减指数", "en": "Falloff Power" }, "kind": "Number", "default": 2.0, "min": 0.5, "max": 4.0, "step": 0.1 }
+  ],
+  "ai": {
+    "capabilities": ["particle", "lighting"],
+    "triggers": {
+      "zh-Hans": "粒子光照, 粒子光晕, 光源效果, 叠加发光",
+      "en": "particle light, particle glow, light effect, additive glow"
+    },
+    "suggestedInputs": ["ParticleEmitter", "ParticleRender"],
+    "exampleUsage": {
+      "zh-Hans": "将粒子渲染为叠加模式的光源，光晕半径0.05，使用粒子颜色产生彩色光照效果",
+      "en": "Render particles as additive light sources with glow radius 0.05, using particle colors for colorful lighting"
+    }
+  }
+}

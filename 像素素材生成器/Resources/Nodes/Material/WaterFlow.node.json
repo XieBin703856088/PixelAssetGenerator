@@ -1,0 +1,186 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "WaterFlow",
+    "displayName": {
+      "zh-Hans": "水流",
+      "en": "Water Flow"
+    },
+    "category": "Material",
+    "description": {
+      "zh-Hans": "使用定向流动噪波生成流水/流体纹理。具有深/浅水色区域、波峰泡沫、涟漪细节和可配置流动方向。所有噪波均可平铺，实现无缝输出。",
+      "en": "Generates flowing water / fluid textures using directional flow noise. Features deep/shallow color zones, foam at wave crests, ripple detail, and configurable flow direction. All noise is tileable for seamless output."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "遮罩",
+          "en": "Mask"
+        },
+        "type": "Mask"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "种子",
+        "en": "Seed"
+      },
+      "kind": "Seed",
+      "default": 42,
+      "min": 0,
+      "max": 9999
+    },
+    {
+      "name": {
+        "zh-Hans": "缩放",
+        "en": "Scale"
+      },
+      "kind": "Number",
+      "default": 2.0,
+      "min": 0.5,
+      "max": 10.0,
+      "step": 0.5
+    },
+    {
+      "name": {
+        "zh-Hans": "流速",
+        "en": "Flow Speed"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "流动角度",
+        "en": "Flow Angle"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 360.0,
+      "step": 1.0
+    },
+    {
+      "name": {
+        "zh-Hans": "波浪强度",
+        "en": "Wave Strength"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "泡沫数量",
+        "en": "Foam Amount"
+      },
+      "kind": "Number",
+      "default": 0.3,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "深水颜色",
+        "en": "Deep Color"
+      },
+      "kind": "Color",
+      "default": "#0A2864FF"
+    },
+    {
+      "name": {
+        "zh-Hans": "浅水颜色",
+        "en": "Shallow Color"
+      },
+      "kind": "Color",
+      "default": "#3278C8FF"
+    },
+    {
+      "name": {
+        "zh-Hans": "泡沫颜色",
+        "en": "Foam Color"
+      },
+      "kind": "Color",
+      "default": "#F0FAFFFF"
+    },
+    {
+      "name": {
+        "zh-Hans": "涟漪强度",
+        "en": "Ripple Strength"
+      },
+      "kind": "Number",
+      "default": 0.3,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "不透明度",
+        "en": "Opacity"
+      },
+      "kind": "Number",
+      "default": 0.8,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "八度",
+        "en": "Octaves"
+      },
+      "kind": "Number",
+      "default": 3.0,
+      "min": 1.0,
+      "max": 6.0,
+      "step": 1.0
+    },
+    {
+      "name": {
+        "zh-Hans": "反相",
+        "en": "Invert"
+      },
+      "kind": "Boolean",
+      "default": false
+    }
+  ],
+  "ai": {
+    "capabilities": ["material", "procedural-texture", "liquid", "nature", "tileable"],
+    "triggers": {
+      "zh-Hans": "水流, 流水, 水面, 河流, 波浪, 流体, 水面纹理",
+      "en": "water flow, stream, river, wave, fluid, water surface"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "生成流水/流体纹理，用于河流、海洋或水边场景的地面材质。",
+      "en": "Generate flowing water textures for rivers, oceans, or water-side scene ground materials."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar seed = GetInt(parameters, \"seed\", context.Seed);\nvar scale = GetFloat(parameters, \"scale\", 2f);\nvar flowSpeed = GetFloat(parameters, \"flowSpeed\", 0.5f);\nvar flowAngle = GetFloat(parameters, \"flowAngle\", 0f);\nvar waveStrength = GetFloat(parameters, \"waveStrength\", 0.5f);\nvar foamAmount = GetFloat(parameters, \"foamAmount\", 0.3f);\nvar deepColor = GetColor(parameters, \"deepColor\", Color.FromRgb(10, 40, 100));\nvar shallowColor = GetColor(parameters, \"shallowColor\", Color.FromRgb(50, 120, 200));\nvar foamColor = GetColor(parameters, \"foamColor\", Color.FromRgb(240, 250, 255));\nvar rippleStrength = GetFloat(parameters, \"rippleStrength\", 0.3f);\nvar opacity = GetFloat(parameters, \"opacity\", 0.8f);\nvar octaves = Math.Max(1, GetInt(parameters, \"octaves\", 3));\nvar invert = GetBool(parameters, \"invert\", false);\n\nvar size = context.TileSize;\nvar buffer = new PixelBuffer(size, size);\n\nvar dR = deepColor.R / 255f; var dG = deepColor.G / 255f; var dB = deepColor.B / 255f;\nvar sR = shallowColor.R / 255f; var sG = shallowColor.G / 255f; var sB = shallowColor.B / 255f;\nvar fR = foamColor.R / 255f; var fG = foamColor.G / 255f; var fB = foamColor.B / 255f;\n\nvar angleRad = flowAngle * MathF.PI / 180f;\nvar cosAngle = MathF.Cos(angleRad);\nvar sinAngle = MathF.Sin(angleRad);\n\nvar period = Math.Max(1, (int)MathF.Round(scale * 2f));\n\nbuffer.ParallelForEachPixel((x, y) =>\n{\n    var u = (x + 0.5f) / size;\n    var v = (y + 0.5f) / size;\n\n    // --- Flow noise: directional distortion ---\n    // Rotate coordinates to align with flow direction\n    var flowU = u * cosAngle - v * sinAngle;\n    var flowV = u * sinAngle + v * cosAngle;\n\n    // Primary flow noise (stretched along flow direction)\n    var flowNoise = TileableFractalNoise(\n        flowU * scale * 0.5f, flowV * scale * 2f,\n        period, octaves, 0.55f, 2.2f, seed);\n\n    // Secondary noise for cross-flow variation\n    var crossNoise = TileableFractalNoise(\n        u * scale * 0.8f + 50f, v * scale * 0.8f + 50f,\n        period, octaves - 1, 0.5f, 2f, seed + 100);\n\n    // --- Wave height map ---\n    var wave = TileableFractalNoise(\n        u * scale * 1.5f, v * scale * 1.5f,\n        period, octaves, 0.5f, 2.2f, seed + 200);\n\n    // Flow perturbs the wave\n    var flowOffset = (flowNoise - 0.5f) * flowSpeed * 0.3f;\n    wave += flowOffset;\n    wave = Math.Clamp(wave, 0f, 1f);\n\n    // --- Ripple detail (high-frequency) ---\n    var ripple = 0f;\n    if (rippleStrength > 0f)\n    {\n        var ripplePhase = u * scale * 6f + v * scale * 4f + crossNoise * 2f;\n        ripple = MathF.Sin(ripplePhase * MathF.PI * 2f) * rippleStrength * 0.1f;\n        // Secondary ripple at different frequency\n        ripple += MathF.Sin((u * scale * 4f - v * scale * 5f) * MathF.PI * 2f + seed) * rippleStrength * 0.06f;\n    }\n\n    // --- Depth coloring ---\n    // Deep areas (low wave) → dark blue, Shallow (high wave) → light blue\n    var depth = wave * waveStrength + 0.3f;\n    depth = Math.Clamp(depth, 0f, 1f);\n\n    var waterR = Lerp(dR, sR, depth);\n    var waterG = Lerp(dG, sG, depth);\n    var waterB = Lerp(dB, sB, depth);\n\n    // Add ripple to surface\n    waterR += ripple;\n    waterG += ripple * 0.8f;\n    waterB += ripple * 1.2f;\n\n    // --- Foam detection ---\n    // Foam forms where wave amplitude crosses a threshold (wave crests)\n    var foamThreshold = 1f - foamAmount * 0.5f;\n\n    // Use the gradient of the wave field to find crests\n    var waveDX = TileableFractalNoise(\n        (u + 0.02f) * scale * 1.5f, v * scale * 1.5f,\n        period, 2, 0.5f, 2f, seed + 300);\n    var waveGradient = MathF.Abs(waveDX - wave);\n\n    var foamSignal = waveGradient * 4f * foamAmount;\n    foamSignal = Math.Clamp(foamSignal, 0f, 1f);\n\n    // Foam also appears at wave crests\n    var crestFoam = MathF.Max(0f, (wave - foamThreshold) / (1f - foamThreshold));\n    crestFoam = crestFoam * crestFoam * foamAmount;\n    foamSignal = MathF.Max(foamSignal, crestFoam);\n\n    // Break up foam with fine noise for organic look\n    var foamDetail = TileableFractalNoise(\n        u * scale * 8f, v * scale * 8f,\n        Math.Max(1, period / 2), 1, 0.5f, 2f, seed + 400);\n    foamSignal *= foamDetail > 0.3f ? 1f : foamDetail * 3f;\n    foamSignal = Math.Clamp(foamSignal, 0f, 1f);\n\n    // --- Compose final color ---\n    var foamBlend = foamSignal;\n    var finalR = Lerp(waterR, fR, foamBlend);\n    var finalG = Lerp(waterG, fG, foamBlend);\n    var finalB = Lerp(waterB, fB, foamBlend);\n    var finalA = opacity;\n\n    // Specular highlight on wave crests\n    var spec = MathF.Pow(MathF.Max(0f, wave * 2f - 1f), 4f) * 0.3f;\n    finalR = Math.Clamp(finalR + spec, 0f, 1f);\n    finalG = Math.Clamp(finalG + spec, 0f, 1f);\n    finalB = Math.Clamp(finalB + spec * 1.2f, 0f, 1f);\n\n    if (invert) { finalR = 1f - finalR; finalG = 1f - finalG; finalB = 1f - finalB; }\n\n    buffer.SetPixel(x, y, finalR, finalG, finalB, finalA);\n});\n\nreturn buffer;\n}"
+  }
+}

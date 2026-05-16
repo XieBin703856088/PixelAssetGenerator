@@ -1,0 +1,164 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "Bark",
+    "displayName": {
+      "zh-Hans": "树皮",
+      "en": "Bark"
+    },
+    "category": "Noise",
+    "description": {
+      "zh-Hans": "生成树皮纹理，带有垂直裂缝、粗糙表面细节、苔藓/地衣点缀和有机纹理图案。完全可平铺。",
+      "en": "Generates tree bark textures with vertical fissures, rough surface detail, moss/lichen accents, and organic grain patterns. Fully tileable."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "遮罩",
+          "en": "Mask"
+        },
+        "type": "Mask"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "种子",
+        "en": "Seed"
+      },
+      "kind": "Seed",
+      "default": 42,
+      "min": 0,
+      "max": 9999
+    },
+    {
+      "name": {
+        "zh-Hans": "缩放",
+        "en": "Scale"
+      },
+      "kind": "Number",
+      "default": 3.0,
+      "min": 0.5,
+      "max": 8.0,
+      "step": 0.5
+    },
+    {
+      "name": {
+        "zh-Hans": "裂缝深度",
+        "en": "Fissure Depth"
+      },
+      "kind": "Number",
+      "default": 0.6,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "粗糙度",
+        "en": "Roughness"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "苔藓数量",
+        "en": "Moss Amount"
+      },
+      "kind": "Number",
+      "default": 0.2,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "树皮颜色",
+        "en": "Bark Color"
+      },
+      "kind": "Color",
+      "default": "#78553CFF"
+    },
+    {
+      "name": {
+        "zh-Hans": "深色树皮颜色",
+        "en": "Dark Bark Color"
+      },
+      "kind": "Color",
+      "default": "#463223FF"
+    },
+    {
+      "name": {
+        "zh-Hans": "苔藓颜色",
+        "en": "Moss Color"
+      },
+      "kind": "Color",
+      "default": "#506E3CFF"
+    },
+    {
+      "name": {
+        "zh-Hans": "亮度",
+        "en": "Brightness"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": -0.3,
+      "max": 0.3,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "对比度",
+        "en": "Contrast"
+      },
+      "kind": "Number",
+      "default": 0.2,
+      "min": -0.5,
+      "max": 0.5,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "反相",
+        "en": "Invert"
+      },
+      "kind": "Boolean",
+      "default": false
+    }
+  ],
+  "ai": {
+    "capabilities": ["generate-noise", "procedural-texture", "organic", "tileable"],
+    "triggers": {
+      "zh-Hans": "树皮, 树干, 树木纹理, 森林",
+      "en": "bark, tree trunk, wood texture, forest"
+    },
+    "suggestedInputs": ["Noise"],
+    "exampleUsage": {
+      "zh-Hans": "生成一棵树干的树皮纹理，可用于环境装饰或道具纹理。",
+      "en": "Generates a tree bark texture for environmental decoration or prop texturing."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar seed = GetInt(parameters, \"seed\", context.Seed);\nvar scale = GetFloat(parameters, \"scale\", 3f);\nvar fissureDepth = GetFloat(parameters, \"fissureDepth\", 0.6f);\nvar roughness = GetFloat(parameters, \"roughness\", 0.5f);\nvar mossAmount = GetFloat(parameters, \"mossAmount\", 0.2f);\nvar barkColor = GetColor(parameters, \"barkColor\", Color.FromRgb(120, 85, 60));\nvar darkBark = GetColor(parameters, \"darkBarkColor\", Color.FromRgb(70, 50, 35));\nvar mossColor = GetColor(parameters, \"mossColor\", Color.FromRgb(80, 110, 60));\nvar brightness = GetFloat(parameters, \"brightness\", 0f);\nvar contrast = GetFloat(parameters, \"contrast\", 0f);\nvar invert = GetBool(parameters, \"invert\", false);\n\nvar size = context.TileSize;\nvar buffer = new PixelBuffer(size, size);\n\nvar bR = barkColor.R / 255f; var bG = barkColor.G / 255f; var bB = barkColor.B / 255f;\nvar dR = darkBark.R / 255f; var dG = darkBark.G / 255f; var dB = darkBark.B / 255f;\nvar mR = mossColor.R / 255f; var mG = mossColor.G / 255f; var mB = mossColor.B / 255f;\n\nvar period = Math.Max(1, (int)MathF.Round(scale * 2f));\n\nbuffer.ParallelForEachPixel((x, y) =>\n{\n    var u = (x + 0.5f) / size;\n    var v = (y + 0.5f) / size;\n\n    // Vertical stretch: bark has strong vertical grain\n    var su = u * scale;\n    var sv = v * scale * 0.3f;\n\n    // Vertical fissure noise (stretched vertically)\n    var fissureNoise = TileableFractalNoise(su, sv, period, 3, 0.6f, 2.2f, seed);\n\n    // Horizontal cross-grain for horizontal cracks\n    var crossGrain = TileableFractalNoise(\n        su * 1.5f + 50f, v * scale * 2f + 50f,\n        period, 2, 0.5f, 2f, seed + 100);\n\n    // Vertical streak pattern\n    var streak = TileableFractalNoise(\n        su * 2f, sv * 4f,\n        period, 2, 0.5f, 2f, seed + 200);\n\n    // Combined bark texture\n    var barkTex = fissureNoise * 0.5f + crossGrain * 0.3f + streak * 0.2f;\n\n    // Detect vertical fissures (sharp dark lines)\n    var fissureV = TileableFractalNoise(\n        su * 3f, sv * 6f,\n        Math.Max(1, period / 2), 2, 0.5f, 2.5f, seed + 300);\n    var fissure = MathF.Abs(fissureV - 0.5f) * 2f;\n    fissure = MathF.Pow(fissure, 1.5f) * fissureDepth;\n    fissure = Math.Clamp(fissure, 0f, 1f);\n\n    // Horizontal crack lines\n    var crackH = TileableFractalNoise(\n        su * 2f + 200f, sv * 8f + 200f,\n        Math.Max(1, period / 2), 1, 0.5f, 2f, seed + 400);\n    var crack = MathF.Max(0f, (crackH - 0.6f) / 0.4f) * fissureDepth * 0.5f;\n\n    // Surface roughness\n    var roughDetail = TileableFractalNoise(\n        u * scale * 6f, v * scale * 6f,\n        Math.Max(1, period / 2), 2, 0.5f, 2f, seed + 500);\n    var rough = (roughDetail - 0.5f) * roughness * 0.2f;\n\n    // Base bark color with texture\n    var r = Lerp(dR, bR, barkTex) + rough;\n    var g = Lerp(dG, bG, barkTex) + rough * 0.85f;\n    var b = Lerp(dB, bB, barkTex) + rough * 0.7f;\n\n    // Darken fissures\n    r -= fissure * 0.3f;\n    g -= fissure * 0.25f;\n    b -= fissure * 0.2f;\n\n    // Add horizontal crack darkness\n    r -= crack * 0.2f;\n    g -= crack * 0.15f;\n    b -= crack * 0.1f;\n\n    // Moss/lichen patches\n    if (mossAmount > 0.001f)\n    {\n        var mossNoise = TileableFractalNoise(\n            u * scale * 2f + 300f, v * scale * 2f + 300f,\n            period, 2, 0.5f, 2f, seed + 600);\n        var mossPatch = TileableFractalNoise(\n            u * scale * 0.8f, v * scale * 0.8f,\n            period, 1, 0.5f, 2f, seed + 700);\n\n        var moss = MathF.Max(0f, (mossNoise - 0.4f) / 0.6f);\n        moss *= mossPatch > 0.5f ? 1f : 0f;\n\n        // Moss grows more in horizontal cracks\n        moss *= 1f + crack * 2f;\n\n        var mossBlend = Math.Clamp(moss * mossAmount * 2f, 0f, 1f);\n        var mossR = mR + (mossPatch - 0.5f) * 0.1f;\n        var mossG = mG + (mossPatch - 0.5f) * 0.15f;\n\n        r = Lerp(r, mossR, mossBlend);\n        g = Lerp(g, mossG, mossBlend);\n        b = Lerp(b, mB, mossBlend);\n    }\n\n    // Brightness and contrast\n    r = Math.Clamp(r + brightness, 0f, 1f);\n    g = Math.Clamp(g + brightness, 0f, 1f);\n    b = Math.Clamp(b + brightness, 0f, 1f);\n\n    if (MathF.Abs(contrast) > 0.001f)\n    {\n        var factor = 1f + contrast;\n        r = (r - 0.5f) * factor + 0.5f;\n        g = (g - 0.5f) * factor + 0.5f;\n        b = (b - 0.5f) * factor + 0.5f;\n    }\n\n    if (invert) { r = 1f - r; g = 1f - g; b = 1f - b; }\n\n    buffer.SetPixel(x, y, Math.Clamp(r, 0f, 1f), Math.Clamp(g, 0f, 1f), Math.Clamp(b, 0f, 1f), 1f);\n});\n\nreturn buffer;\n}"
+  }
+}

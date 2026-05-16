@@ -1,0 +1,200 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "Distort",
+    "displayName": {
+      "zh-Hans": "扭曲",
+      "en": "Distort"
+    },
+    "category": "ImageProcess",
+    "description": {
+      "zh-Hans": "使用基于噪波的位移场扭曲输入图像。使用可平铺噪波进行位移，以保持无缝输出。",
+      "en": "Distorts an input image using a noise-based displacement field. Uses tileable noise for the displacement to maintain seamless output."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      }
+    ],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "种子",
+        "en": "Seed"
+      },
+      "kind": "Seed",
+      "default": 42,
+      "min": 0,
+      "max": 9999
+    },
+    {
+      "name": {
+        "zh-Hans": "扭曲类型",
+        "en": "Distort Type"
+      },
+      "kind": "Choice",
+      "default": "noise",
+      "choices": [
+        {
+          "value": "noise",
+          "label": {
+            "zh-Hans": "噪波",
+            "en": "noise"
+          }
+        },
+        {
+          "value": "swirl",
+          "label": {
+            "zh-Hans": "旋涡",
+            "en": "swirl"
+          }
+        },
+        {
+          "value": "ripple",
+          "label": {
+            "zh-Hans": "波纹",
+            "en": "ripple"
+          }
+        },
+        {
+          "value": "pinch",
+          "label": {
+            "zh-Hans": "捏合",
+            "en": "pinch"
+          }
+        },
+        {
+          "value": "polar",
+          "label": {
+            "zh-Hans": "极坐标",
+            "en": "polar"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "zh-Hans": "强度",
+        "en": "Intensity"
+      },
+      "kind": "Number",
+      "default": 0.15,
+      "min": 0.0,
+      "max": 0.5,
+      "step": 0.005
+    },
+    {
+      "name": {
+        "zh-Hans": "频率",
+        "en": "Frequency"
+      },
+      "kind": "Number",
+      "default": 3.0,
+      "min": 0.5,
+      "max": 20.0,
+      "step": 0.5
+    },
+    {
+      "name": {
+        "zh-Hans": "八度",
+        "en": "Octaves"
+      },
+      "kind": "Integer",
+      "default": 2,
+      "min": 1,
+      "max": 6,
+      "step": 1
+    },
+    {
+      "name": {
+        "zh-Hans": "X 强度",
+        "en": "X Strength"
+      },
+      "kind": "Number",
+      "default": 1.0,
+      "min": 0.0,
+      "max": 2.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "Y 强度",
+        "en": "Y Strength"
+      },
+      "kind": "Number",
+      "default": 1.0,
+      "min": 0.0,
+      "max": 2.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "角度",
+        "en": "Angle"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 360.0,
+      "step": 1.0
+    },
+    {
+      "name": {
+        "zh-Hans": "中心 X",
+        "en": "Center X"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "中心 Y",
+        "en": "Center Y"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    }
+  ],
+  "ai": {
+    "capabilities": ["distort"],
+    "triggers": {
+      "zh-Hans": "扭曲, 噪波扭曲, 旋涡, 波纹, 捏合, 极坐标",
+      "en": "distort, noise warp, swirl, ripple, pinch, polar"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "使用噪波扭曲图像，创建流体运动效果。",
+      "en": "Distort an image with noise to create a fluid motion effect."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar input = inputs.Length > 0 ? inputs[0] : null;\n        if (input is null)\n            return PixelBuffer.CreateSolid(context.TileSize, context.TileSize, 0, 0, 0);\n\n        var seed = GetInt(parameters, \"seed\", context.Seed);\n        var distortType = GetChoice(parameters, \"distortType\", \"noise\");\n        var strength = GetFloat(parameters, \"intensity\", 0.05f);\n        var frequency = GetFloat(parameters, \"frequency\", 3f);\n        var octaves = GetInt(parameters, \"octaves\", 2);\n        var xStrength = GetFloat(parameters, \"xStrength\", 1f);\n        var yStrength = GetFloat(parameters, \"yStrength\", 1f);\n        var angle = GetFloat(parameters, \"angle\", 0f) * MathF.PI / 180f;\n        var centerX = GetFloat(parameters, \"centerX\", 0.5f);\n        var centerY = GetFloat(parameters, \"centerY\", 0.5f);\n\n        var size = input.Width;\n        var result = new PixelBuffer(size, size);\n        var period = Math.Max(1, (int)MathF.Round(frequency));\n\n        result.ParallelForEachPixel((x, y) =>\n        {\n            var nx = x / (float)size * frequency;\n            var ny = y / (float)size * frequency;\n            float dx, dy;\n\n            switch (distortType)\n            {\n                case \"swirl\":\n                {\n                    var relX = x / (float)size - centerX;\n                    var relY = y / (float)size - centerY;\n                    var dist = MathF.Sqrt(relX * relX + relY * relY);\n                    var swirlAngle = dist * strength * 40f;\n                    var cosA = MathF.Cos(swirlAngle);\n                    var sinA = MathF.Sin(swirlAngle);\n                    dx = (relX * cosA - relY * sinA - relX) * size;\n                    dy = (relX * sinA + relY * cosA - relY) * size;\n                    break;\n                }\n                case \"ripple\":\n                {\n                    var relX = x / (float)size - centerX;\n                    var relY = y / (float)size - centerY;\n                    var dist = MathF.Sqrt(relX * relX + relY * relY);\n                    var wave = MathF.Sin(dist * frequency * MathF.Tau + angle) * strength;\n                    if (dist > 0.001f)\n                    {\n                        dx = wave * (relX / dist) * size;\n                        dy = wave * (relY / dist) * size;\n                    }\n                    else\n                    {\n                        dx = 0; dy = 0;\n                    }\n                    break;\n                }\n                case \"pinch\":\n                {\n                    var relX = x / (float)size - centerX;\n                    var relY = y / (float)size - centerY;\n                    var dist = MathF.Sqrt(relX * relX + relY * relY);\n                    // Guard against Pow(0, negative) which returns Infinity, producing NaN downstream.\n                    var safeDist = MathF.Max(dist, 0.001f);\n                    var factor = MathF.Pow(safeDist, 1f + strength * 5f) / safeDist;\n                    dx = (relX * factor - relX) * size;\n                    dy = (relY * factor - relY) * size;\n                    break;\n                }\n                case \"polar\":\n                {\n                    var relX = x / (float)size - centerX;\n                    var relY = y / (float)size - centerY;\n                    var theta = MathF.Atan2(relY, relX);\n                    var dist = MathF.Sqrt(relX * relX + relY * relY);\n                    // Map angle to x, distance to y\n                    var polarX = (theta / MathF.Tau + 0.5f) * size;\n                    var polarY = dist * 2f * size;\n                    dx = (polarX - x) * strength * 2f;\n                    dy = (polarY - y) * strength * 2f;\n                    break;\n                }\n                default: // \"noise\"\n                {\n                    var noiseX = TileableFractalNoise(nx, ny, period, octaves, 0.5f, 2f, seed) - 0.5f;\n                    var noiseY = TileableFractalNoise(nx, ny, period, octaves, 0.5f, 2f, seed + 777) - 0.5f;\n\n                    // Apply directional angle\n                    if (MathF.Abs(angle) > 0.001f)\n                    {\n                        var cosD = MathF.Cos(angle);\n                        var sinD = MathF.Sin(angle);\n                        var rotX = noiseX * cosD - noiseY * sinD;\n                        var rotY = noiseX * sinD + noiseY * cosD;\n                        noiseX = rotX;\n                        noiseY = rotY;\n                    }\n\n                    dx = noiseX * strength * size * xStrength;\n                    dy = noiseY * strength * size * yStrength;\n                    break;\n                }\n            }\n\n            var sampleX = x + dx;\n            var sampleY = y + dy;\n\n            // Wrap for tileability\n            var sx = ((int)MathF.Round(sampleX) % size + size) % size;\n            var sy = ((int)MathF.Round(sampleY) % size + size) % size;\n\n            var (r, g, b, a) = input.GetPixelWrapped(sx, sy);\n            result.SetPixel(x, y, r, g, b, a);\n        });\n\n        return result;\n}"
+  }
+}

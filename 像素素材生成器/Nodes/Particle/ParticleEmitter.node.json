@@ -1,0 +1,69 @@
+{
+  "formatVersion": 2,
+  "processorType": "ParticleEmitter",
+  "identity": {
+    "typeName": "ParticleEmitter",
+    "displayName": {
+      "zh-Hans": "粒子发射器",
+      "en": "Particle Emitter"
+    },
+    "category": "Particle",
+    "description": {
+      "zh-Hans": "发射和模拟粒子系统，输出粒子缓冲供渲染节点使用",
+      "en": "Emits and simulates particle systems, outputs particle buffer for render nodes"
+    },
+    "tags": ["particle", "emitter"],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [
+      {
+        "name": { "zh-Hans": "遮罩", "en": "Mask" },
+        "type": "Mask"
+      }
+    ],
+    "outputs": [
+      {
+        "name": { "zh-Hans": "粒子", "en": "Particles" },
+        "type": "Particle"
+      }
+    ]
+  },
+  "parameters": [
+    { "name": { "zh-Hans": "发射率", "en": "Emission Rate" }, "kind": "Number", "default": 50, "min": 1, "max": 500, "step": 1 },
+    { "name": { "zh-Hans": "爆发数量", "en": "Burst Count" }, "kind": "Integer", "default": 20, "min": 0, "max": 200, "step": 1 },
+    { "name": { "zh-Hans": "粒子寿命", "en": "Lifespan" }, "kind": "Number", "default": 2.0, "min": 0.1, "max": 10, "step": 0.1 },
+    { "name": { "zh-Hans": "速度", "en": "Speed" }, "kind": "Number", "default": 0.3, "min": 0.01, "max": 1.0, "step": 0.01 },
+    { "name": { "zh-Hans": "速度随机", "en": "Speed Random" }, "kind": "Number", "default": 0.5, "min": 0, "max": 1.0, "step": 0.01 },
+    { "name": { "zh-Hans": "发射角度", "en": "Angle" }, "kind": "Number", "default": 270, "min": 0, "max": 360, "step": 1 },
+    { "name": { "zh-Hans": "扩散角度", "en": "Spread" }, "kind": "Number", "default": 30, "min": 0, "max": 180, "step": 1 },
+    { "name": { "zh-Hans": "起始大小", "en": "Start Size" }, "kind": "Number", "default": 0.05, "min": 0.005, "max": 0.5, "step": 0.005 },
+    { "name": { "zh-Hans": "结束大小", "en": "End Size" }, "kind": "Number", "default": 0.01, "min": 0, "max": 0.5, "step": 0.005 },
+    { "name": { "zh-Hans": "起始颜色", "en": "Start Color" }, "kind": "Color", "default": "#FFFFFFFF" },
+    { "name": { "zh-Hans": "结束颜色", "en": "End Color" }, "kind": "Color", "default": "#00FFFFFF" },
+    { "name": { "zh-Hans": "重力", "en": "Gravity" }, "kind": "Number", "default": 0.2, "min": -1.0, "max": 1.0, "step": 0.01 },
+    { "name": { "zh-Hans": "阻尼", "en": "Damping" }, "kind": "Number", "default": 0.98, "min": 0.0, "max": 1.0, "step": 0.005 },
+    { "name": { "zh-Hans": "一次性爆发", "en": "One Shot" }, "kind": "Boolean", "default": false },
+    { "name": { "zh-Hans": "平铺模式", "en": "Tiling" }, "kind": "Boolean", "default": true },
+    { "name": { "zh-Hans": "风力", "en": "Wind" }, "kind": "Number", "default": 0, "min": -1.0, "max": 1.0, "step": 0.01 },
+    { "name": { "zh-Hans": "最大粒子数", "en": "Max Particles" }, "kind": "Integer", "default": 500, "min": 1, "max": 10000, "step": 1 },
+    { "name": { "zh-Hans": "发射形状", "en": "Emission Shape" }, "kind": "Choice", "default": "point", "choices": ["point", "line", "rectangle", "circle", "ring"] },
+    { "name": { "zh-Hans": "形状宽度", "en": "Shape Width" }, "kind": "Number", "default": 0.1, "min": 0, "max": 1.0, "step": 0.01 },
+    { "name": { "zh-Hans": "形状高度", "en": "Shape Height" }, "kind": "Number", "default": 0.1, "min": 0, "max": 1.0, "step": 0.01 },
+    { "name": { "zh-Hans": "随机旋转", "en": "Random Rotation" }, "kind": "Number", "default": 3.14, "min": 0, "max": 6.28, "step": 0.01 },
+    { "name": { "zh-Hans": "随机角速度", "en": "Angular Vel. Random" }, "kind": "Number", "default": 0, "min": 0, "max": 10, "step": 0.1 }
+  ],
+  "ai": {
+    "capabilities": ["particle", "emitter"],
+    "triggers": {
+      "zh-Hans": "粒子发射器, 粒子系统, 粒子爆发, 粒子发射形状",
+      "en": "particle emitter, particle system, particle burst, emission shape"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "创建一个每秒发射50个粒子的圆形粒子发射器，粒子寿命2秒，从中心向外扩散",
+      "en": "Create a circular particle emitter emitting 50 particles per second with 2-second lifespan, spreading outward from center"
+    }
+  }
+}

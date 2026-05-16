@@ -1,0 +1,128 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "Line",
+    "displayName": {
+      "zh-Hans": "线条",
+      "en": "Line"
+    },
+    "category": "Logic",
+    "description": {
+      "zh-Hans": "在可选的输入缓冲区上绘制抗锯齿线条。",
+      "en": "Draws an anti-aliased line onto an optional input buffer."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [
+      {
+        "name": {
+          "zh-Hans": "输入",
+          "en": "Input"
+        },
+        "type": "Image"
+      }
+    ],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "输出",
+          "en": "Output"
+        },
+        "type": "Image"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "起点 X",
+        "en": "Start X"
+      },
+      "kind": "Number",
+      "default": 0.1,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "起点 Y",
+        "en": "Start Y"
+      },
+      "kind": "Number",
+      "default": 0.1,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "终点 X",
+        "en": "End X"
+      },
+      "kind": "Number",
+      "default": 0.9,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "终点 Y",
+        "en": "End Y"
+      },
+      "kind": "Number",
+      "default": 0.9,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "线宽",
+        "en": "Line Width"
+      },
+      "kind": "Integer",
+      "default": 2,
+      "min": 1,
+      "max": 16,
+      "step": 1
+    },
+    {
+      "name": {
+        "zh-Hans": "颜色",
+        "en": "Color"
+      },
+      "kind": "Color",
+      "default": "#FFFFFFFF"
+    },
+    {
+      "name": {
+        "zh-Hans": "抗锯齿",
+        "en": "Anti Alias"
+      },
+      "kind": "Boolean",
+      "default": true
+    }
+  ],
+  "ai": {
+    "capabilities": ["logic", "math"],
+    "triggers": {
+      "zh-Hans": "线条, 画线, 线段, 抗锯齿线条",
+      "en": "line, draw line, line segment, anti-aliased line"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "在输入缓冲区上绘制抗锯齿的白色线段，用于像素艺术中的装饰线条。",
+      "en": "Draw an anti-aliased white line segment on an input buffer for decorative lines in pixel art."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar size = context.TileSize;\nvar startX = GetFloat(parameters, \"startX\", 0.1f) * size;\nvar startY = GetFloat(parameters, \"startY\", 0.1f) * size;\nvar endX = GetFloat(parameters, \"endX\", 0.9f) * size;\nvar endY = GetFloat(parameters, \"endY\", 0.9f) * size;\nvar lineWidth = Math.Max(1, GetInt(parameters, \"lineWidth\", 1));\nvar lineColor = GetColor(parameters, \"color\", Colors.White);\nvar antiAlias = GetBool(parameters, \"antiAlias\", true);\n\nvar lR = lineColor.R / 255f;\nvar lG = lineColor.G / 255f;\nvar lB = lineColor.B / 255f;\n\n// Clone input buffer or create empty one\nPixelBuffer buffer;\nif (inputs.Length > 0 && inputs[0] != null)\n{\n    buffer = inputs[0]!.Clone();\n}\nelse\n{\n    buffer = PixelBufferPool.Borrow(size, size);\n}\n\nvar halfWidth = lineWidth * 0.5f;\n\nbuffer.ParallelForEachPixel((x, y) =>\n{\n    // Compute shortest distance from pixel (x+0.5, y+0.5) to the line segment\n    var px = x + 0.5f;\n    var py = y + 0.5f;\n    var dx = endX - startX;\n    var dy = endY - startY;\n    var lenSq = dx * dx + dy * dy;\n\n    float dist;\n    if (lenSq < 0.0001f)\n    {\n        // Degenerate: point-to-point distance\n        dist = MathF.Sqrt((px - startX) * (px - startX) + (py - startY) * (py - startY));\n    }\n    else\n    {\n        var t = Math.Clamp(((px - startX) * dx + (py - startY) * dy) / lenSq, 0f, 1f);\n        var nearX = startX + t * dx;\n        var nearY = startY + t * dy;\n        dist = MathF.Sqrt((px - nearX) * (px - nearX) + (py - nearY) * (py - nearY));\n    }\n\n    var alpha = antiAlias\n        ? 1f - Math.Clamp((dist - (halfWidth - 0.5f)) / (halfWidth + 0.5f - (halfWidth - 0.5f) + 0.0001f), 0f, 1f)\n        : (dist <= halfWidth ? 1f : 0f);\n\n    if (alpha <= 0f) return;\n\n    var (or, og, ob, oa) = buffer.GetPixel(x, y);\n    // Blend with existing pixel (over operator)\n    var outA = oa + alpha * (1f - oa);\n    if (outA > 0f)\n    {\n        var outR = (or * oa + lR * alpha * (1f - oa)) / outA;\n        var outG = (og * oa + lG * alpha * (1f - oa)) / outA;\n        var outB = (ob * oa + lB * alpha * (1f - oa)) / outA;\n        buffer.SetPixel(x, y, outR, outG, outB, outA);\n    }\n    else\n    {\n        buffer.SetPixel(x, y, lR, lG, lB, alpha);\n    }\n});\n\nreturn buffer;\n}"
+  }
+}

@@ -1,0 +1,131 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "Circuit",
+    "displayName": {
+      "zh-Hans": "电路",
+      "en": "Circuit"
+    },
+    "category": "Pattern",
+    "description": {
+      "zh-Hans": "使用随机游走迹线生成电路板/PCB风格图案，具有正交路径、圆角和焊盘标记。由于其顺序路径路由特性，仅支持CPU执行。",
+      "en": "Generates circuit-board / PCB-style patterns using random-walk traces with orthogonal paths, corner rounding, and solder pad landmarks. CPU-only due to sequential path-routing nature."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "遮罩",
+          "en": "Mask"
+        },
+        "type": "Mask"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "种子",
+        "en": "Seed"
+      },
+      "kind": "Seed",
+      "default": 42,
+      "min": 0,
+      "max": 9999
+    },
+    {
+      "name": {
+        "zh-Hans": "线路密度",
+        "en": "Trace Density"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.1,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "线路宽度",
+        "en": "Trace Width"
+      },
+      "kind": "Integer",
+      "default": 2,
+      "min": 1,
+      "max": 6,
+      "step": 1
+    },
+    {
+      "name": {
+        "zh-Hans": "圆润度",
+        "en": "Roundness"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "电路板颜色",
+        "en": "Board Color"
+      },
+      "kind": "Color",
+      "default": "#1E3214FF"
+    },
+    {
+      "name": {
+        "zh-Hans": "线路颜色",
+        "en": "Trace Color"
+      },
+      "kind": "Color",
+      "default": "#C8B464FF"
+    },
+    {
+      "name": {
+        "zh-Hans": "焊盘颜色",
+        "en": "Pad Color"
+      },
+      "kind": "Color",
+      "default": "#B4A050FF"
+    },
+    {
+      "name": {
+        "zh-Hans": "反相",
+        "en": "Invert"
+      },
+      "kind": "Boolean",
+      "default": false
+    }
+  ],
+  "ai": {
+    "capabilities": ["pattern", "geometric", "tiling"],
+    "triggers": {
+      "zh-Hans": "电路, 电路板, PCB, 电路图案",
+      "en": "circuit, circuit board, PCB, trace pattern"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "生成一个电路板风格的背景图案，用于科技感像素艺术场景。",
+      "en": "Generate a circuit board style background pattern for a tech-themed pixel art scene."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar seed = GetInt(parameters, \"seed\", context.Seed);\n    var density = GetFloat(parameters, \"traceDensity\", 0.5f);\n    var traceWidth = GetInt(parameters, \"traceWidth\", 2);\n    var roundness = GetFloat(parameters, \"roundness\", 0.5f);\n    var boardColor = GetColor(parameters, \"boardColor\", System.Windows.Media.Color.FromRgb(30, 50, 20));\n    var traceColor = GetColor(parameters, \"traceColor\", System.Windows.Media.Color.FromRgb(200, 180, 100));\n    var padColor = GetColor(parameters, \"padColor\", System.Windows.Media.Color.FromRgb(180, 160, 80));\n    var invert = GetBool(parameters, \"invert\", false);\n\n    var size = context.TileSize;\n    var buffer = new PixelBuffer(size, size);\n\n    var bR = boardColor.R / 255f; var bG = boardColor.G / 255f; var bB = boardColor.B / 255f;\n    var tR = traceColor.R / 255f; var tG = traceColor.G / 255f; var tB = traceColor.B / 255f;\n    var pR = padColor.R / 255f; var pG = padColor.G / 255f; var pB = padColor.B / 255f;\n\n    // Initialize with board color\n    buffer.ParallelForEachPixel((x, y) =>\n    {\n        buffer.SetPixel(x, y, bR, bG, bB, 1f);\n    });\n\n    // Trace grid parameters\n    var gridSize = Math.Max(8, size / 8);\n    var cols = size / gridSize;\n    var rows = size / gridSize;\n\n    // Generate pads at grid intersections\n    var padPresent = new bool[cols, rows];\n    for (var gy = 0; gy < rows; gy++)\n    {\n        for (var gx = 0; gx < cols; gx++)\n        {\n            var roll = HashToUnit(gx, gy, seed);\n            padPresent[gx, gy] = roll < density * 0.7f;\n        }\n    }\n\n    // Draw pads\n    for (var gy = 0; gy < rows; gy++)\n    {\n        for (var gx = 0; gx < cols; gx++)\n        {\n            if (!padPresent[gx, gy]) continue;\n\n            var cx = gx * gridSize + gridSize / 2;\n            var cy = gy * gridSize + gridSize / 2;\n            var padRadius = traceWidth + 1;\n\n            for (var dy = -padRadius; dy <= padRadius; dy++)\n            {\n                for (var dx = -padRadius; dx <= padRadius; dx++)\n                {\n                    var px = cx + dx;\n                    var py = cy + dy;\n\n                    var dist = MathF.Sqrt(dx * dx + dy * dy);\n                    if (dist <= padRadius)\n                    {\n                        var (r, g, b, a) = buffer.GetPixelWrapped(px, py);\n                        // Blend pad color\n                        var blend = dist / padRadius;\n                        buffer.SetPixelWrapped(px, py,\n                            Lerp(pR, r, blend),\n                            Lerp(pG, g, blend),\n                            Lerp(pB, b, blend), 1f);\n                    }\n                }\n            }\n        }\n    }\n\n    // Generate traces (horizontal and vertical segments)\n    var localSeed = seed + 100;\n    for (var gy = 0; gy < rows; gy++)\n    {\n        for (var gx = 0; gx < cols; gx++)\n        {\n            if (!padPresent[gx, gy]) continue;\n\n            // Try to connect to neighbor pads\n            var dirs = new[] { (1, 0), (0, 1), (-1, 0), (0, -1) };\n            // Shuffle directions based on hash\n            var shuffle = HashToUnit(gx, gy, localSeed);\n            var startIdx = (int)(shuffle * 4);\n            for (var d = 0; d < 4; d++)\n            {\n                var (dx, dy) = dirs[(startIdx + d) % 4];\n                var nx = gx + dx;\n                var ny = gy + dy;\n                if (nx < 0 || nx >= cols || ny < 0 || ny >= rows) continue;\n                if (!padPresent[nx, ny]) continue;\n\n                // Connect with trace line\n                var x0 = gx * gridSize + gridSize / 2;\n                var y0 = gy * gridSize + gridSize / 2;\n                var x1 = nx * gridSize + gridSize / 2;\n                var y1 = ny * gridSize + gridSize / 2;\n\n                DrawTrace(buffer, x0, y0, x1, y1, traceWidth, tR, tG, tB, size);\n            }\n        }\n    }\n\n    // Add some random via points\n    for (var i = 0; i < cols * rows * density * 0.1f; i++)\n    {\n        var vx = (int)(HashToUnit(i, seed * 3, 555) * size);\n        var vy = (int)(HashToUnit(i * 7, seed * 5, 666) * size);\n        var viaRadius = traceWidth;\n\n        for (var dy = -viaRadius; dy <= viaRadius; dy++)\n        {\n            for (var dx = -viaRadius; dx <= viaRadius; dx++)\n            {\n                var px = vx + dx;\n                var py = vy + dy;\n                if (dx * dx + dy * dy <= viaRadius * viaRadius)\n                {\n                    buffer.SetPixelWrapped(px, py, tR * 0.8f, tG * 0.8f, tB * 0.8f, 1f);\n                }\n            }\n        }\n\n        // Center hole\n        for (var dy = -1; dy <= 1; dy++)\n        {\n            for (var dx = -1; dx <= 1; dx++)\n            {\n                var px = vx + dx;\n                var py = vy + dy;\n                if (dx * dx + dy * dy <= 1)\n                {\n                    buffer.SetPixelWrapped(px, py, bR, bG, bB, 1f);\n                }\n            }\n        }\n    }\n\n    return buffer;\n\nprivate static void DrawTrace(PixelBuffer buffer, int x0, int y0, int x1, int y1, int width, float r, float g, float b, int size)\n{\n    // Simple orthogonal trace with optional corner rounding\n    var midX = (x0 + x1) / 2;\n    var midY = (y0 + y1) / 2;\n\n    // Horizontal then vertical (L-shaped)\n    DrawLine(buffer, x0, y0, midX, y0, width, r, g, b, size);\n    DrawLine(buffer, midX, y0, midX, y1, width, r, g, b, size);\n    DrawLine(buffer, midX, y1, x1, y1, width, r, g, b, size);\n}\n\nprivate static void DrawLine(PixelBuffer buffer, int x0, int y0, int x1, int y1, int width, float r, float g, float b, int size)\n{\n    var dx = MathF.Abs(x1 - x0);\n    var dy = MathF.Abs(y1 - y0);\n    var sx = x0 < x1 ? 1 : -1;\n    var sy = y0 < y1 ? 1 : -1;\n    var err = dx - dy;\n    var cx = x0;\n    var cy = y0;\n\n    while (true)\n    {\n        // Draw filled circle at each point for width\n        for (var wy = -width / 2; wy <= width / 2; wy++)\n        {\n            for (var wx = -width / 2; wx <= width / 2; wx++)\n            {\n                var px = cx + wx;\n                var py = cy + wy;\n                buffer.SetPixelWrapped(px, py, r, g, b, 1f);\n            }\n        }\n\n        if (cx == x1 && cy == y1) break;\n        var e2 = 2 * err;\n        if (e2 > -dy) { err -= dy; cx += sx; }\n        if (e2 < dx) { err += dx; cy += sy; }\n    }\n    }\n}"
+  }
+}

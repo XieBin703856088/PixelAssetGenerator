@@ -1,0 +1,145 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "Magma",
+    "displayName": {
+      "zh-Hans": "岩浆",
+      "en": "Magma"
+    },
+    "category": "Noise",
+    "description": {
+      "zh-Hans": "生成岩浆/熔岩辉光图案，具有暗色地壳、发光的次表层纹理（Voronoi边缘）和热辐射效果。",
+      "en": "Generates magma / lava glow patterns with dark crust, glowing subsurface veins (Voronoi edges), and heat emission."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "遮罩",
+          "en": "Mask"
+        },
+        "type": "Mask"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "种子",
+        "en": "Seed"
+      },
+      "kind": "Seed",
+      "default": 42,
+      "min": 0,
+      "max": 9999
+    },
+    {
+      "name": {
+        "zh-Hans": "缩放",
+        "en": "Scale"
+      },
+      "kind": "Number",
+      "default": 3.0,
+      "min": 1.0,
+      "max": 8.0,
+      "step": 0.5
+    },
+    {
+      "name": {
+        "zh-Hans": "流动",
+        "en": "Flow"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "发光强度",
+        "en": "Glow Intensity"
+      },
+      "kind": "Number",
+      "default": 0.7,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "岩浆颜色",
+        "en": "Magma Color"
+      },
+      "kind": "Color",
+      "default": "#FF961EFF"
+    },
+    {
+      "name": {
+        "zh-Hans": "地壳颜色",
+        "en": "Crust Color"
+      },
+      "kind": "Color",
+      "default": "#281E19FF"
+    },
+    {
+      "name": {
+        "zh-Hans": "纹理密度",
+        "en": "Vein Density"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "八度",
+        "en": "Octaves"
+      },
+      "kind": "Number",
+      "default": 3.0,
+      "min": 1.0,
+      "max": 6.0,
+      "step": 1.0
+    },
+    {
+      "name": {
+        "zh-Hans": "反相",
+        "en": "Invert"
+      },
+      "kind": "Boolean",
+      "default": false
+    }
+  ],
+  "ai": {
+    "capabilities": ["generate-noise", "procedural-texture", "organic", "tileable", "color-map"],
+    "triggers": {
+      "zh-Hans": "岩浆, 熔岩, 地壳, 火山, 发光纹理",
+      "en": "magma, lava, crust, volcanic, glow, thermal"
+    },
+    "suggestedInputs": ["Noise"],
+    "exampleUsage": {
+      "zh-Hans": "生成岩浆/熔岩辉光纹理，带暗色地壳和发光次表层脉络，适用于火山地形。",
+      "en": "Generates magma/lava glow texture with dark crust and glowing subsurface veins for volcanic terrain."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar seed = GetInt(parameters, \"seed\", context.Seed);\nvar scale = GetFloat(parameters, \"scale\", 3);\nvar flow = GetFloat(parameters, \"flow\", 0.5f);\nvar glowIntensity = GetFloat(parameters, \"glowIntensity\", 0.7f);\nvar magmaColor = GetColor(parameters, \"magmaColor\", System.Windows.Media.Color.FromRgb(255, 150, 30));\nvar crustColor = GetColor(parameters, \"crustColor\", System.Windows.Media.Color.FromRgb(40, 30, 25));\nvar veinDensity = GetFloat(parameters, \"veinDensity\", 0.5f);\nvar octaves = GetInt(parameters, \"octaves\", 3);\nvar invert = GetBool(parameters, \"invert\", false);\n\nvar size = context.TileSize;\nvar buffer = new PixelBuffer(size, size);\n\nvar mR = magmaColor.R / 255f; var mG = magmaColor.G / 255f; var mB = magmaColor.B / 255f;\nvar cR = crustColor.R / 255f; var cG = crustColor.G / 255f; var cB = crustColor.B / 255f;\n\n// Generate Voronoi points for vein structure\nvar cellCount = (int)(scale * scale * 0.8f);\nvar points = new (float X, float Y, float H)[cellCount];\nfor (var i = 0; i < cellCount; i++)\n{\n    points[i] = (\n        HashToUnit(i * 7, seed, 111),\n        HashToUnit(i * 13, seed * 3, 222),\n        HashToUnit(i * 23, seed * 7, 333)\n    );\n}\n\nbuffer.ParallelForEachPixel((x, y) =>\n{\n    var u = (x + 0.5f) / size;\n    var v = (y + 0.5f) / size;\n\n    // Flow distortion\n    var flowU = u + flow * TileableFractalNoise(u * 2f, v * 2f, 2, 2, 0.5f, 2f, seed) * 0.15f;\n    var flowV = v + flow * TileableFractalNoise(u * 2f + 50f, v * 2f + 50f, 2, 2, 0.5f, 2f, seed + 50) * 0.15f;\n\n    // Voronoi distance to nearest point\n    var minDist = float.MaxValue;\n    var nearH = 0f;\n    foreach (var (px, py, h) in points)\n    {\n        var dx = MathF.Abs(flowU - px);\n        var dy = MathF.Abs(flowV - py);\n        if (dx > 0.5f) dx = 1f - dx;\n        if (dy > 0.5f) dy = 1f - dy;\n        var dist = dx * dx + dy * dy;\n        if (dist < minDist)\n        {\n            minDist = dist;\n            nearH = h;\n        }\n    }\n    var voronoiDist = MathF.Sqrt(minDist);\n\n    // Noise for crust texture\n    var crustNoise = TileableFractalNoise(u * scale * 1.5f, v * scale * 1.5f, Math.Max(1, (int)MathF.Round(scale * 1.5f)), octaves, 0.5f, 2f, seed + 100);\n\n    // Vein detection: edges of Voronoi cells\n    var vein = 1f - voronoiDist * scale * 3f;\n    vein = MathF.Max(0f, vein);\n    vein = vein * vein * (3f - 2f * vein); // smoothstep\n\n    // Apply vein density\n    vein = MathF.Pow(vein, 1f - veinDensity * 0.5f);\n\n    // Heat glow: bright near veins, fading with distance\n    var heat = vein * glowIntensity;\n\n    // Crust thickness variation\n    var crustThickness = crustNoise * 0.4f + 0.3f;\n    var crustBreak = vein > crustThickness;\n\n    float r, g, b;\n    if (crustBreak)\n    {\n        // Magma glow visible through crust\n        var glow = MathF.Min(1f, (vein - crustThickness) * 3f);\n        r = Lerp(cR, mR, glow);\n        g = Lerp(cG, mG * 0.8f, glow);\n        b = Lerp(cB, mB * 0.3f, glow);\n\n        // Add pulsing heat\n        var heatPulse = MathF.Sin(vein * 20f + nearH * 10f) * 0.1f + 0.9f;\n        r = Math.Clamp(r * heatPulse, 0f, 1f);\n        g = Math.Clamp(g * heatPulse * 0.9f, 0f, 1f);\n    }\n    else\n    {\n        // Dark crust with subtle glow above veins\n        r = cR + crustNoise * 0.1f + heat * 0.2f;\n        g = cG + crustNoise * 0.08f + heat * 0.1f;\n        b = cB + crustNoise * 0.05f;\n    }\n\n    if (invert) { r = 1f - r; g = 1f - g; b = 1f - b; }\n\n    buffer.SetPixel(x, y, Math.Clamp(r, 0f, 1f), Math.Clamp(g, 0f, 1f), Math.Clamp(b, 0f, 1f), 1f);\n});\n\nreturn buffer;\n}"
+  }
+}

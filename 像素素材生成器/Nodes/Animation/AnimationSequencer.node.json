@@ -1,0 +1,269 @@
+{
+  "formatVersion": 2,
+  "processorType": "AnimationSequencer",
+  "identity": {
+    "typeName": "AnimationSequencer",
+    "displayName": {
+      "zh-Hans": "动画序列器",
+      "en": "Animation Sequencer"
+    },
+    "category": "Animation",
+    "description": {
+      "zh-Hans": "按顺序播放多个时间段的动画，每个时间段输出不同的值序列。类似 DAW 编排器，支持循环播放和段间过渡混合。",
+      "en": "Plays multiple timed animation segments in sequence, each with its own value curve. Like a DAW-style sequencer with loop and cross-fade support."
+    },
+    "tags": ["animation", "sequencer"],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [],
+    "outputs": [
+      {
+        "name": { "zh-Hans": "值", "en": "Value" },
+        "type": "Float"
+      }
+    ]
+  },
+  "parameters": [
+    { "name": { "zh-Hans": "段数", "en": "Segments" }, "kind": "Integer", "default": 3, "min": 1, "max": 16, "step": 1 },
+    { "name": { "zh-Hans": "循环", "en": "Loop" }, "kind": "Boolean", "default": true },
+    { "name": { "zh-Hans": "过渡混合", "en": "Transition Blend" }, "kind": "Number", "default": 0.1, "min": 0, "max": 1, "step": 0.01 },
+
+    { "name": { "zh-Hans": "段1持续时间", "en": "Seg1 Duration" }, "kind": "Number", "default": 1.0, "min": 0.1, "max": 30, "step": 0.1 },
+    { "name": { "zh-Hans": "段1起始值", "en": "Seg1 Start Value" }, "kind": "Number", "default": 0.0, "min": -10, "max": 10, "step": 0.01 },
+    { "name": { "zh-Hans": "段1结束值", "en": "Seg1 End Value" }, "kind": "Number", "default": 1, "min": -10, "max": 10, "step": 0.01 },
+    { "name": { "zh-Hans": "段1缓动", "en": "Seg1 Easing" }, "kind": "Choice", "default": "linear",
+      "choices": [
+        { "value": "linear", "label": { "zh-Hans": "线性", "en": "Linear" } },
+        { "value": "easeIn", "label": { "zh-Hans": "缓入", "en": "Ease In" } },
+        { "value": "easeOut", "label": { "zh-Hans": "缓出", "en": "Ease Out" } },
+        { "value": "easeInOut", "label": { "zh-Hans": "缓入缓出", "en": "Ease In Out" } },
+        { "value": "bounceOut", "label": { "zh-Hans": "弹跳", "en": "Bounce Out" } },
+        { "value": "elasticOut", "label": { "zh-Hans": "弹性", "en": "Elastic Out" } }
+      ]
+    },
+
+    { "name": { "zh-Hans": "段2持续时间", "en": "Seg2 Duration" }, "kind": "Number", "default": 1.0, "min": 0.1, "max": 30, "step": 0.1 },
+    { "name": { "zh-Hans": "段2起始值", "en": "Seg2 Start Value" }, "kind": "Number", "default": 0.0, "min": -10, "max": 10, "step": 0.01 },
+    { "name": { "zh-Hans": "段2结束值", "en": "Seg2 End Value" }, "kind": "Number", "default": 0, "min": -10, "max": 10, "step": 0.01 },
+    { "name": { "zh-Hans": "段2缓动", "en": "Seg2 Easing" }, "kind": "Choice", "default": "linear",
+      "choices": [
+        { "value": "linear", "label": { "zh-Hans": "线性", "en": "Linear" } },
+        { "value": "easeIn", "label": { "zh-Hans": "缓入", "en": "Ease In" } },
+        { "value": "easeOut", "label": { "zh-Hans": "缓出", "en": "Ease Out" } },
+        { "value": "easeInOut", "label": { "zh-Hans": "缓入缓出", "en": "Ease In Out" } },
+        { "value": "bounceOut", "label": { "zh-Hans": "弹跳", "en": "Bounce Out" } },
+        { "value": "elasticOut", "label": { "zh-Hans": "弹性", "en": "Elastic Out" } }
+      ]
+    },
+
+    { "name": { "zh-Hans": "段3持续时间", "en": "Seg3 Duration" }, "kind": "Number", "default": 1.0, "min": 0.1, "max": 30, "step": 0.1 },
+    { "name": { "zh-Hans": "段3起始值", "en": "Seg3 Start Value" }, "kind": "Number", "default": 0.0, "min": -10, "max": 10, "step": 0.01 },
+    { "name": { "zh-Hans": "段3结束值", "en": "Seg3 End Value" }, "kind": "Number", "default": 0, "min": -10, "max": 10, "step": 0.01 },
+    { "name": { "zh-Hans": "段3缓动", "en": "Seg3 Easing" }, "kind": "Choice", "default": "linear",
+      "choices": [
+        { "value": "linear", "label": { "zh-Hans": "线性", "en": "Linear" } },
+        { "value": "easeIn", "label": { "zh-Hans": "缓入", "en": "Ease In" } },
+        { "value": "easeOut", "label": { "zh-Hans": "缓出", "en": "Ease Out" } },
+        { "value": "easeInOut", "label": { "zh-Hans": "缓入缓出", "en": "Ease In Out" } },
+        { "value": "bounceOut", "label": { "zh-Hans": "弹跳", "en": "Bounce Out" } },
+        { "value": "elasticOut", "label": { "zh-Hans": "弹性", "en": "Elastic Out" } }
+      ]
+    },
+
+    { "name": { "zh-Hans": "段4持续时间", "en": "Seg4 Duration" }, "kind": "Number", "default": 1.0, "min": 0.1, "max": 30, "step": 0.1 },
+    { "name": { "zh-Hans": "段4起始值", "en": "Seg4 Start Value" }, "kind": "Number", "default": 0.0, "min": -10, "max": 10, "step": 0.01 },
+    { "name": { "zh-Hans": "段4结束值", "en": "Seg4 End Value" }, "kind": "Number", "default": 0, "min": -10, "max": 10, "step": 0.01 },
+    { "name": { "zh-Hans": "段4缓动", "en": "Seg4 Easing" }, "kind": "Choice", "default": "linear",
+      "choices": [
+        { "value": "linear", "label": { "zh-Hans": "线性", "en": "Linear" } },
+        { "value": "easeIn", "label": { "zh-Hans": "缓入", "en": "Ease In" } },
+        { "value": "easeOut", "label": { "zh-Hans": "缓出", "en": "Ease Out" } },
+        { "value": "easeInOut", "label": { "zh-Hans": "缓入缓出", "en": "Ease In Out" } },
+        { "value": "bounceOut", "label": { "zh-Hans": "弹跳", "en": "Bounce Out" } },
+        { "value": "elasticOut", "label": { "zh-Hans": "弹性", "en": "Elastic Out" } }
+      ]
+    },
+
+    { "name": { "zh-Hans": "段5持续时间", "en": "Seg5 Duration" }, "kind": "Number", "default": 1.0, "min": 0.1, "max": 30, "step": 0.1 },
+    { "name": { "zh-Hans": "段5起始值", "en": "Seg5 Start Value" }, "kind": "Number", "default": 0.0, "min": -10, "max": 10, "step": 0.01 },
+    { "name": { "zh-Hans": "段5结束值", "en": "Seg5 End Value" }, "kind": "Number", "default": 0, "min": -10, "max": 10, "step": 0.01 },
+    { "name": { "zh-Hans": "段5缓动", "en": "Seg5 Easing" }, "kind": "Choice", "default": "linear",
+      "choices": [
+        { "value": "linear", "label": { "zh-Hans": "线性", "en": "Linear" } },
+        { "value": "easeIn", "label": { "zh-Hans": "缓入", "en": "Ease In" } },
+        { "value": "easeOut", "label": { "zh-Hans": "缓出", "en": "Ease Out" } },
+        { "value": "easeInOut", "label": { "zh-Hans": "缓入缓出", "en": "Ease In Out" } },
+        { "value": "bounceOut", "label": { "zh-Hans": "弹跳", "en": "Bounce Out" } },
+        { "value": "elasticOut", "label": { "zh-Hans": "弹性", "en": "Elastic Out" } }
+      ]
+    },
+
+    { "name": { "zh-Hans": "段6持续时间", "en": "Seg6 Duration" }, "kind": "Number", "default": 1.0, "min": 0.1, "max": 30, "step": 0.1 },
+    { "name": { "zh-Hans": "段6起始值", "en": "Seg6 Start Value" }, "kind": "Number", "default": 0.0, "min": -10, "max": 10, "step": 0.01 },
+    { "name": { "zh-Hans": "段6结束值", "en": "Seg6 End Value" }, "kind": "Number", "default": 0, "min": -10, "max": 10, "step": 0.01 },
+    { "name": { "zh-Hans": "段6缓动", "en": "Seg6 Easing" }, "kind": "Choice", "default": "linear",
+      "choices": [
+        { "value": "linear", "label": { "zh-Hans": "线性", "en": "Linear" } },
+        { "value": "easeIn", "label": { "zh-Hans": "缓入", "en": "Ease In" } },
+        { "value": "easeOut", "label": { "zh-Hans": "缓出", "en": "Ease Out" } },
+        { "value": "easeInOut", "label": { "zh-Hans": "缓入缓出", "en": "Ease In Out" } },
+        { "value": "bounceOut", "label": { "zh-Hans": "弹跳", "en": "Bounce Out" } },
+        { "value": "elasticOut", "label": { "zh-Hans": "弹性", "en": "Elastic Out" } }
+      ]
+    },
+
+    { "name": { "zh-Hans": "段7持续时间", "en": "Seg7 Duration" }, "kind": "Number", "default": 1.0, "min": 0.1, "max": 30, "step": 0.1 },
+    { "name": { "zh-Hans": "段7起始值", "en": "Seg7 Start Value" }, "kind": "Number", "default": 0.0, "min": -10, "max": 10, "step": 0.01 },
+    { "name": { "zh-Hans": "段7结束值", "en": "Seg7 End Value" }, "kind": "Number", "default": 0, "min": -10, "max": 10, "step": 0.01 },
+    { "name": { "zh-Hans": "段7缓动", "en": "Seg7 Easing" }, "kind": "Choice", "default": "linear",
+      "choices": [
+        { "value": "linear", "label": { "zh-Hans": "线性", "en": "Linear" } },
+        { "value": "easeIn", "label": { "zh-Hans": "缓入", "en": "Ease In" } },
+        { "value": "easeOut", "label": { "zh-Hans": "缓出", "en": "Ease Out" } },
+        { "value": "easeInOut", "label": { "zh-Hans": "缓入缓出", "en": "Ease In Out" } },
+        { "value": "bounceOut", "label": { "zh-Hans": "弹跳", "en": "Bounce Out" } },
+        { "value": "elasticOut", "label": { "zh-Hans": "弹性", "en": "Elastic Out" } }
+      ]
+    },
+
+    { "name": { "zh-Hans": "段8持续时间", "en": "Seg8 Duration" }, "kind": "Number", "default": 1.0, "min": 0.1, "max": 30, "step": 0.1 },
+    { "name": { "zh-Hans": "段8起始值", "en": "Seg8 Start Value" }, "kind": "Number", "default": 0.0, "min": -10, "max": 10, "step": 0.01 },
+    { "name": { "zh-Hans": "段8结束值", "en": "Seg8 End Value" }, "kind": "Number", "default": 0, "min": -10, "max": 10, "step": 0.01 },
+    { "name": { "zh-Hans": "段8缓动", "en": "Seg8 Easing" }, "kind": "Choice", "default": "linear",
+      "choices": [
+        { "value": "linear", "label": { "zh-Hans": "线性", "en": "Linear" } },
+        { "value": "easeIn", "label": { "zh-Hans": "缓入", "en": "Ease In" } },
+        { "value": "easeOut", "label": { "zh-Hans": "缓出", "en": "Ease Out" } },
+        { "value": "easeInOut", "label": { "zh-Hans": "缓入缓出", "en": "Ease In Out" } },
+        { "value": "bounceOut", "label": { "zh-Hans": "弹跳", "en": "Bounce Out" } },
+        { "value": "elasticOut", "label": { "zh-Hans": "弹性", "en": "Elastic Out" } }
+      ]
+    },
+
+    { "name": { "zh-Hans": "段9持续时间", "en": "Seg9 Duration" }, "kind": "Number", "default": 1.0, "min": 0.1, "max": 30, "step": 0.1 },
+    { "name": { "zh-Hans": "段9起始值", "en": "Seg9 Start Value" }, "kind": "Number", "default": 0.0, "min": -10, "max": 10, "step": 0.01 },
+    { "name": { "zh-Hans": "段9结束值", "en": "Seg9 End Value" }, "kind": "Number", "default": 0, "min": -10, "max": 10, "step": 0.01 },
+    { "name": { "zh-Hans": "段9缓动", "en": "Seg9 Easing" }, "kind": "Choice", "default": "linear",
+      "choices": [
+        { "value": "linear", "label": { "zh-Hans": "线性", "en": "Linear" } },
+        { "value": "easeIn", "label": { "zh-Hans": "缓入", "en": "Ease In" } },
+        { "value": "easeOut", "label": { "zh-Hans": "缓出", "en": "Ease Out" } },
+        { "value": "easeInOut", "label": { "zh-Hans": "缓入缓出", "en": "Ease In Out" } },
+        { "value": "bounceOut", "label": { "zh-Hans": "弹跳", "en": "Bounce Out" } },
+        { "value": "elasticOut", "label": { "zh-Hans": "弹性", "en": "Elastic Out" } }
+      ]
+    },
+
+    { "name": { "zh-Hans": "段10持续时间", "en": "Seg10 Duration" }, "kind": "Number", "default": 1.0, "min": 0.1, "max": 30, "step": 0.1 },
+    { "name": { "zh-Hans": "段10起始值", "en": "Seg10 Start Value" }, "kind": "Number", "default": 0.0, "min": -10, "max": 10, "step": 0.01 },
+    { "name": { "zh-Hans": "段10结束值", "en": "Seg10 End Value" }, "kind": "Number", "default": 0, "min": -10, "max": 10, "step": 0.01 },
+    { "name": { "zh-Hans": "段10缓动", "en": "Seg10 Easing" }, "kind": "Choice", "default": "linear",
+      "choices": [
+        { "value": "linear", "label": { "zh-Hans": "线性", "en": "Linear" } },
+        { "value": "easeIn", "label": { "zh-Hans": "缓入", "en": "Ease In" } },
+        { "value": "easeOut", "label": { "zh-Hans": "缓出", "en": "Ease Out" } },
+        { "value": "easeInOut", "label": { "zh-Hans": "缓入缓出", "en": "Ease In Out" } },
+        { "value": "bounceOut", "label": { "zh-Hans": "弹跳", "en": "Bounce Out" } },
+        { "value": "elasticOut", "label": { "zh-Hans": "弹性", "en": "Elastic Out" } }
+      ]
+    },
+
+    { "name": { "zh-Hans": "段11持续时间", "en": "Seg11 Duration" }, "kind": "Number", "default": 1.0, "min": 0.1, "max": 30, "step": 0.1 },
+    { "name": { "zh-Hans": "段11起始值", "en": "Seg11 Start Value" }, "kind": "Number", "default": 0.0, "min": -10, "max": 10, "step": 0.01 },
+    { "name": { "zh-Hans": "段11结束值", "en": "Seg11 End Value" }, "kind": "Number", "default": 0, "min": -10, "max": 10, "step": 0.01 },
+    { "name": { "zh-Hans": "段11缓动", "en": "Seg11 Easing" }, "kind": "Choice", "default": "linear",
+      "choices": [
+        { "value": "linear", "label": { "zh-Hans": "线性", "en": "Linear" } },
+        { "value": "easeIn", "label": { "zh-Hans": "缓入", "en": "Ease In" } },
+        { "value": "easeOut", "label": { "zh-Hans": "缓出", "en": "Ease Out" } },
+        { "value": "easeInOut", "label": { "zh-Hans": "缓入缓出", "en": "Ease In Out" } },
+        { "value": "bounceOut", "label": { "zh-Hans": "弹跳", "en": "Bounce Out" } },
+        { "value": "elasticOut", "label": { "zh-Hans": "弹性", "en": "Elastic Out" } }
+      ]
+    },
+
+    { "name": { "zh-Hans": "段12持续时间", "en": "Seg12 Duration" }, "kind": "Number", "default": 1.0, "min": 0.1, "max": 30, "step": 0.1 },
+    { "name": { "zh-Hans": "段12起始值", "en": "Seg12 Start Value" }, "kind": "Number", "default": 0.0, "min": -10, "max": 10, "step": 0.01 },
+    { "name": { "zh-Hans": "段12结束值", "en": "Seg12 End Value" }, "kind": "Number", "default": 0, "min": -10, "max": 10, "step": 0.01 },
+    { "name": { "zh-Hans": "段12缓动", "en": "Seg12 Easing" }, "kind": "Choice", "default": "linear",
+      "choices": [
+        { "value": "linear", "label": { "zh-Hans": "线性", "en": "Linear" } },
+        { "value": "easeIn", "label": { "zh-Hans": "缓入", "en": "Ease In" } },
+        { "value": "easeOut", "label": { "zh-Hans": "缓出", "en": "Ease Out" } },
+        { "value": "easeInOut", "label": { "zh-Hans": "缓入缓出", "en": "Ease In Out" } },
+        { "value": "bounceOut", "label": { "zh-Hans": "弹跳", "en": "Bounce Out" } },
+        { "value": "elasticOut", "label": { "zh-Hans": "弹性", "en": "Elastic Out" } }
+      ]
+    },
+
+    { "name": { "zh-Hans": "段13持续时间", "en": "Seg13 Duration" }, "kind": "Number", "default": 1.0, "min": 0.1, "max": 30, "step": 0.1 },
+    { "name": { "zh-Hans": "段13起始值", "en": "Seg13 Start Value" }, "kind": "Number", "default": 0.0, "min": -10, "max": 10, "step": 0.01 },
+    { "name": { "zh-Hans": "段13结束值", "en": "Seg13 End Value" }, "kind": "Number", "default": 0, "min": -10, "max": 10, "step": 0.01 },
+    { "name": { "zh-Hans": "段13缓动", "en": "Seg13 Easing" }, "kind": "Choice", "default": "linear",
+      "choices": [
+        { "value": "linear", "label": { "zh-Hans": "线性", "en": "Linear" } },
+        { "value": "easeIn", "label": { "zh-Hans": "缓入", "en": "Ease In" } },
+        { "value": "easeOut", "label": { "zh-Hans": "缓出", "en": "Ease Out" } },
+        { "value": "easeInOut", "label": { "zh-Hans": "缓入缓出", "en": "Ease In Out" } },
+        { "value": "bounceOut", "label": { "zh-Hans": "弹跳", "en": "Bounce Out" } },
+        { "value": "elasticOut", "label": { "zh-Hans": "弹性", "en": "Elastic Out" } }
+      ]
+    },
+
+    { "name": { "zh-Hans": "段14持续时间", "en": "Seg14 Duration" }, "kind": "Number", "default": 1.0, "min": 0.1, "max": 30, "step": 0.1 },
+    { "name": { "zh-Hans": "段14起始值", "en": "Seg14 Start Value" }, "kind": "Number", "default": 0.0, "min": -10, "max": 10, "step": 0.01 },
+    { "name": { "zh-Hans": "段14结束值", "en": "Seg14 End Value" }, "kind": "Number", "default": 0, "min": -10, "max": 10, "step": 0.01 },
+    { "name": { "zh-Hans": "段14缓动", "en": "Seg14 Easing" }, "kind": "Choice", "default": "linear",
+      "choices": [
+        { "value": "linear", "label": { "zh-Hans": "线性", "en": "Linear" } },
+        { "value": "easeIn", "label": { "zh-Hans": "缓入", "en": "Ease In" } },
+        { "value": "easeOut", "label": { "zh-Hans": "缓出", "en": "Ease Out" } },
+        { "value": "easeInOut", "label": { "zh-Hans": "缓入缓出", "en": "Ease In Out" } },
+        { "value": "bounceOut", "label": { "zh-Hans": "弹跳", "en": "Bounce Out" } },
+        { "value": "elasticOut", "label": { "zh-Hans": "弹性", "en": "Elastic Out" } }
+      ]
+    },
+
+    { "name": { "zh-Hans": "段15持续时间", "en": "Seg15 Duration" }, "kind": "Number", "default": 1.0, "min": 0.1, "max": 30, "step": 0.1 },
+    { "name": { "zh-Hans": "段15起始值", "en": "Seg15 Start Value" }, "kind": "Number", "default": 0.0, "min": -10, "max": 10, "step": 0.01 },
+    { "name": { "zh-Hans": "段15结束值", "en": "Seg15 End Value" }, "kind": "Number", "default": 0, "min": -10, "max": 10, "step": 0.01 },
+    { "name": { "zh-Hans": "段15缓动", "en": "Seg15 Easing" }, "kind": "Choice", "default": "linear",
+      "choices": [
+        { "value": "linear", "label": { "zh-Hans": "线性", "en": "Linear" } },
+        { "value": "easeIn", "label": { "zh-Hans": "缓入", "en": "Ease In" } },
+        { "value": "easeOut", "label": { "zh-Hans": "缓出", "en": "Ease Out" } },
+        { "value": "easeInOut", "label": { "zh-Hans": "缓入缓出", "en": "Ease In Out" } },
+        { "value": "bounceOut", "label": { "zh-Hans": "弹跳", "en": "Bounce Out" } },
+        { "value": "elasticOut", "label": { "zh-Hans": "弹性", "en": "Elastic Out" } }
+      ]
+    },
+
+    { "name": { "zh-Hans": "段16持续时间", "en": "Seg16 Duration" }, "kind": "Number", "default": 1.0, "min": 0.1, "max": 30, "step": 0.1 },
+    { "name": { "zh-Hans": "段16起始值", "en": "Seg16 Start Value" }, "kind": "Number", "default": 0.0, "min": -10, "max": 10, "step": 0.01 },
+    { "name": { "zh-Hans": "段16结束值", "en": "Seg16 End Value" }, "kind": "Number", "default": 0, "min": -10, "max": 10, "step": 0.01 },
+    { "name": { "zh-Hans": "段16缓动", "en": "Seg16 Easing" }, "kind": "Choice", "default": "linear",
+      "choices": [
+        { "value": "linear", "label": { "zh-Hans": "线性", "en": "Linear" } },
+        { "value": "easeIn", "label": { "zh-Hans": "缓入", "en": "Ease In" } },
+        { "value": "easeOut", "label": { "zh-Hans": "缓出", "en": "Ease Out" } },
+        { "value": "easeInOut", "label": { "zh-Hans": "缓入缓出", "en": "Ease In Out" } },
+        { "value": "bounceOut", "label": { "zh-Hans": "弹跳", "en": "Bounce Out" } },
+        { "value": "elasticOut", "label": { "zh-Hans": "弹性", "en": "Elastic Out" } }
+      ]
+    }
+  ],
+  "ai": {
+    "capabilities": ["animation", "parameter-animation", "time"],
+    "triggers": {
+      "zh-Hans": "动画序列, 分段动画, DAW编排, 时间线动画",
+      "en": "animation sequence, segment animation, DAW sequencing, timeline animation"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "创建3段序列动画：段1从0到1缓入，段2保持为1，段3从1到0缓出",
+      "en": "Create a 3-segment sequence: segment 1 eases in 0->1, segment 2 holds at 1, segment 3 eases out 1->0"
+    }
+  }
+}

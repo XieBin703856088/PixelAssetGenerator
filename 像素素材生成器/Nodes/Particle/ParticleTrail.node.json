@@ -1,0 +1,79 @@
+{
+  "formatVersion": 2,
+  "processorType": "ParticleTrail",
+  "identity": {
+    "typeName": "ParticleTrail",
+    "displayName": {
+      "zh-Hans": "粒子拖尾",
+      "en": "Particle Trail"
+    },
+    "category": "Particle",
+    "description": {
+      "zh-Hans": "在粒子运动路径上生成拖尾残影效果，每个粒子的旧位置产生逐渐淡出的影子粒子",
+      "en": "Generates trailing afterimage effects along particle motion paths, creating fading ghost particles at each particle's old positions"
+    },
+    "tags": ["particle", "trail", "afterimage"],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [
+      {
+        "name": { "zh-Hans": "粒子", "en": "Particles" },
+        "type": "Particle"
+      }
+    ],
+    "outputs": [
+      {
+        "name": { "zh-Hans": "粒子", "en": "Particles" },
+        "type": "Particle"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": { "zh-Hans": "拖尾持续时间", "en": "Trail Length" },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.1,
+      "max": 2.0,
+      "step": 0.1
+    },
+    {
+      "name": { "zh-Hans": "轨迹分段数", "en": "Segments" },
+      "kind": "Integer",
+      "default": 5,
+      "min": 1,
+      "max": 20,
+      "step": 1
+    },
+    {
+      "name": { "zh-Hans": "透明度衰减", "en": "Fade Alpha" },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0,
+      "max": 1.0,
+      "step": 0.05
+    },
+    {
+      "name": { "zh-Hans": "大小缩放", "en": "Size Scale" },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0,
+      "max": 1.0,
+      "step": 0.05
+    }
+  ],
+  "ai": {
+    "capabilities": ["particle", "trail"],
+    "triggers": {
+      "zh-Hans": "粒子拖尾, 残影效果, 运动轨迹, 拖尾消失",
+      "en": "particle trail, afterimage effect, motion trail, trail fade"
+    },
+    "suggestedInputs": ["ParticleEmitter"],
+    "exampleUsage": {
+      "zh-Hans": "在粒子运动路径上生成拖尾效果，拖尾持续时间0.5秒，分段数5个残影",
+      "en": "Generate trailing afterimages along particle motion paths with 0.5-second trail length and 5 ghost segments"
+    }
+  }
+}

@@ -1,0 +1,160 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "Pixelate",
+    "displayName": {
+      "zh-Hans": "像素化",
+      "en": "Pixelate"
+    },
+    "category": "ImageProcess",
+    "description": {
+      "zh-Hans": "降采样再升采样，营造像素艺术风格外观。对于让程序生成的输出看起来像手绘而非模糊效果至关重要。",
+      "en": "Downsamples and re-upsamples to create a pixel-art style look. Critical for making procedural output look hand-drawn rather than blurry."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      }
+    ],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "块大小",
+        "en": "Block Size"
+      },
+      "kind": "Integer",
+      "default": 3,
+      "min": 1,
+      "max": 16,
+      "step": 1
+    },
+    {
+      "name": {
+        "zh-Hans": "调色板步数",
+        "en": "Palette Steps"
+      },
+      "kind": "Integer",
+      "default": 0,
+      "min": 0,
+      "max": 32,
+      "step": 1
+    },
+    {
+      "name": {
+        "zh-Hans": "采样模式",
+        "en": "Sample Mode"
+      },
+      "kind": "Choice",
+      "default": "center",
+      "choices": [
+        {
+          "value": "center",
+          "label": {
+            "zh-Hans": "中心",
+            "en": "center"
+          }
+        },
+        {
+          "value": "average",
+          "label": {
+            "zh-Hans": "平均",
+            "en": "average"
+          }
+        },
+        {
+          "value": "nearest",
+          "label": {
+            "zh-Hans": "最近邻",
+            "en": "nearest"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "zh-Hans": "抖动模式",
+        "en": "Dither Mode"
+      },
+      "kind": "Choice",
+      "default": "none",
+      "choices": [
+        {
+          "value": "none",
+          "label": {
+            "zh-Hans": "无",
+            "en": "none"
+          }
+        },
+        {
+          "value": "ordered4x4",
+          "label": {
+            "zh-Hans": "有序 4x4",
+            "en": "ordered4x4"
+          }
+        },
+        {
+          "value": "floydSteinberg",
+          "label": {
+            "zh-Hans": "Floyd-Steinberg",
+            "en": "floydSteinberg"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "zh-Hans": "轮廓强度",
+        "en": "Outline Strength"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "轮廓颜色",
+        "en": "Outline Color"
+      },
+      "kind": "Color",
+      "default": "#0A1428FF"
+    }
+  ],
+  "ai": {
+    "capabilities": ["stylize"],
+    "triggers": {
+      "zh-Hans": "像素化, 马赛克, 像素块, 块状效果",
+      "en": "pixelate, mosaic, pixel block, block effect"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "对图像进行像素化处理以创建马赛克效果。",
+      "en": "Pixelate an image to create a mosaic effect."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar input = inputs.Length > 0 ? inputs[0] : null;\n        if (input is null)\n            return PixelBuffer.CreateSolid(context.TileSize, context.TileSize, 0, 0, 0);\n\n        var blockSize = Math.Max(1, GetInt(parameters, \"blockSize\", 2));\n        var paletteSteps = GetInt(parameters, \"paletteSteps\", 0);\n        var sampleMode = GetChoice(parameters, \"sampleMode\", \"center\");\n        var ditherMode = GetChoice(parameters, \"ditherMode\", \"none\");\n        var outlineStrength = GetFloat(parameters, \"outlineStrength\", 0f);\n        var outlineColor = GetColor(parameters, \"outlineColor\", System.Windows.Media.Color.FromRgb(0, 0, 0));\n        var outR = outlineColor.R / 255f;\n        var outG = outlineColor.G / 255f;\n        var outB = outlineColor.B / 255f;\n\n        var w = input.Width;\n        var h = input.Height;\n        var result = new PixelBuffer(w, h);\n\n        // Ordered dither matrix\n        var ditherMatrix = new float[,]\n        {\n            { 0f / 16f, 8f / 16f, 2f / 16f, 10f / 16f },\n            { 12f / 16f, 4f / 16f, 14f / 16f, 6f / 16f },\n            { 3f / 16f, 11f / 16f, 1f / 16f, 9f / 16f },\n            { 15f / 16f, 7f / 16f, 13f / 16f, 5f / 16f }\n        };\n\n        result.ParallelForEachPixel((x, y) =>\n        {\n            float r, g, b, a;\n\n            if (sampleMode == \"average\" && blockSize > 1)\n            {\n                // Average all pixels in the block\n                float sr = 0, sg = 0, sb = 0, sa = 0;\n                var bx0 = (x / blockSize) * blockSize;\n                var by0 = (y / blockSize) * blockSize;\n                var count = 0;\n                for (var by = by0; by < Math.Min(by0 + blockSize, h); by++)\n                {\n                    for (var bx = bx0; bx < Math.Min(bx0 + blockSize, w); bx++)\n                    {\n                        var (pr, pg, pb, pa) = input.GetPixel(bx, by);\n                        sr += pr; sg += pg; sb += pb; sa += pa;\n                        count++;\n                    }\n                }\n                r = sr / count; g = sg / count; b = sb / count; a = sa / count;\n            }\n            else\n            {\n                // Center or nearest sampling\n                var bx = (x / blockSize) * blockSize + blockSize / 2;\n                var by = (y / blockSize) * blockSize + blockSize / 2;\n                bx = Math.Min(bx, w - 1);\n                by = Math.Min(by, h - 1);\n                (r, g, b, a) = input.GetPixel(bx, by);\n            }\n\n            // Dithering before palette quantization\n            if (ditherMode == \"ordered4x4\" && paletteSteps > 1)\n            {\n                var steps = paletteSteps - 1f;\n                var ditherVal = (ditherMatrix[y % 4, x % 4] - 0.5f) / steps;\n                r += ditherVal;\n                g += ditherVal;\n                b += ditherVal;\n            }\n\n            // Palette quantization (skip for FS — handled in serial pass)\n            if (paletteSteps > 1 && ditherMode != \"floydSteinberg\")\n            {\n                var steps = paletteSteps - 1f;\n                r = MathF.Round(r * steps) / steps;\n                g = MathF.Round(g * steps) / steps;\n                b = MathF.Round(b * steps) / steps;\n            }\n\n            result.SetPixel(x, y, Math.Clamp(r, 0f, 1f), Math.Clamp(g, 0f, 1f), Math.Clamp(b, 0f, 1f), a);\n        });\n\n        // Floyd-Steinberg error diffusion (serial scanline — incompatible with ParallelForEachPixel)\n        if (ditherMode == \"floydSteinberg\" && paletteSteps > 1)\n        {\n            ApplyFloydSteinbergInPlace(result, paletteSteps, w, h);\n        }\n\n        // Outline pass: detect color boundaries between adjacent pixels at block edges\n        if (outlineStrength > 0f && blockSize > 1)\n        {\n            var outlined = result.Clone();\n            outlined.ParallelForEachPixel((x, y) =>\n            {\n                var (cr, cg, cb, ca) = result.GetPixel(x, y);\n                float maxDiff = 0f;\n\n                // Check all four immediate neighbors; after pixelation only block-boundary\n                // neighbors can differ in color.\n                if (x + 1 < w)\n                {\n                    var (rr, rg, rb, _) = result.GetPixel(x + 1, y);\n                    maxDiff = MathF.Max(maxDiff, MathF.Abs(cr - rr) + MathF.Abs(cg - rg) + MathF.Abs(cb - rb));\n                }\n                if (x - 1 >= 0)\n                {\n                    var (lr, lg, lb, _) = result.GetPixel(x - 1, y);\n                    maxDiff = MathF.Max(maxDiff, MathF.Abs(cr - lr) + MathF.Abs(cg - lg) + MathF.Abs(cb - lb));\n                }\n                if (y + 1 < h)\n                {\n                    var (dr, dg, db, _) = result.GetPixel(x, y + 1);\n                    maxDiff = MathF.Max(maxDiff, MathF.Abs(cr - dr) + MathF.Abs(cg - dg) + MathF.Abs(cb - db));\n                }\n                if (y - 1 >= 0)\n                {\n                    var (ur, ug, ub, _) = result.GetPixel(x, y - 1);\n                    maxDiff = MathF.Max(maxDiff, MathF.Abs(cr - ur) + MathF.Abs(cg - ug) + MathF.Abs(cb - ub));\n                }\n\n                var edge = Math.Clamp(maxDiff * 3f, 0f, 1f) * outlineStrength;\n\n                if (edge > 0.01f)\n                {\n                    var fr = Lerp(cr, outR, edge);\n                    var fg = Lerp(cg, outG, edge);\n                    var fb = Lerp(cb, outB, edge);\n                    outlined.SetPixel(x, y, fr, fg, fb, ca);\n                }\n            });\n            return outlined;\n        }\n\n        return result;\n\n    private static new float Lerp(float a, float b, float t) => a + (b - a) * t;\n\n    private static void ApplyFloydSteinbergInPlace(PixelBuffer buffer, int paletteSteps, int w, int h)\n    {\n        var steps = paletteSteps - 1f;\n        for (var y = 0; y < h; y++)\n        {\n            for (var x = 0; x < w; x++)\n            {\n                var (r, g, b, a) = buffer.GetPixel(x, y);\n\n                // Quantize\n                var rq = MathF.Round(r * steps) / steps;\n                var gq = MathF.Round(g * steps) / steps;\n                var bq = MathF.Round(b * steps) / steps;\n                buffer.SetPixel(x, y, rq, gq, bq, a);\n\n                // Quantization error\n                var er = r - rq;\n                var eg = g - gq;\n                var eb = b - bq;\n\n                // Distribute error to future pixels (Floyd-Steinberg kernel)\n                if (x + 1 < w)\n                    AddError(buffer, x + 1, y, er * 7f / 16f, eg * 7f / 16f, eb * 7f / 16f);\n\n                if (y + 1 < h)\n                {\n                    if (x - 1 >= 0)\n                        AddError(buffer, x - 1, y + 1, er * 3f / 16f, eg * 3f / 16f, eb * 3f / 16f);\n                    AddError(buffer, x, y + 1, er * 5f / 16f, eg * 5f / 16f, eb * 5f / 16f);\n                    if (x + 1 < w)\n                        AddError(buffer, x + 1, y + 1, er * 1f / 16f, eg * 1f / 16f, eb * 1f / 16f);\n                }\n            }\n        }\n    }\n\n    private static void AddError(PixelBuffer buffer, int x, int y, float er, float eg, float eb)\n    {\n        var (r, g, b, a) = buffer.GetPixel(x, y);\n        buffer.SetPixel(x, y, Math.Clamp(r + er, 0f, 1f), Math.Clamp(g + eg, 0f, 1f), Math.Clamp(b + eb, 0f, 1f), a);\n    }\n}"
+  }
+}

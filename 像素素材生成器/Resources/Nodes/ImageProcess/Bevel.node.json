@@ -1,0 +1,207 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "Bevel",
+    "displayName": {
+      "zh-Hans": "斜面",
+      "en": "Bevel"
+    },
+    "category": "ImageProcess",
+    "description": {
+      "zh-Hans": "通过将Alpha通道或亮度解释为高度图，使用Sobel算子计算法线并应用Blinn-Phong着色，产生斜面/浮雕效果。创建3D凸起或凹陷外观。",
+      "en": "Applies a bevel/emboss effect by interpreting alpha or luminance as a heightmap, computing normals via Sobel, and applying Blinn-Phong shading. Creates a 3D raised or inset appearance."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [
+      {
+        "name": {
+          "zh-Hans": "输入",
+          "en": "Input"
+        },
+        "type": "Image"
+      }
+    ],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "输出",
+          "en": "Output"
+        },
+        "type": "Image"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "深度",
+        "en": "Depth"
+      },
+      "kind": "Number",
+      "default": 2.0,
+      "min": 0.1,
+      "max": 10.0,
+      "step": 0.1
+    },
+    {
+      "name": {
+        "zh-Hans": "亮度",
+        "en": "Brightness"
+      },
+      "kind": "Number",
+      "default": 0.6,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "环境光",
+        "en": "Ambient"
+      },
+      "kind": "Number",
+      "default": 0.3,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "高光",
+        "en": "Specular"
+      },
+      "kind": "Number",
+      "default": 0.3,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "高光幂次",
+        "en": "Specular Power"
+      },
+      "kind": "Number",
+      "default": 8.0,
+      "min": 1.0,
+      "max": 32.0,
+      "step": 1.0
+    },
+    {
+      "name": {
+        "zh-Hans": "光照方向",
+        "en": "Light Direction"
+      },
+      "kind": "Choice",
+      "default": "topLeft",
+      "choices": [
+        {
+          "value": "topLeft",
+          "label": {
+            "zh-Hans": "左上",
+            "en": "topLeft"
+          }
+        },
+        {
+          "value": "topRight",
+          "label": {
+            "zh-Hans": "右上",
+            "en": "topRight"
+          }
+        },
+        {
+          "value": "bottomLeft",
+          "label": {
+            "zh-Hans": "左下",
+            "en": "bottomLeft"
+          }
+        },
+        {
+          "value": "bottomRight",
+          "label": {
+            "zh-Hans": "右下",
+            "en": "bottomRight"
+          }
+        },
+        {
+          "value": "top",
+          "label": {
+            "zh-Hans": "顶部",
+            "en": "top"
+          }
+        },
+        {
+          "value": "custom",
+          "label": {
+            "zh-Hans": "自定义",
+            "en": "custom"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "zh-Hans": "光照角度",
+        "en": "Light Angle"
+      },
+      "kind": "Number",
+      "default": 0.785,
+      "min": 0.0,
+      "max": 6.28,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "高度来源",
+        "en": "Height Source"
+      },
+      "kind": "Choice",
+      "default": "alpha",
+      "choices": [
+        {
+          "value": "alpha",
+          "label": {
+            "zh-Hans": "透明通道",
+            "en": "alpha"
+          }
+        },
+        {
+          "value": "luminance",
+          "label": {
+            "zh-Hans": "亮度",
+            "en": "luminance"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "zh-Hans": "内斜面",
+        "en": "Inner Bevel"
+      },
+      "kind": "Boolean",
+      "default": true
+    }
+  ],
+  "ai": {
+    "capabilities": ["lighting-effect", "filter"],
+    "triggers": {
+      "zh-Hans": "斜面, 浮雕, 凸起, 凹陷, 3D边缘",
+      "en": "bevel, emboss, raised, inset, 3D edge"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "为像素艺术图标应用斜面效果，产生3D凸起外观。",
+      "en": "Apply a bevel effect to a pixel art icon for a 3D raised appearance."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar input = inputs.Length > 0 && inputs[0] != null ? inputs[0]! :\n        new PixelBuffer(context.TileSize, context.TileSize);\n\n    var depth = GetFloat(parameters, \"depth\", 2f);\n    var brightness = GetFloat(parameters, \"brightness\", 0.6f);\n    var ambient = GetFloat(parameters, \"ambient\", 0.3f);\n    var specular = GetFloat(parameters, \"specular\", 0.3f);\n    var specularPower = GetFloat(parameters, \"specularPower\", 8f);\n    var lightDir = GetChoice(parameters, \"lightDirection\", \"topLeft\");\n    var lightAngle = GetFloat(parameters, \"lightAngle\", 0.785f);\n    var heightSource = GetChoice(parameters, \"heightSource\", \"alpha\");\n    var inner = GetBool(parameters, \"innerBevel\", true);\n\n    var size = context.TileSize;\n    var output = new PixelBuffer(size, size);\n    var useAlpha = heightSource == \"alpha\";\n\n    // Light direction\n    float lx, ly;\n    switch (lightDir)\n    {\n        case \"topRight\": lx = 0.707f; ly = -0.707f; break;\n        case \"bottomLeft\": lx = -0.707f; ly = 0.707f; break;\n        case \"bottomRight\": lx = 0.707f; ly = 0.707f; break;\n        case \"top\": lx = 0f; ly = -1f; break;\n        case \"custom\": lx = MathF.Cos(lightAngle); ly = MathF.Sin(lightAngle); break;\n        default: lx = -0.707f; ly = -0.707f; break; // topLeft\n    }\n\n    // Half-vector for Blinn-Phong specular (view direction = (0,0,1))\n    var hx = lx;\n    var hy = ly;\n    var hz = 1f;\n    var hLen = MathF.Sqrt(hx * hx + hy * hy + hz * hz);\n    hx /= hLen; hy /= hLen; hz /= hLen;\n\n    output.ParallelForEachPixel((x, y) =>\n    {\n        var (r, g, b, a) = input.GetPixel(x, y);\n\n        // Consistent height field: both center and neighbors use same source\n        var hC = useAlpha ? a : SampleHeightFromLuminance(input, x, y);\n        var hL = useAlpha ? SampleHeightFromAlpha(input, x - 1, y) : SampleHeightFromLuminance(input, x - 1, y);\n        var hR = useAlpha ? SampleHeightFromAlpha(input, x + 1, y) : SampleHeightFromLuminance(input, x + 1, y);\n        var hD = useAlpha ? SampleHeightFromAlpha(input, x, y - 1) : SampleHeightFromLuminance(input, x, y - 1);\n        var hU = useAlpha ? SampleHeightFromAlpha(input, x, y + 1) : SampleHeightFromLuminance(input, x, y + 1);\n\n        // Calculate normal from gradient\n        var gx = (hR - hL) * depth;\n        var gy = (hU - hD) * depth;\n        if (!inner) { gx = -gx; gy = -gy; }\n\n        var len = MathF.Sqrt(gx * gx + gy * gy + 1f);\n        var nx = gx / len;\n        var ny = gy / len;\n        var nz = 1f / len;\n\n        // Diffuse (Lambert)\n        var ndotl = nx * lx + ny * ly + nz * 0.5f;\n        ndotl = MathF.Max(0f, ndotl);\n        var shade = ambient + ndotl * brightness;\n\n        // Specular (Blinn-Phong)\n        var ndoth = nx * hx + ny * hy + nz * hz;\n        var spec = 0f;\n        if (ndoth > 0f)\n        {\n            spec = specular * MathF.Pow(ndoth, specularPower);\n        }\n\n        shade = Math.Clamp(shade + spec, 0f, 1f);\n\n        var nr = Math.Clamp(r * shade, 0f, 1f);\n        var ng = Math.Clamp(g * shade, 0f, 1f);\n        var nb = Math.Clamp(b * shade, 0f, 1f);\n\n        output.SetPixel(x, y, nr, ng, nb, a);\n    });\n\n    return output;\n\nprivate static float SampleHeightFromAlpha(PixelBuffer buffer, int x, int y)\n{\n    x = Math.Clamp(x, 0, buffer.Width - 1);\n    y = Math.Clamp(y, 0, buffer.Height - 1);\n    var (_, _, _, a) = buffer.GetPixel(x, y);\n    return a;\n}\n\nprivate static float SampleHeightFromLuminance(PixelBuffer buffer, int x, int y)\n{\n    x = Math.Clamp(x, 0, buffer.Width - 1);\n    y = Math.Clamp(y, 0, buffer.Height - 1);\n    var (r, g, b, _) = buffer.GetPixel(x, y);\n    return r * 0.299f + g * 0.587f + b * 0.114f;\n    }\n}"
+  }
+}

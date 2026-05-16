@@ -1,0 +1,150 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "Variation",
+    "displayName": {
+      "zh-Hans": "变体",
+      "en": "Variation"
+    },
+    "category": "Logic",
+    "description": {
+      "zh-Hans": "对输入图像应用微妙的受控扰动，在保持整体结构的同时产生视觉变体。适用于从单个基础素材生成多个相似资源（例如从同一源生成不同外观的树木、岩石或建筑）。",
+      "en": "Applies subtle controlled perturbation to an input image to produce visual variations while preserving the overall structure. Useful for generating multiple similar assets from a single base (e.g., different looking trees, rocks, or buildings from one source)."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [
+      {
+        "name": {
+          "zh-Hans": "输入",
+          "en": "Input"
+        },
+        "type": "Image"
+      }
+    ],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "输出",
+          "en": "Output"
+        },
+        "type": "Image"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "种子",
+        "en": "Seed"
+      },
+      "kind": "Seed",
+      "default": 42,
+      "min": 0,
+      "max": 9999
+    },
+    {
+      "name": {
+        "zh-Hans": "强度",
+        "en": "Intensity"
+      },
+      "kind": "Number",
+      "default": 0.3,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "模式",
+        "en": "Mode"
+      },
+      "kind": "Choice",
+      "default": "seedScramble",
+      "choices": [
+        {
+          "value": "seedScramble",
+          "label": {
+            "zh-Hans": "种子随机",
+            "en": "seedScramble"
+          }
+        },
+        {
+          "value": "parameterNoise",
+          "label": {
+            "zh-Hans": "参数噪波",
+            "en": "parameterNoise"
+          }
+        },
+        {
+          "value": "styleBlend",
+          "label": {
+            "zh-Hans": "风格混合",
+            "en": "styleBlend"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "zh-Hans": "色相偏移",
+        "en": "Hue Shift"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": -0.5,
+      "max": 0.5,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "饱和度偏移",
+        "en": "Saturation Shift"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": -0.5,
+      "max": 0.5,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "明度偏移",
+        "en": "Lightness Shift"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": -0.3,
+      "max": 0.3,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "保留结构",
+        "en": "Keep Structure"
+      },
+      "kind": "Boolean",
+      "default": true
+    }
+  ],
+  "ai": {
+    "capabilities": ["logic", "image-analysis"],
+    "triggers": {
+      "zh-Hans": "变体, 图像变体, 扰动, 风格混合, 参数噪声, 种子随机",
+      "en": "variation, image variation, perturbation, style blend, seed scramble"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "对树木素材施加细微扰动，生成外观不同的多个变体。",
+      "en": "Apply subtle perturbation to a tree asset to generate multiple visually distinct variations."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar input = inputs.Length > 0 && inputs[0] != null ? inputs[0]! :\n        new PixelBuffer(context.TileSize, context.TileSize);\n\n    var seed = GetInt(parameters, \"seed\", context.Seed);\n    var intensity = GetFloat(parameters, \"intensity\", 0.3f);\n    var mode = GetChoice(parameters, \"mode\", \"seedScramble\");\n    var hueShift = GetFloat(parameters, \"hueShift\", 0f);\n    var satShift = GetFloat(parameters, \"saturationShift\", 0f);\n    var lightShift = GetFloat(parameters, \"lightnessShift\", 0f);\n    var keepStructure = GetBool(parameters, \"keepStructure\", true);\n\n    var size = context.TileSize;\n    var buffer = new PixelBuffer(size, size);\n    var clone = input.Clone();\n\n    switch (mode)\n    {\n        case \"parameterNoise\":\n            ParameterNoiseVariation(clone, buffer, size, seed, intensity);\n            break;\n        case \"styleBlend\":\n            StyleBlendVariation(clone, buffer, size, seed, intensity, keepStructure);\n            break;\n        default: // seedScramble\n            SeedScrambleVariation(clone, buffer, size, seed, intensity);\n            break;\n    }\n\n    return buffer;\n\nprivate static void SeedScrambleVariation(PixelBuffer input, PixelBuffer output, int size, int seed, float intensity)\n{\n    output.ParallelForEachPixel((x, y) =>\n    {\n        var (r, g, b, a) = input.GetPixel(x, y);\n\n        // Per-pixel noise offset using hash\n        var noiseX = HashToUnit(x * 7 + seed, y * 13 + seed * 3, 111);\n        var noiseY = HashToUnit(x * 11 + seed * 5, y * 7 + seed, 222);\n        var noiseZ = HashToUnit(x * 3 + seed * 7, y * 11 + seed * 11, 333);\n\n        var shift = intensity * 0.15f;\n        r = Math.Clamp(r + (noiseX - 0.5f) * shift, 0f, 1f);\n        g = Math.Clamp(g + (noiseY - 0.5f) * shift, 0f, 1f);\n        b = Math.Clamp(b + (noiseZ - 0.5f) * shift, 0f, 1f);\n\n        output.SetPixel(x, y, r, g, b, a);\n    });\n}\n\nprivate static void ParameterNoiseVariation(PixelBuffer input, PixelBuffer output, int size, int seed, float intensity)\n{\n    // Generate a noise field and blend it with the input\n    var noiseField = new PixelBuffer(size, size);\n    noiseField.ParallelForEachPixel((x, y) =>\n    {\n        var n = TileableFractalNoise(x / (float)size * 4f, y / (float)size * 4f, 4, 3, 0.5f, 2f, seed);\n        noiseField.SetPixel(x, y, n, n, n, 1f);\n    });\n\n    output.ParallelForEachPixel((x, y) =>\n    {\n        var (r, g, b, a) = input.GetPixel(x, y);\n        var (nr, _, _, _) = noiseField.GetPixel(x, y);\n\n        var blend = intensity * 0.4f;\n        r = Math.Clamp(r + (nr - 0.5f) * blend, 0f, 1f);\n        g = Math.Clamp(g + (nr - 0.5f) * blend, 0f, 1f);\n        b = Math.Clamp(b + (nr - 0.5f) * blend, 0f, 1f);\n\n        output.SetPixel(x, y, r, g, b, a);\n    });\n}\n\nprivate static void StyleBlendVariation(PixelBuffer input, PixelBuffer output, int size, int seed, float intensity, bool keepStructure)\n{\n    output.ParallelForEachPixel((x, y) =>\n    {\n        var (r, g, b, a) = input.GetPixel(x, y);\n\n        if (keepStructure)\n        {\n            // Perturb hue and saturation while preserving luminance\n            var lum = r * 0.299f + g * 0.587f + b * 0.114f;\n            var hueShift = (HashToUnit(x * 31 + seed, y * 37 + seed * 5, 777) - 0.5f) * intensity * 0.3f;\n            var satShift = (HashToUnit(x * 41 + seed * 3, y * 43 + seed * 7, 888) - 0.5f) * intensity * 0.2f;\n\n            // Simple hue rotation approximation in RGB\n            var cosA = MathF.Cos(hueShift * MathF.PI * 2f);\n            var sinA = MathF.Sin(hueShift * MathF.PI * 2f);\n            var nr = lum + (r - lum) * cosA - (g - b) * 0.577f * sinA;\n            var ng = lum + (g - lum) * cosA - (b - r) * 0.577f * sinA;\n            var nb = lum + (b - lum) * cosA - (r - g) * 0.577f * sinA;\n\n            // Apply saturation shift\n            var sat = 1f + satShift;\n            nr = lum + (nr - lum) * sat;\n            ng = lum + (ng - lum) * sat;\n            nb = lum + (nb - lum) * sat;\n\n            r = Math.Clamp(nr, 0f, 1f);\n            g = Math.Clamp(ng, 0f, 1f);\n            b = Math.Clamp(nb, 0f, 1f);\n        }\n        else\n        {\n            // More aggressive: swap channel correlations\n            var mix = intensity * 0.3f;\n            var nr = r * (1f - mix) + g * mix * 0.5f + b * mix * 0.5f;\n            var ng = g * (1f - mix) + r * mix * 0.5f + b * mix * 0.5f;\n            var nb = b * (1f - mix) + r * mix * 0.5f + g * mix * 0.5f;\n            r = Math.Clamp(nr, 0f, 1f);\n            g = Math.Clamp(ng, 0f, 1f);\n            b = Math.Clamp(nb, 0f, 1f);\n        }\n\n        output.SetPixel(x, y, r, g, b, a);\n    });\n    }\n}"
+  }
+}

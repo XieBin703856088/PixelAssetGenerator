@@ -1,0 +1,145 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "ColorQuantize",
+    "displayName": {
+      "zh-Hans": "颜色量化",
+      "en": "Color Quantize"
+    },
+    "category": "ImageProcess",
+    "description": {
+      "zh-Hans": "使用均匀量化减少图像颜色数量，支持可配置抖动（有序Bayer抖动或误差扩散）。生成有限调色板的像素艺术风格输出。",
+      "en": "Reduces the number of colors in an image using uniform quantization with configurable dithering (ordered Bayer or error diffusion). Produces a limited-palette pixel art style output."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [
+      {
+        "name": {
+          "zh-Hans": "输入",
+          "en": "Input"
+        },
+        "type": "Image"
+      }
+    ],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "输出",
+          "en": "Output"
+        },
+        "type": "Image"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "颜色数量",
+        "en": "Num Colors"
+      },
+      "kind": "Integer",
+      "default": 16,
+      "min": 2,
+      "max": 256,
+      "step": 1
+    },
+    {
+      "name": {
+        "zh-Hans": "抖动模式",
+        "en": "Dither Mode"
+      },
+      "kind": "Choice",
+      "default": "floydSteinberg",
+      "choices": [
+        {
+          "value": "none",
+          "label": {
+            "zh-Hans": "无",
+            "en": "none"
+          }
+        },
+        {
+          "value": "bayer4x4",
+          "label": {
+            "zh-Hans": "Bayer 4x4",
+            "en": "bayer4x4"
+          }
+        },
+        {
+          "value": "bayer8x8",
+          "label": {
+            "zh-Hans": "Bayer 8x8",
+            "en": "bayer8x8"
+          }
+        },
+        {
+          "value": "floydSteinberg",
+          "label": {
+            "zh-Hans": "Floyd-Steinberg",
+            "en": "floydSteinberg"
+          }
+        },
+        {
+          "value": "atkinson",
+          "label": {
+            "zh-Hans": "Atkinson",
+            "en": "atkinson"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "zh-Hans": "颜色空间",
+        "en": "Color Space"
+      },
+      "kind": "Choice",
+      "default": "RGB",
+      "choices": [
+        {
+          "value": "RGB",
+          "label": {
+            "zh-Hans": "RGB",
+            "en": "RGB"
+          }
+        },
+        {
+          "value": "HSVWeighted",
+          "label": {
+            "zh-Hans": "HSV加权",
+            "en": "HSVWeighted"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "zh-Hans": "保留透明通道",
+        "en": "Preserve Alpha"
+      },
+      "kind": "Boolean",
+      "default": true
+    }
+  ],
+  "ai": {
+    "capabilities": ["color-adjust", "effect"],
+    "triggers": {
+      "zh-Hans": "颜色量化, 减少颜色, 抖动, 像素艺术调色板, Bayer抖动, Floyd-Steinberg",
+      "en": "color quantize, reduce colors, dither, pixel art palette, Bayer dither, Floyd-Steinberg"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "将照片量化为16色像素艺术风格，并应用Floyd-Steinberg抖动。",
+      "en": "Quantize a photo to 16 colors in pixel art style with Floyd-Steinberg dithering."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar input = inputs.Length > 0 && inputs[0] != null ? inputs[0]! :\n        new PixelBuffer(context.TileSize, context.TileSize);\n\n    var numColors = GetInt(parameters, \"numColors\", 16);\n    var ditherMode = GetChoice(parameters, \"ditherMode\", \"floydSteinberg\");\n    var colorSpace = GetChoice(parameters, \"colorSpace\", \"RGB\");\n    var preserveAlpha = GetBool(parameters, \"preserveAlpha\", true);\n\n    var size = context.TileSize;\n    var output = new PixelBuffer(size, size);\n\n    // Calculate number of steps per channel for uniform quantization\n    var steps = Math.Max(2, (int)Math.Round(Math.Pow(numColors, 1f / 3f)));\n    var stepSize = 1f / (steps - 1);\n\n    if (ditherMode == \"none\")\n    {\n        // Simple uniform quantization without dithering\n        output.ParallelForEachPixel((x, y) =>\n        {\n            var (r, g, b, a) = input.GetPixel(x, y);\n\n            r = QuantizeChannel(r, stepSize);\n            g = QuantizeChannel(g, stepSize);\n            b = QuantizeChannel(b, stepSize);\n\n            output.SetPixel(x, y, r, g, b, preserveAlpha ? a : 1f);\n        });\n    }\n    else if (ditherMode == \"bayer4x4\" || ditherMode == \"bayer8x8\")\n    {\n        var useBayer8 = ditherMode == \"bayer8x8\";\n        var matrix = useBayer8 ? Bayer8 : Bayer4;\n        var matrixSize = useBayer8 ? 8 : 4;\n\n        if (colorSpace == \"HSVWeighted\")\n        {\n            // HSV-weighted dithering: apply different dither strength per channel\n            output.ParallelForEachPixel((x, y) =>\n            {\n                var (r, g, b, a) = input.GetPixel(x, y);\n                var mx = x % matrixSize;\n                var my = y % matrixSize;\n                var threshold = matrix[my * matrixSize + mx];\n\n                // Perceptual weighting: green gets less dither, blue gets more\n                var tr = threshold * 0.7f;\n                var tg = threshold * 0.5f;\n                var tb = threshold * 0.9f;\n\n                r = QuantizeChannelDither(r + tr * stepSize, stepSize);\n                g = QuantizeChannelDither(g + tg * stepSize, stepSize);\n                b = QuantizeChannelDither(b + tb * stepSize, stepSize);\n\n                output.SetPixel(x, y, r, g, b, preserveAlpha ? a : 1f);\n            });\n        }\n        else\n        {\n            output.ParallelForEachPixel((x, y) =>\n            {\n                var (r, g, b, a) = input.GetPixel(x, y);\n                var mx = x % matrixSize;\n                var my = y % matrixSize;\n                var threshold = matrix[my * matrixSize + mx];\n\n                r = QuantizeChannelDither(r + threshold * stepSize, stepSize);\n                g = QuantizeChannelDither(g + threshold * stepSize, stepSize);\n                b = QuantizeChannelDither(b + threshold * stepSize, stepSize);\n\n                output.SetPixel(x, y, r, g, b, preserveAlpha ? a : 1f);\n            });\n        }\n    }\n    else\n    {\n        // Error diffusion dithering (Floyd-Steinberg or Atkinson)\n        // Requires serial scanline processing — cannot use ParallelForEachPixel\n        var w = size;\n        var h = size;\n\n        // Copy input to output as float arrays for in-place error diffusion\n        var pixels = new float[w * h * 4];\n        for (var i = 0; i < pixels.Length; i++)\n            pixels[i] = input.AsReadOnlySpan()[i];\n\n        var isAtkinson = ditherMode == \"atkinson\";\n\n        for (var y = 0; y < h; y++)\n        {\n            for (var x = 0; x < w; x++)\n            {\n                var idx = (y * w + x) * 4;\n                var oldR = pixels[idx];\n                var oldG = pixels[idx + 1];\n                var oldB = pixels[idx + 2];\n\n                float newR, newG, newB;\n\n                if (colorSpace == \"HSVWeighted\")\n                {\n                    newR = QuantizeChannel(oldR, stepSize);\n                    newG = QuantizeChannel(oldG, stepSize);\n                    newB = QuantizeChannel(oldB, stepSize);\n                }\n                else\n                {\n                    newR = QuantizeChannel(oldR, stepSize);\n                    newG = QuantizeChannel(oldG, stepSize);\n                    newB = QuantizeChannel(oldB, stepSize);\n                }\n\n                pixels[idx] = newR;\n                pixels[idx + 1] = newG;\n                pixels[idx + 2] = newB;\n                // Alpha stays unchanged\n\n                var errR = oldR - newR;\n                var errG = oldG - newG;\n                var errB = oldB - newB;\n\n                if (isAtkinson)\n                {\n                    // Atkinson: 1/8 error diffusion to 6 neighbors\n                    var aFwd = 1f / 8f;\n                    var aRow = 1f / 8f;\n\n                    Diffuse(pixels, w, h, x + 1, y, errR * aFwd, errG * aFwd, errB * aFwd);\n                    Diffuse(pixels, w, h, x + 2, y, errR * aFwd, errG * aFwd, errB * aFwd);\n                    Diffuse(pixels, w, h, x - 1, y + 1, errR * aFwd, errG * aFwd, errB * aFwd);\n                    Diffuse(pixels, w, h, x, y + 1, errR * aRow, errG * aRow, errB * aRow);\n                    Diffuse(pixels, w, h, x + 1, y + 1, errR * aFwd, errG * aFwd, errB * aFwd);\n                }\n                else\n                {\n                    // Floyd-Steinberg: 7/16, 3/16, 5/16, 1/16\n                    Diffuse(pixels, w, h, x + 1, y, errR * 7f / 16f, errG * 7f / 16f, errB * 7f / 16f);\n                    Diffuse(pixels, w, h, x - 1, y + 1, errR * 3f / 16f, errG * 3f / 16f, errB * 3f / 16f);\n                    Diffuse(pixels, w, h, x, y + 1, errR * 5f / 16f, errG * 5f / 16f, errB * 5f / 16f);\n                    Diffuse(pixels, w, h, x + 1, y + 1, errR * 1f / 16f, errG * 1f / 16f, errB * 1f / 16f);\n                }\n            }\n        }\n\n        // Copy result back to output PixelBuffer\n        for (var y = 0; y < h; y++)\n        for (var x = 0; x < w; x++)\n        {\n            var idx = (y * w + x) * 4;\n            var a = preserveAlpha ? pixels[idx + 3] : 1f;\n            output.SetPixel(x, y, pixels[idx], pixels[idx + 1], pixels[idx + 2], a);\n        }\n    }\n\n    return output;\n\nprivate static void Diffuse(float[] pixels, int w, int h, int x, int y, float er, float eg, float eb)\n{\n    if (x < 0 || x >= w || y < 0 || y >= h) return;\n    var idx = (y * w + x) * 4;\n    pixels[idx] = Math.Clamp(pixels[idx] + er, 0f, 1f);\n    pixels[idx + 1] = Math.Clamp(pixels[idx + 1] + eg, 0f, 1f);\n    pixels[idx + 2] = Math.Clamp(pixels[idx + 2] + eb, 0f, 1f);\n}\n\nprivate static readonly byte[] Bayer4 = { 0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5 };\nprivate static readonly byte[] Bayer8 = { 0, 32, 8, 40, 2, 34, 10, 42, 48, 16, 56, 24, 50, 18, 58, 26, 12, 44, 4, 36, 14, 46, 6, 38, 60, 28, 52, 20, 62, 30, 54, 22, 3, 35, 11, 43, 1, 33, 9, 41, 51, 19, 59, 27, 49, 17, 57, 25, 15, 47, 7, 39, 13, 45, 5, 37, 63, 31, 55, 23, 61, 29, 53, 21 };\n\nprivate static float QuantizeChannel(float v, float stepSize)\n{\n    if (stepSize <= 0f) return Math.Clamp(v, 0f, 1f);\n    var stepped = MathF.Round(v / stepSize) * stepSize;\n    return Math.Clamp(stepped, 0f, 1f);\n}\n\nprivate static float QuantizeChannelDither(float v, float stepSize)\n{\n    if (stepSize <= 0f) return Math.Clamp(v, 0f, 1f);\n    var stepped = MathF.Floor(v / stepSize) * stepSize;\n    stepped += stepSize * 0.5f; // center the quantized value in its bucket\n    return Math.Clamp(stepped, 0f, 1f);\n    }\n}"
+  }
+}

@@ -1,0 +1,218 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "Camo",
+    "displayName": {
+      "zh-Hans": "迷彩",
+      "en": "Camo"
+    },
+    "category": "Material",
+    "description": {
+      "zh-Hans": "使用多阈值分形噪波生成迷彩/伪装图案纹理。支持可配置的颜色带（2-5种颜色）、斑块缩放、边缘柔化和有机块状形状。所有噪波均可平铺。",
+      "en": "Generates camouflage / disruptive pattern textures using multi-threshold fractal noise. Supports configurable color bands (2-5 colors), patch scale, edge softness, and organic blob-like shapes. All noise is tileable."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "遮罩",
+          "en": "Mask"
+        },
+        "type": "Mask"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "种子",
+        "en": "Seed"
+      },
+      "kind": "Seed",
+      "default": 42,
+      "min": 0,
+      "max": 9999
+    },
+    {
+      "name": {
+        "zh-Hans": "缩放",
+        "en": "Scale"
+      },
+      "kind": "Number",
+      "default": 3.5,
+      "min": 0.5,
+      "max": 8.0,
+      "step": 0.5
+    },
+    {
+      "name": {
+        "zh-Hans": "边缘柔化",
+        "en": "Edge Softness"
+      },
+      "kind": "Number",
+      "default": 0.25,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "颜色1",
+        "en": "Color1"
+      },
+      "kind": "Color",
+      "default": "#3C6428FF"
+    },
+    {
+      "name": {
+        "zh-Hans": "颜色2",
+        "en": "Color2"
+      },
+      "kind": "Color",
+      "default": "#788C3CFF"
+    },
+    {
+      "name": {
+        "zh-Hans": "颜色3",
+        "en": "Color3"
+      },
+      "kind": "Color",
+      "default": "#504628FF"
+    },
+    {
+      "name": {
+        "zh-Hans": "颜色4",
+        "en": "Color4"
+      },
+      "kind": "Color",
+      "default": "#28321EFF"
+    },
+    {
+      "name": {
+        "zh-Hans": "颜色5",
+        "en": "Color5"
+      },
+      "kind": "Color",
+      "default": "#A09664FF"
+    },
+    {
+      "name": {
+        "zh-Hans": "颜色数量",
+        "en": "Color Count"
+      },
+      "kind": "Integer",
+      "default": 4,
+      "min": 2,
+      "max": 5,
+      "step": 1
+    },
+    {
+      "name": {
+        "zh-Hans": "图案类型",
+        "en": "Pattern Type"
+      },
+      "kind": "Choice",
+      "default": "standard",
+      "choices": [
+        {
+          "value": "standard",
+          "label": {
+            "zh-Hans": "标准",
+            "en": "standard"
+          }
+        },
+        {
+          "value": "spot",
+          "label": {
+            "zh-Hans": "聚光灯",
+            "en": "spot"
+          }
+        },
+        {
+          "value": "stripe",
+          "label": {
+            "zh-Hans": "条纹",
+            "en": "stripe"
+          }
+        },
+        {
+          "value": "fragment",
+          "label": {
+            "zh-Hans": "碎片",
+            "en": "fragment"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "zh-Hans": "八度",
+        "en": "Octaves"
+      },
+      "kind": "Number",
+      "default": 4.0,
+      "min": 2.0,
+      "max": 8.0,
+      "step": 1.0
+    },
+    {
+      "name": {
+        "zh-Hans": "亮度",
+        "en": "Brightness"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": -0.3,
+      "max": 0.3,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "对比度",
+        "en": "Contrast"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": -0.5,
+      "max": 0.5,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "反相",
+        "en": "Invert"
+      },
+      "kind": "Boolean",
+      "default": false
+    }
+  ],
+  "ai": {
+    "capabilities": ["material", "procedural-texture", "organic", "fabric", "tileable"],
+    "triggers": {
+      "zh-Hans": "迷彩, 伪装, 军用, 斑纹, 野外纹理",
+      "en": "camo, camouflage, military pattern, disruptive pattern, woodland"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "生成军事迷彩图案纹理，用于角色服装或车辆涂装。",
+      "en": "Generate a camouflage pattern texture for character outfits or vehicle paint schemes."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar seed = GetInt(parameters, \"seed\", context.Seed);\nvar scale = GetFloat(parameters, \"scale\", 2f);\nvar edgeSoftness = GetFloat(parameters, \"edgeSoftness\", 0.3f);\nvar colorCount = Math.Clamp(GetInt(parameters, \"colorCount\", 3), 2, 5);\nvar patternType = GetChoice(parameters, \"patternType\", \"standard\");\nvar octaves = Math.Max(2, GetInt(parameters, \"octaves\", 4));\nvar brightness = GetFloat(parameters, \"brightness\", 0f);\nvar contrast = GetFloat(parameters, \"contrast\", 0f);\nvar invert = GetBool(parameters, \"invert\", false);\n\nvar size = context.TileSize;\nvar buffer = new PixelBuffer(size, size);\n\n// Collect colors\nvar colorNames = new[] { \"color1\", \"color2\", \"color3\", \"color4\", \"color5\" };\nvar colors = new (float r, float g, float b)[colorCount];\nvar defaultColors = new[]\n{\n    Color.FromRgb(60, 100, 40), Color.FromRgb(120, 140, 60),\n    Color.FromRgb(80, 70, 40), Color.FromRgb(40, 50, 30),\n    Color.FromRgb(160, 150, 100)\n};\nfor (var i = 0; i < colorCount; i++)\n{\n    var c = GetColor(parameters, colorNames[i], defaultColors[i]);\n    colors[i] = (c.R / 255f, c.G / 255f, c.B / 255f);\n}\n\nbuffer.ParallelForEachPixel((x, y) =>\n{\n    var u = (x + 0.5f) / size;\n    var v = (y + 0.5f) / size;\n\n    float noiseVal;\n\n    switch (patternType)\n    {\n        case \"spot\":\n        {\n            // Spot pattern: cellular noise with high contrast\n            var cellSize = Math.Max(1, size / Math.Max(1, (int)scale));\n            var cellCount = Math.Max(1, size / cellSize);\n            TileableVoronoi(u * size, v * size, cellSize, cellCount, seed,\n                out var nearest, out var secondNearest, out _, out _);\n            noiseVal = (nearest + secondNearest) * 0.5f;\n            break;\n        }\n        case \"stripe\":\n        {\n            // Stripes: directional tileable noise-based banding\n            var dirX = u * scale * 0.5f - v * scale * 0.3f;\n            var dirY = u * scale * 0.3f + v * scale * 0.5f;\n            var stripeNoiseVal = TileableFractalNoise(\n                dirX, dirY,\n                Math.Max(1, (int)MathF.Round(scale * 0.5f)),\n                3, 0.6f, 2f, seed + 100);\n            // Smooth noise banding creates stripe appearance\n            var band = (stripeNoiseVal * 2.5f + 0.5f) % 1f;\n            noiseVal = band < 0.5f ? band * 2f : 2f - band * 2f;\n            noiseVal = Math.Clamp(noiseVal, 0f, 1f);\n            break;\n        }\n        case \"fragment\":\n        {\n            // Fragment pattern: multiple noise octaves with sharp threshold\n            var frag = TileableFractalNoise(\n                u * scale * 1.5f, v * scale * 1.5f,\n                Math.Max(1, (int)MathF.Round(scale * 1.5f)),\n                Math.Min(octaves, 4), 0.7f, 2.5f, seed + 200);\n            var frag2 = TileableFractalNoise(\n                u * scale * 2.5f + 30f, v * scale * 2.5f + 30f,\n                Math.Max(1, (int)MathF.Round(scale * 2.5f)),\n                2, 0.5f, 2f, seed + 300);\n            noiseVal = frag * 0.7f + frag2 * 0.3f;\n            break;\n        }\n        default: // standard\n        {\n            // Standard multi-octave fractal noise\n            noiseVal = TileableFractalNoise(\n                u * scale, v * scale,\n                Math.Max(1, (int)MathF.Round(scale)),\n                octaves, 0.55f, 2.2f, seed);\n            break;\n        }\n    }\n\n    // Map noise value to color band\n    var bandPos = noiseVal * (colorCount - 1);\n    var bandIdx = (int)MathF.Floor(bandPos);\n    var bandT = bandPos - bandIdx;\n    bandIdx = Math.Clamp(bandIdx, 0, colorCount - 2);\n\n    // Edge softness: smooth the transition between bands\n    if (edgeSoftness > 0f)\n    {\n        var remapT = MathF.Pow(bandT, 1f - edgeSoftness * 0.7f);\n        bandT = remapT;\n    }\n\n    var c0 = colors[bandIdx];\n    var c1 = colors[bandIdx + 1];\n\n    float r = Lerp(c0.r, c1.r, bandT);\n    float g = Lerp(c0.g, c1.g, bandT);\n    float b = Lerp(c0.b, c1.b, bandT);\n\n    // Detail noise for fabric texture\n    if (patternType != \"fragment\")\n    {\n        var detail = TileableFractalNoise(\n            u * scale * 8f, v * scale * 8f,\n            Math.Max(1, (int)MathF.Round(scale * 8f)),\n            1, 0.5f, 2f, seed + 400);\n        var detailAmt = (detail - 0.5f) * 0.04f;\n        r = Math.Clamp(r + detailAmt, 0f, 1f);\n        g = Math.Clamp(g + detailAmt * 0.8f, 0f, 1f);\n        b = Math.Clamp(b + detailAmt * 0.6f, 0f, 1f);\n    }\n\n    // Brightness and contrast\n    r = Math.Clamp(r + brightness, 0f, 1f);\n    g = Math.Clamp(g + brightness, 0f, 1f);\n    b = Math.Clamp(b + brightness, 0f, 1f);\n\n    if (MathF.Abs(contrast) > 0.001f)\n    {\n        var factor = 1f + contrast;\n        r = (r - 0.5f) * factor + 0.5f;\n        g = (g - 0.5f) * factor + 0.5f;\n        b = (b - 0.5f) * factor + 0.5f;\n    }\n\n    if (invert) { r = 1f - r; g = 1f - g; b = 1f - b; }\n\n    buffer.SetPixel(x, y, Math.Clamp(r, 0f, 1f), Math.Clamp(g, 0f, 1f), Math.Clamp(b, 0f, 1f), 1f);\n});\n\nreturn buffer;\n}"
+  }
+}

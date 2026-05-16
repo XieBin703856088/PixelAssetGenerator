@@ -1,0 +1,172 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "ColorAdjust",
+    "displayName": {
+      "zh-Hans": "颜色调整",
+      "en": "Color Adjust"
+    },
+    "category": "ImageProcess",
+    "description": {
+      "zh-Hans": "调整颜色属性：亮度、对比度、饱和度、色相偏移。支持调色板限制（索引颜色模式），实现像素艺术风格。",
+      "en": "Adjusts color properties: brightness, contrast, saturation, hue shift. Also supports palette limiting (indexed color mode) for pixel art style."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      }
+    ],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "亮度",
+        "en": "Brightness"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": -1.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "对比度",
+        "en": "Contrast"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": -1.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "饱和度",
+        "en": "Saturation"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": -1.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "色相偏移",
+        "en": "Hue Shift"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": -180.0,
+      "max": 180.0,
+      "step": 1.0
+    },
+    {
+      "name": {
+        "zh-Hans": "伽马",
+        "en": "Gamma"
+      },
+      "kind": "Number",
+      "default": 1.0,
+      "min": 0.1,
+      "max": 5.0,
+      "step": 0.05
+    },
+    {
+      "name": {
+        "zh-Hans": "色温",
+        "en": "Color Temp"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": -1.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "着色颜色",
+        "en": "Tint Color"
+      },
+      "kind": "Color",
+      "default": "#FFFFFFA0"
+    },
+    {
+      "name": {
+        "zh-Hans": "阴影裁剪",
+        "en": "Shadow Clip"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "高光裁剪",
+        "en": "Highlight Clip"
+      },
+      "kind": "Number",
+      "default": 1.0,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "调色板步数",
+        "en": "Palette Steps"
+      },
+      "kind": "Integer",
+      "default": 0,
+      "min": 0,
+      "max": 32,
+      "step": 1
+    },
+    {
+      "name": {
+        "zh-Hans": "反相",
+        "en": "Invert"
+      },
+      "kind": "Boolean",
+      "default": false
+    }
+  ],
+  "ai": {
+    "capabilities": ["color-adjust"],
+    "triggers": {
+      "zh-Hans": "颜色调整, 亮度, 对比度, 饱和度, 色相, 伽马, 色温, 反相",
+      "en": "color adjust, brightness, contrast, saturation, hue, gamma, color temp, invert"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "调整精灵的亮度和对比度以匹配场景光照。",
+      "en": "Adjust brightness and contrast of a sprite to match scene lighting."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar input = inputs.Length > 0 ? inputs[0] : null;\n        if (input is null)\n            return PixelBuffer.CreateSolid(context.TileSize, context.TileSize, 0, 0, 0);\n\n        var brightness = GetFloat(parameters, \"brightness\", 0f);\n        var contrast = GetFloat(parameters, \"contrast\", 0f);\n        var saturation = GetFloat(parameters, \"saturation\", 0f);\n        var hueShift = GetFloat(parameters, \"hueShift\", 0f);\n        var gamma = GetFloat(parameters, \"gamma\", 1f);\n        var colorTemp = GetFloat(parameters, \"colorTemp\", 0f);\n        var tintColor = GetColor(parameters, \"tintColor\", System.Windows.Media.Color.FromRgb(255,255,255));\n        // Convert color picker into per-channel multipliers in 0..2 range (keeping default white -> 1.0 multiplier)\n        var tintR = tintColor.R / 255f * 2f;\n        var tintG = tintColor.G / 255f * 2f;\n        var tintB = tintColor.B / 255f * 2f;\n        var shadowClip = GetFloat(parameters, \"shadowClip\", 0f);\n        var highlightClip = GetFloat(parameters, \"highlightClip\", 1f);\n        var paletteSteps = GetInt(parameters, \"paletteSteps\", 0);\n        var invert = GetBool(parameters, \"invert\");\n\n        var result = input.Clone();\n\n        result.Apply((r, g, b, a) =>\n        {\n            if (invert)\n            {\n                r = 1f - r;\n                g = 1f - g;\n                b = 1f - b;\n            }\n\n            // Brightness\n            r += brightness;\n            g += brightness;\n            b += brightness;\n\n            // Contrast (around midpoint 0.5)\n            var contrastFactor = 1f + contrast;\n            r = (r - 0.5f) * contrastFactor + 0.5f;\n            g = (g - 0.5f) * contrastFactor + 0.5f;\n            b = (b - 0.5f) * contrastFactor + 0.5f;\n\n            // Gamma correction\n            if (MathF.Abs(gamma - 1f) > 0.01f)\n            {\n                var invGamma = 1f / MathF.Max(0.1f, gamma);\n                r = MathF.Pow(Math.Clamp(r, 0f, 1f), invGamma);\n                g = MathF.Pow(Math.Clamp(g, 0f, 1f), invGamma);\n                b = MathF.Pow(Math.Clamp(b, 0f, 1f), invGamma);\n            }\n\n            // Saturation (adjust toward luminance)\n            var lum = 0.2126f * r + 0.7152f * g + 0.0722f * b;\n            var satFactor = 1f + saturation;\n            r = lum + (r - lum) * satFactor;\n            g = lum + (g - lum) * satFactor;\n            b = lum + (b - lum) * satFactor;\n\n            // Color temperature: warm shifts toward red/yellow, cool toward blue\n            if (MathF.Abs(colorTemp) > 0.01f)\n            {\n                r += colorTemp * 0.1f;\n                g += colorTemp * 0.02f;\n                b -= colorTemp * 0.1f;\n            }\n\n            // RGB tint multiplier\n            r *= tintR;\n            g *= tintG;\n            b *= tintB;\n\n            // Hue shift (convert to HSV, shift, convert back)\n            if (MathF.Abs(hueShift) > 0.5f)\n            {\n                RgbToHsv(r, g, b, out var h, out var s, out var v);\n                h = (h + hueShift / 360f) % 1f;\n                if (h < 0f) h += 1f;\n                HsvToRgb(h, s, v, out r, out g, out b);\n            }\n\n            // Levels: shadow/highlight clip\n            if (shadowClip > 0f || highlightClip < 1f)\n            {\n                var range = MathF.Max(0.001f, highlightClip - shadowClip);\n                r = (r - shadowClip) / range;\n                g = (g - shadowClip) / range;\n                b = (b - shadowClip) / range;\n            }\n\n            // Palette limiting (posterize/indexed color mode)\n            if (paletteSteps > 1)\n            {\n                var steps = paletteSteps - 1f;\n                r = MathF.Round(r * steps) / steps;\n                g = MathF.Round(g * steps) / steps;\n                b = MathF.Round(b * steps) / steps;\n            }\n\n            r = Math.Clamp(r, 0f, 1f);\n            g = Math.Clamp(g, 0f, 1f);\n            b = Math.Clamp(b, 0f, 1f);\n            return (r, g, b, a);\n        });\n\n        return result;\n\n    private static void RgbToHsv(float r, float g, float b, out float h, out float s, out float v)\n    {\n        var max = MathF.Max(r, MathF.Max(g, b));\n        var min = MathF.Min(r, MathF.Min(g, b));\n        var delta = max - min;\n\n        v = max;\n        s = max > 0.0001f ? delta / max : 0f;\n\n        if (delta < 0.0001f)\n        {\n            h = 0f;\n        }\n        else if (MathF.Abs(max - r) < 0.0001f)\n        {\n            h = ((g - b) / delta) / 6f;\n        }\n        else if (MathF.Abs(max - g) < 0.0001f)\n        {\n            h = (2f + (b - r) / delta) / 6f;\n        }\n        else\n        {\n            h = (4f + (r - g) / delta) / 6f;\n        }\n\n        if (h < 0f) h += 1f;\n    }\n\n    private static void HsvToRgb(float h, float s, float v, out float r, out float g, out float b)\n    {\n        var i = (int)(h * 6f);\n        var f = h * 6f - i;\n        var p = v * (1f - s);\n        var q = v * (1f - f * s);\n        var t = v * (1f - (1f - f) * s);\n\n        switch (i % 6)\n        {\n            case 0: r = v; g = t; b = p; break;\n            case 1: r = q; g = v; b = p; break;\n            case 2: r = p; g = v; b = t; break;\n            case 3: r = p; g = q; b = v; break;\n            case 4: r = t; g = p; b = v; break;\n            default: r = v; g = p; b = q; break;\n        }\n    }\n}"
+  }
+}

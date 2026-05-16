@@ -1,0 +1,177 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "Lattice",
+    "displayName": {
+      "zh-Hans": "格栅",
+      "en": "Lattice"
+    },
+    "category": "Pattern",
+    "description": {
+      "zh-Hans": "生成可平铺的格子/交叉阴影网格图案，由相交的条形组成。",
+      "en": "Generates a tileable lattice/crosshatch grid pattern of intersecting bars."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "遮罩",
+          "en": "Mask"
+        },
+        "type": "Mask"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "U 分段",
+        "en": "U Divisions"
+      },
+      "kind": "Integer",
+      "default": 12,
+      "min": 1,
+      "max": 64,
+      "step": 1
+    },
+    {
+      "name": {
+        "zh-Hans": "V 分段",
+        "en": "V Divisions"
+      },
+      "kind": "Integer",
+      "default": 12,
+      "min": 1,
+      "max": 64,
+      "step": 1
+    },
+    {
+      "name": {
+        "zh-Hans": "条宽",
+        "en": "Bar Width"
+      },
+      "kind": "Number",
+      "default": 0.25,
+      "min": 0.01,
+      "max": 0.99,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "条形状",
+        "en": "Bar Shape"
+      },
+      "kind": "Choice",
+      "default": "square",
+      "choices": [
+        {
+          "value": "square",
+          "label": {
+            "zh-Hans": "正方形",
+            "en": "square"
+          }
+        },
+        {
+          "value": "round",
+          "label": {
+            "zh-Hans": "圆形",
+            "en": "round"
+          }
+        },
+        {
+          "value": "diamond",
+          "label": {
+            "zh-Hans": "菱形",
+            "en": "diamond"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "zh-Hans": "颜色 A",
+        "en": "Color A"
+      },
+      "kind": "Color",
+      "default": "#FFFFFFFF"
+    },
+    {
+      "name": {
+        "zh-Hans": "颜色 B",
+        "en": "Color B"
+      },
+      "kind": "Color",
+      "default": "#000000FF"
+    },
+    {
+      "name": {
+        "zh-Hans": "旋转角度",
+        "en": "Rotation Angle"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 360.0,
+      "step": 1.0
+    },
+    {
+      "name": {
+        "zh-Hans": "偏移",
+        "en": "Offset"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "柔化",
+        "en": "Softness"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "反相",
+        "en": "Invert"
+      },
+      "kind": "Boolean",
+      "default": false
+    }
+  ],
+  "ai": {
+    "capabilities": ["pattern", "geometric", "grid", "tiling"],
+    "triggers": {
+      "zh-Hans": "格栅, 格子, 交叉网格, 交叉阴影",
+      "en": "lattice, grid, crosshatch, intersecting bars"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "生成交叉格子网格图案，用作像素艺术的窗户或栅格纹理。",
+      "en": "Generate a crosshatch lattice pattern for pixel art windows or grille textures."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar uDivs = Math.Max(1, GetInt(parameters, \"uDivisions\", 8));\nvar vDivs = Math.Max(1, GetInt(parameters, \"vDivisions\", 8));\nvar barWidth = GetFloat(parameters, \"barWidth\", 0.3f);\nvar barShape = GetChoice(parameters, \"barShape\", \"square\");\nvar colorA = GetColor(parameters, \"colorA\", Colors.White);\nvar colorB = GetColor(parameters, \"colorB\", Colors.Black);\nvar rotation = GetFloat(parameters, \"rotationAngle\", 0f);\nvar offset = GetFloat(parameters, \"offset\", 0f);\nvar softness = GetFloat(parameters, \"softness\", 0f);\nvar invert = GetBool(parameters, \"invert\", false);\n\nvar size = context.TileSize;\nvar buffer = new PixelBuffer(size, size);\n\nvar aR = colorA.R / 255f; var aG = colorA.G / 255f; var aB = colorA.B / 255f;\nvar bR = colorB.R / 255f; var bG = colorB.G / 255f; var bB = colorB.B / 255f;\nvar rotRad = rotation * MathF.PI / 180f;\nvar cosR = MathF.Cos(rotRad);\nvar sinR = MathF.Sin(rotRad);\n\nbuffer.ParallelForEachPixel((x, y) =>\n{\n    var u = (x + 0.5f) / size;\n    var v = (y + 0.5f) / size;\n\n    // Rotate UV\n    var ru = u * cosR - v * sinR;\n    var rv = u * sinR + v * cosR;\n\n    // Grid cell coordinates\n    var cellU = ru * uDivs;\n    var cellV = rv * vDivs;\n    var localU = cellU - MathF.Floor(cellU);\n    var localV = cellV - MathF.Floor(cellV);\n\n    // Distance to nearest bar edge\n    var distU = barShape switch\n    {\n        \"round\" => MathF.Abs(localU - 0.5f) * 2f,\n        \"diamond\" => (MathF.Abs(localU - 0.5f) + MathF.Abs(localV - 0.5f)),\n        _ => MathF.Max(MathF.Abs(localU - 0.5f), MathF.Abs(localV - 0.5f))\n    };\n\n    var threshold = 1f - barWidth;\n    var t = (distU - threshold) / Math.Max(softness * 0.1f + 0.001f, 0.001f);\n    t = Math.Clamp(t, 0f, 1f);\n\n    if (invert) t = 1f - t;\n\n    var r = Lerp(aR, bR, t);\n    var g = Lerp(aG, bG, t);\n    var b = Lerp(aB, bB, t);\n\n    buffer.SetPixel(x, y, r, g, b, 1f);\n});\n\nreturn buffer;\n}"
+  }
+}

@@ -1,0 +1,121 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "Text",
+    "displayName": {
+      "zh-Hans": "文本",
+      "en": "Text"
+    },
+    "category": "Material",
+    "description": {
+      "zh-Hans": "使用WPF文本渲染将文字渲染为像素艺术。支持Unicode文本（包括中文），可配置字体大小、前景色、背景和边框。同时输出图像和遮罩。",
+      "en": "Renders text as pixel art using WPF text rendering. Supports Unicode text (including Chinese) with configurable font size, foreground color, background, and border. Outputs both image and mask."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "遮罩",
+          "en": "Mask"
+        },
+        "type": "Mask"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "文本内容",
+        "en": "Text"
+      },
+      "kind": "Text",
+      "default": "PIXEL"
+    },
+    {
+      "name": {
+        "zh-Hans": "字体颜色",
+        "en": "Font Color"
+      },
+      "kind": "Color",
+      "default": "#FFFFFFFF"
+    },
+    {
+      "name": {
+        "zh-Hans": "背景颜色",
+        "en": "Bg Color"
+      },
+      "kind": "Color",
+      "default": "#00000000"
+    },
+    {
+      "name": {
+        "zh-Hans": "字号",
+        "en": "Font Size"
+      },
+      "kind": "Integer",
+      "default": 24,
+      "min": 6,
+      "max": 48,
+      "step": 1
+    },
+    {
+      "name": {
+        "zh-Hans": "显示背景",
+        "en": "Show Bg"
+      },
+      "kind": "Boolean",
+      "default": true
+    },
+    {
+      "name": {
+        "zh-Hans": "边框",
+        "en": "Border"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "间距",
+        "en": "Spacing"
+      },
+      "kind": "Integer",
+      "default": 1,
+      "min": 0,
+      "max": 4,
+      "step": 1
+    }
+  ],
+  "ai": {
+    "capabilities": ["material", "procedural-texture", "ui-element", "text"],
+    "triggers": {
+      "zh-Hans": "文本, 文字, 字体, 标签, UI文字, 标题, 像素字体",
+      "en": "text, label, font, typography, UI text, pixel font, title"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "将文字渲染为像素艺术，用于游戏UI标签、标题或对话框。",
+      "en": "Render text as pixel art for game UI labels, titles, or dialog boxes."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar text = GetString(parameters, \"text\", \"Hello\");\nvar fgColor = GetColor(parameters, \"fontColor\", System.Windows.Media.Color.FromRgb(255, 255, 255));\nvar bgColor = GetColor(parameters, \"bgColor\", System.Windows.Media.Color.FromRgb(0, 0, 0));\nvar fontSize = Math.Max(4f, GetFloat(parameters, \"fontSize\", 20f));\nvar showBg = GetBool(parameters, \"showBg\", false);\nvar border = Math.Max(0f, GetFloat(parameters, \"border\", 4f));\nvar size = context.TileSize;\nvar result = new PixelBuffer(size, size);\n// Use WPF to render text into a bitmap\nSystem.Windows.Media.DrawingVisual dv = null;\nSystem.Windows.Media.Imaging.RenderTargetBitmap rtb = null;\ntry\n{\n    dv = new System.Windows.Media.DrawingVisual();\n    using (var dc = dv.RenderOpen())\n    {\n        if (showBg)\n            dc.DrawRectangle(new System.Windows.Media.SolidColorBrush(bgColor), null, new System.Windows.Rect(0, 0, size, size));\n        var tf = new System.Windows.Media.FormattedText(\n            string.IsNullOrEmpty(text) ? \" \" : text,\n            System.Globalization.CultureInfo.CurrentCulture,\n            System.Windows.FlowDirection.LeftToRight,\n            new System.Windows.Media.Typeface(\"Segoe UI\"),\n            fontSize,\n            new System.Windows.Media.SolidColorBrush(fgColor),\n            96);\n        var tx = Math.Max(border, (size - tf.Width) * 0.5);\n        var ty = Math.Max(border, (size - tf.Height) * 0.5);\n        dc.DrawText(tf, new System.Windows.Point(tx, ty));\n    }\n    rtb = new System.Windows.Media.Imaging.RenderTargetBitmap(size, size, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);\n    rtb.Render(dv);\n    var stride = size * 4;\n    var pixels = new byte[size * stride];\n    rtb.CopyPixels(pixels, stride, 0);\n    result.ParallelForEachPixel((x, y) =>\n    {\n        var i = (y * size + x) * 4;\n        var b = pixels[i] / 255f;\n        var g = pixels[i+1] / 255f;\n        var r = pixels[i+2] / 255f;\n        var a = pixels[i+3] / 255f;\n        result.SetPixel(x, y, r, g, b, a);\n    });\n}\ncatch { }\nreturn result;\n}"
+  }
+}

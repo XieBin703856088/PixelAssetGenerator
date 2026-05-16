@@ -1,0 +1,99 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "Constant",
+    "displayName": {
+      "zh-Hans": "常量",
+      "en": "Constant"
+    },
+    "category": "Logic",
+    "description": {
+      "zh-Hans": "输出常量值（浮点数或颜色），供其他节点作为输入使用。",
+      "en": "Outputs a constant value (float or color) for use as input to other nodes."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "数值",
+          "en": "Value"
+        },
+        "type": "Float"
+      },
+      {
+        "name": {
+          "zh-Hans": "颜色",
+          "en": "Color"
+        },
+        "type": "Color"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "输出类型",
+        "en": "Output Type"
+      },
+      "kind": "Choice",
+      "default": "float",
+      "choices": [
+        {
+          "value": "float",
+          "label": {
+            "zh-Hans": "浮点数",
+            "en": "float"
+          }
+        },
+        {
+          "value": "color",
+          "label": {
+            "zh-Hans": "颜色",
+            "en": "color"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "zh-Hans": "浮点值",
+        "en": "Float Value"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "颜色值",
+        "en": "Color Value"
+      },
+      "kind": "Color",
+      "default": "#FFFFFFFF"
+    }
+  ],
+  "ai": {
+    "capabilities": ["logic", "math"],
+    "triggers": {
+      "zh-Hans": "常量, 常数, 固定值, 颜色常量, 浮点常量",
+      "en": "constant, fixed value, color constant, float constant"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "输出一个0.5的浮点值，作为其他数学运算节点的输入。",
+      "en": "Output a constant float value of 0.5 for use as input to other math operation nodes."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "// Float and Color outputs are represented as 1x1 PixelBuffers\n// containing the value, which is read by downstream Float/Color inputs.\nvar size = context.TileSize;\nvar buffer = new PixelBuffer(size, size);\nvar color = GetColor(parameters, \"colorValue\", Colors.White);\nvar floatVal = GetFloat(parameters, \"floatValue\", 0.5f);\n\n// Encode the float value into all pixels (downstream Float ports read from pixel data)\nbuffer.ParallelForEachPixel((x, y) =>\n{\n    buffer.SetPixel(x, y, floatVal, floatVal, floatVal, 1f);\n});\n\nreturn buffer;"
+  }
+}

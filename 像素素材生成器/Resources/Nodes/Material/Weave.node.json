@@ -1,0 +1,108 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "Weave",
+    "displayName": {
+      "zh-Hans": "编织",
+      "en": "Weave"
+    },
+    "category": "Material",
+    "description": {
+      "zh-Hans": "生成可平铺的编织图案，由交替的垂直和水平圆角条（柔和的高斯状边缘）组成，排列在2x2重复单元格中。",
+      "en": "Generates a tileable weave pattern composed of alternating vertical and horizontal rounded bars (soft, Gaussian-like edges) arranged in a 2x2 repeating cell."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "遮罩",
+          "en": "Mask"
+        },
+        "type": "Mask"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "密度",
+        "en": "Density"
+      },
+      "kind": "Integer",
+      "default": 3,
+      "min": 1,
+      "max": 16,
+      "step": 1
+    },
+    {
+      "name": {
+        "zh-Hans": "厚度",
+        "en": "Thickness"
+      },
+      "kind": "Number",
+      "default": 0.15,
+      "min": 0.05,
+      "max": 0.5,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "亮度",
+        "en": "Brightness"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": -1.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "对比度",
+        "en": "Contrast"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": -1.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "反相",
+        "en": "Invert"
+      },
+      "kind": "Boolean",
+      "default": true
+    }
+  ],
+  "ai": {
+    "capabilities": ["material", "procedural-texture", "fabric", "tileable", "weave"],
+    "triggers": {
+      "zh-Hans": "编织, 编织图案, 交错, 编条, 编织纹理, 篮纹",
+      "en": "weave, woven, basket weave, interlaced, wicker"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "生成可平铺的编织条纹理，用于篮子、家具或装饰性表面。",
+      "en": "Generate a tileable woven strip texture for baskets, furniture, or decorative surfaces."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar density = Math.Max(1, GetInt(parameters, \"density\", 3));\n        var brightness = GetFloat(parameters, \"brightness\", 0f);\n        var contrast = GetFloat(parameters, \"contrast\", 0f);\n        var safeWidth = GetFloat(parameters, \"thickness\", 0.15f);\n        var invert = GetBool(parameters, \"invert\", false);\n\n        var size = context.TileSize;\n        var buffer = new PixelBuffer(size, size);\n\n        buffer.ParallelForEachPixel((x, y) =>\n        {\n            var u = x / (float)size;\n            var v = y / (float)size;\n\n            // 2x2 repeating cell (each cell is 0.5 x 0.5 in UV)\n            var cellU = (u % 0.5f) / 0.5f; // 0..1 inside cell\n            var cellV = (v % 0.5f) / 0.5f;\n            var cellX = (int)MathF.Floor(u / 0.5f);\n            var cellY = (int)MathF.Floor(v / 0.5f);\n            var vertical = ((cellX + cellY) & 1) == 0;\n\n            float vOut = 0f;\n\n            // Parameters in cell-space: spacing between centers = 1/density\n            var sigmaPerp = MathF.Max(0.0005f, safeWidth * 0.45f); // width across strip (in cell units)\n            var capSigma = sigmaPerp * 1.15f;\n\n            for (int oi = -2; oi <= 2; ++oi)\n            {\n                if (vertical)\n                {\n                    // centers along X within cell-space\n                    var pos = cellU * density;\n                    var nearest = MathF.Round(pos) + oi;\n                    var centerX = nearest / (float)density; // in 0..1 cell-space\n\n                    var dx = cellU - centerX; // perp distance in cell units\n                    var dyCenter = cellV - 0.5f; // long axis centered\n\n                    // Main narrow bar (no attenuation along length)\n                    var ndPerp = dx / sigmaPerp;\n                    var barMain = MathF.Exp(-0.5f * (ndPerp * ndPerp));\n\n                    // Caps at top/bottom of the cell\n                    var distTop = MathF.Sqrt(dx * dx + (cellV - 0f) * (cellV - 0f));\n                    var distBot = MathF.Sqrt(dx * dx + (cellV - 1f) * (cellV - 1f));\n                    var capTop = MathF.Exp(-0.5f * (distTop * distTop) / (capSigma * capSigma));\n                    var capBot = MathF.Exp(-0.5f * (distBot * distBot) / (capSigma * capSigma));\n\n                    var contrib = Math.Max(barMain, Math.Max(capTop, capBot));\n                    if (contrib > vOut) vOut = contrib;\n                }\n                else\n                {\n                    // horizontal bars: centers along Y\n                    var pos = cellV * density;\n                    var nearest = MathF.Round(pos) + oi;\n                    var centerY = nearest / (float)density;\n\n                    var dy = cellV - centerY; // perp in cell units (for horizontal bar)\n                    var dxCenter = cellU - 0.5f;\n\n                    var ndPerp = dy / sigmaPerp;\n                    var barMain = MathF.Exp(-0.5f * (ndPerp * ndPerp));\n\n                    var distLeft = MathF.Sqrt(dy * dy + (cellU - 0f) * (cellU - 0f));\n                    var distRight = MathF.Sqrt(dy * dy + (cellU - 1f) * (cellU - 1f));\n                    var capLeft = MathF.Exp(-0.5f * (distLeft * distLeft) / (capSigma * capSigma));\n                    var capRight = MathF.Exp(-0.5f * (distRight * distRight) / (capSigma * capSigma));\n\n                    var contrib = Math.Max(barMain, Math.Max(capLeft, capRight));\n                    if (contrib > vOut) vOut = contrib;\n                }\n            }\n\n            // Peak softening / tonal shaping (similar to FibersNode)\n            var widthFactorGlobal = Math.Clamp((safeWidth - 0.001f) / 1.5f, 0f, 1f);\n            var peakSoftenBase = 0.45f;\n            var peakSoften = peakSoftenBase + 0.5f * widthFactorGlobal;\n            var powBase = 1.25f;\n            var powExp = powBase + 0.9f * widthFactorGlobal;\n            vOut = vOut * (1f - peakSoften) + MathF.Pow(vOut, powExp) * peakSoften;\n\n            if (MathF.Abs(contrast) > 0.0001f)\n            {\n                var factor = 1f + contrast;\n                vOut = (vOut - 0.5f) * factor + 0.5f;\n            }\n\n            vOut += brightness;\n            vOut = Math.Clamp(vOut, 0f, 1f);\n\n            var kneeStart = 0.88f - 0.25f * widthFactorGlobal;\n            if (vOut > kneeStart)\n            {\n                var t = (vOut - kneeStart) / (1f - kneeStart);\n                var easeExp = 1f + 2f * widthFactorGlobal;\n                var eased = 1f - MathF.Pow(1f - t, easeExp);\n                vOut = kneeStart + (1f - kneeStart) * eased;\n            }\n\n            if (invert) vOut = 1f - vOut;\n\n            buffer.SetPixel(x, y, vOut, vOut, vOut, 1f);\n        });\n\n        return buffer;\n}"
+  }
+}

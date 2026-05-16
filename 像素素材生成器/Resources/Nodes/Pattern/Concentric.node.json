@@ -1,0 +1,180 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "Concentric",
+    "displayName": {
+      "zh-Hans": "同心圆",
+      "en": "Concentric"
+    },
+    "category": "Pattern",
+    "description": {
+      "zh-Hans": "生成同心圆环图案，可选用噪波畸变。",
+      "en": "Generates concentric ring patterns with optional noise distortion."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "遮罩",
+          "en": "Mask"
+        },
+        "type": "Mask"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "环数",
+        "en": "Ring Count"
+      },
+      "kind": "Integer",
+      "default": 6,
+      "min": 1,
+      "max": 64,
+      "step": 1
+    },
+    {
+      "name": {
+        "zh-Hans": "中心 X",
+        "en": "Center X"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "中心 Y",
+        "en": "Center Y"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "厚度",
+        "en": "Thickness"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.01,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "间距模式",
+        "en": "Spacing Mode"
+      },
+      "kind": "Choice",
+      "default": "uniform",
+      "choices": [
+        {
+          "value": "uniform",
+          "label": {
+            "zh-Hans": "均匀采样",
+            "en": "uniform"
+          }
+        },
+        {
+          "value": "logarithmic",
+          "label": {
+            "zh-Hans": "对数",
+            "en": "logarithmic"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "zh-Hans": "颜色 A",
+        "en": "Color A"
+      },
+      "kind": "Color",
+      "default": "#FFFFFFFF"
+    },
+    {
+      "name": {
+        "zh-Hans": "颜色 B",
+        "en": "Color B"
+      },
+      "kind": "Color",
+      "default": "#000000FF"
+    },
+    {
+      "name": {
+        "zh-Hans": "畸变",
+        "en": "Distortion"
+      },
+      "kind": "Number",
+      "default": 0.2,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "柔化",
+        "en": "Softness"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "反相",
+        "en": "Invert"
+      },
+      "kind": "Boolean",
+      "default": false
+    },
+    {
+      "name": {
+        "zh-Hans": "种子",
+        "en": "Seed"
+      },
+      "kind": "Seed",
+      "default": 42,
+      "min": 0,
+      "max": 9999
+    }
+  ],
+  "ai": {
+    "capabilities": ["pattern", "geometric", "gradient"],
+    "triggers": {
+      "zh-Hans": "同心圆, 圆环, 环形图案",
+      "en": "concentric, concentric circles, ring pattern"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "生成带有噪波畸变的同心圆环图案，用于靶心或波纹效果。",
+      "en": "Generate concentric ring patterns with noise distortion for a target or ripple effect."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar ringCount = Math.Max(1, GetInt(parameters, \"ringCount\", 6));\nvar cx = Math.Clamp(GetFloat(parameters, \"centerX\", 0.5f), 0.01f, 0.99f);\nvar cy = Math.Clamp(GetFloat(parameters, \"centerY\", 0.5f), 0.01f, 0.99f);\nvar thickness = GetFloat(parameters, \"thickness\", 0.5f);\nvar spacingMode = GetChoice(parameters, \"spacingMode\", \"uniform\");\nvar colorA = GetColor(parameters, \"colorA\", Colors.White);\nvar colorB = GetColor(parameters, \"colorB\", Colors.Black);\nvar distort = GetFloat(parameters, \"distortion\", 0f);\nvar softness = GetFloat(parameters, \"softness\", 0f);\nvar invert = GetBool(parameters, \"invert\", false);\n\nvar size = context.TileSize;\nvar buffer = new PixelBuffer(size, size);\n\nvar aR = colorA.R / 255f; var aG = colorA.G / 255f; var aB = colorA.B / 255f;\nvar bR = colorB.R / 255f; var bG = colorB.G / 255f; var bB = colorB.B / 255f;\nvar seed = GetInt(parameters, \"seed\", context.Seed);\n\nbuffer.ParallelForEachPixel((x, y) =>\n{\n    var u = (x + 0.5f) / size;\n    var v = (y + 0.5f) / size;\n\n    var dx = u - cx;\n    var dy = v - cy;\n    var dist = MathF.Sqrt(dx * dx + dy * dy);\n\n    // Normalize distance to max possible (corner)\n    var maxDist = MathF.Sqrt(\n        MathF.Max(cx, 1f - cx) * MathF.Max(cx, 1f - cx) +\n        MathF.Max(cy, 1f - cy) * MathF.Max(cy, 1f - cy));\n    var normDist = dist / maxDist;\n\n    // Noise distortion\n    if (distort > 0f)\n    {\n        var noiseVal = TileableFractalNoise(x * 0.5f, y * 0.5f, Math.Max(1, size / 2), 2, 0.5f, 2f, seed);\n        normDist += (noiseVal - 0.5f) * distort * 0.3f;\n        normDist = Math.Clamp(normDist, 0f, 1f);\n    }\n\n    // Ring pattern\n    float ringPos;\n    if (spacingMode == \"logarithmic\")\n    {\n        ringPos = MathF.Log(1f + normDist * 9f) / MathF.Log(10f) * ringCount;\n    }\n    else\n    {\n        ringPos = normDist * ringCount;\n    }\n\n    var local = ringPos - MathF.Floor(ringPos);\n    var halfThick = thickness * 0.5f;\n    var t = (local - (0.5f - halfThick)) / Math.Max(softness * 0.05f + 0.001f, 0.001f);\n    t = Math.Clamp(t, 0f, 1f);\n\n    if (invert) t = 1f - t;\n\n    var r = Lerp(aR, bR, t);\n    var g = Lerp(aG, bG, t);\n    var b = Lerp(aB, bB, t);\n\n    buffer.SetPixel(x, y, r, g, b, 1f);\n});\n\nreturn buffer;\n}"
+  }
+}

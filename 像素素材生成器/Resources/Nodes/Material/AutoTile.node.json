@@ -1,0 +1,139 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "AutoTile",
+    "displayName": {
+      "zh-Hans": "自动瓦片",
+      "en": "Auto Tile"
+    },
+    "category": "Material",
+    "description": {
+      "zh-Hans": "接受单个原型图块，通过扰动种子生成N个变体，排列为水平条、垂直条或网格布局。适用于从单个生成节点快速生成图块集。",
+      "en": "Takes a single prototype tile and generates N variations by perturbing the seed, arranged in a horizontal strip, vertical strip, or grid layout. Useful for quickly producing tile sets from a single generator node."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [
+      {
+        "name": {
+          "zh-Hans": "原型图",
+          "en": "Prototype"
+        },
+        "type": "Image"
+      }
+    ],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图块集",
+          "en": "Tileset"
+        },
+        "type": "Image"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "数量",
+        "en": "Count"
+      },
+      "kind": "Integer",
+      "default": 4,
+      "min": 2,
+      "max": 36,
+      "step": 1
+    },
+    {
+      "name": {
+        "zh-Hans": "布局",
+        "en": "Layout"
+      },
+      "kind": "Choice",
+      "default": "horizontal",
+      "choices": [
+        {
+          "value": "horizontal",
+          "label": {
+            "zh-Hans": "水平",
+            "en": "horizontal"
+          }
+        },
+        {
+          "value": "vertical",
+          "label": {
+            "zh-Hans": "垂直",
+            "en": "vertical"
+          }
+        },
+        {
+          "value": "grid",
+          "label": {
+            "zh-Hans": "网格",
+            "en": "grid"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "zh-Hans": "网格列数",
+        "en": "Grid Columns"
+      },
+      "kind": "Integer",
+      "default": 4,
+      "min": 1,
+      "max": 12,
+      "step": 1
+    },
+    {
+      "name": {
+        "zh-Hans": "变化强度",
+        "en": "Variation Intensity"
+      },
+      "kind": "Number",
+      "default": 0.3,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "种子",
+        "en": "Seed"
+      },
+      "kind": "Seed",
+      "default": 42,
+      "min": 0,
+      "max": 9999
+    },
+    {
+      "name": {
+        "zh-Hans": "显示边框",
+        "en": "Show Border"
+      },
+      "kind": "Boolean",
+      "default": false
+    }
+  ],
+  "ai": {
+    "capabilities": ["material", "procedural-texture", "utility"],
+    "triggers": {
+      "zh-Hans": "自动瓦片, 图块变体, 图块集, 瓦片布局",
+      "en": "auto tile, tile variations, tileset, tile layout"
+    },
+    "suggestedInputs": ["Alveolus", "Brick", "Cobblestone", "Mosaic", "Fabric"],
+    "exampleUsage": {
+      "zh-Hans": "将一个生成节点输出作为原型，生成多个带随机变化的图块变体，用于瓦片集制作。",
+      "en": "Feed a generator node output as a prototype to produce multiple tile variations with seeded randomness for tileset creation."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar input = inputs.Length > 0 && inputs[0] != null ? inputs[0]! :\n    new PixelBuffer(context.TileSize, context.TileSize);\n\nvar count = Math.Max(2, GetInt(parameters, \"count\", 4));\nvar layout = GetChoice(parameters, \"layout\", \"horizontal\");\nvar gridCols = Math.Max(1, GetInt(parameters, \"gridColumns\", 4));\nvar intensity = GetFloat(parameters, \"variationIntensity\", 0.3f);\nvar seed = GetInt(parameters, \"seed\", context.Seed);\nvar showBorder = GetBool(parameters, \"showBorder\", false);\n\nvar tileW = input.Width;\nvar tileH = input.Height;\n\nint outW, outH;\nint cols, rows;\n\nswitch (layout)\n{\n    case \"vertical\":\n        cols = 1;\n        rows = count;\n        outW = tileW;\n        outH = tileH * count;\n        break;\n    case \"grid\":\n        cols = Math.Min(count, gridCols);\n        rows = (count + cols - 1) / cols;\n        outW = tileW * cols;\n        outH = tileH * rows;\n        break;\n    default: // horizontal\n        cols = count;\n        rows = 1;\n        outW = tileW * count;\n        outH = tileH;\n        break;\n}\n\nvar output = new PixelBuffer(outW, outH);\n\noutput.ParallelForEachPixel((x, y) =>\n{\n    // Determine which tile cell we're in\n    var cellX = x / tileW;\n    var cellY = y / tileH;\n    var index = cellY * cols + cellX;\n\n    if (index >= count)\n    {\n        output.SetPixel(x, y, 0, 0, 0, 1);\n        return;\n    }\n\n    // Calculate position within the tile\n    var tx = x % tileW;\n    var ty = y % tileH;\n\n    // Check border\n    if (showBorder && (tx == 0 || ty == 0 || tx == tileW - 1 || ty == tileH - 1))\n    {\n        output.SetPixel(x, y, 1, 1, 1, 1);\n        return;\n    }\n\n    // Sample from input\n    var (r, g, b, a) = input.GetPixel(tx, ty);\n\n    // Apply per-tile variation based on index\n    if (intensity > 0.001f && index > 0)\n    {\n        var tileSeed = seed + index * 137;\n        var nx = HashToUnit(tx * 7 + tileSeed, ty * 13 + tileSeed * 3, 111);\n        var ny = HashToUnit(tx * 11 + tileSeed * 5, ty * 7 + tileSeed, 222);\n        var nz = HashToUnit(tx * 3 + tileSeed * 7, ty * 11 + tileSeed * 11, 333);\n\n        var shift = intensity * 0.15f;\n        r = Math.Clamp(r + (nx - 0.5f) * shift, 0f, 1f);\n        g = Math.Clamp(g + (ny - 0.5f) * shift, 0f, 1f);\n        b = Math.Clamp(b + (nz - 0.5f) * shift, 0f, 1f);\n    }\n\n    output.SetPixel(x, y, r, g, b, a);\n});\n\nreturn output;\n}"
+  }
+}

@@ -1,0 +1,178 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "Smoke",
+    "displayName": {
+      "zh-Hans": "烟雾",
+      "en": "Smoke"
+    },
+    "category": "Noise",
+    "description": {
+      "zh-Hans": "使用粒子模拟生成烟雾/蒸汽。粒子上升、膨胀并随风力漂移和湍流消退。由时间参数（0-1）驱动动画。像素艺术量化输出。输出图像和遮罩。",
+      "en": "Generates smoke/steam using particle simulation. Particles rise, expand, and fade with wind drift and turbulence. Driven by a time parameter (0-1) for animation. Pixel-art quantized. Outputs image and mask."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "遮罩",
+          "en": "Mask"
+        },
+        "type": "Mask"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "种子",
+        "en": "Seed"
+      },
+      "kind": "Seed",
+      "default": 42,
+      "min": 0,
+      "max": 9999
+    },
+    {
+      "name": {
+        "zh-Hans": "时间",
+        "en": "Time"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "烟雾类型",
+        "en": "Smoke Type"
+      },
+      "kind": "Choice",
+      "default": "thick",
+      "choices": [
+        {
+          "value": "thick",
+          "label": {
+            "zh-Hans": "浓烟",
+            "en": "thick"
+          }
+        },
+        {
+          "value": "mist",
+          "label": {
+            "zh-Hans": "薄雾",
+            "en": "mist"
+          }
+        },
+        {
+          "value": "steam",
+          "label": {
+            "zh-Hans": "蒸汽",
+            "en": "steam"
+          }
+        },
+        {
+          "value": "dust",
+          "label": {
+            "zh-Hans": "灰尘",
+            "en": "dust"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "zh-Hans": "大小",
+        "en": "Size"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.1,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "密度",
+        "en": "Density"
+      },
+      "kind": "Number",
+      "default": 0.6,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "速度",
+        "en": "Speed"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.0,
+      "max": 2.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "风力",
+        "en": "Wind"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": -1.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "像素大小",
+        "en": "Pixel Size"
+      },
+      "kind": "Integer",
+      "default": 1,
+      "min": 1,
+      "max": 4,
+      "step": 1
+    },
+    {
+      "name": {
+        "zh-Hans": "烟雾颜色",
+        "en": "Smoke Color"
+      },
+      "kind": "Color",
+      "default": "#A0968CFF"
+    }
+  ],
+  "ai": {
+    "capabilities": ["generate-noise", "procedural-texture", "atmospheric-effect", "organic", "sprite"],
+    "triggers": {
+      "zh-Hans": "烟雾, 烟, 蒸汽, 灰尘, 粒子效果, 爆炸",
+      "en": "smoke, steam, mist, dust, particle, explosion"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "生成烟雾或蒸汽的粒子动画效果，随时间参数消散上升，可做爆炸或环境烟雾。",
+      "en": "Generates particle-based smoke or steam animation driven by a time parameter for explosions or environmental haze."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar seed = GetInt(parameters, \"seed\", context.Seed);\nvar time = GetFloat(parameters, \"time\", 0f);\nvar smokeType = GetChoice(parameters, \"smokeType\", \"thick\");\nvar size2 = GetFloat(parameters, \"size\", 0.5f);\nvar density = GetFloat(parameters, \"density\", 0.6f);\nvar speed = GetFloat(parameters, \"speed\", 0.5f);\nvar wind = GetFloat(parameters, \"wind\", 0f);\nvar pixelSize = Math.Max(1, GetInt(parameters, \"pixelSize\", 1));\nvar smokeColor = GetColor(parameters, \"smokeColor\", System.Windows.Media.Color.FromRgb(160, 150, 140));\n\nvar cR = smokeColor.R/255f; var cG = smokeColor.G/255f; var cB = smokeColor.B/255f;\nvar size = context.TileSize;\nvar result = new PixelBuffer(size, size);\n\nvar riseRate = 1f; var expandRate = 1f; var turbulenceStr = 1f;\nswitch (smokeType)\n{\n    case \"mist\": riseRate = 0.4f; expandRate = 1.5f; turbulenceStr = 0.5f; break;\n    case \"steam\": riseRate = 1.5f; expandRate = 0.8f; turbulenceStr = 0.8f; break;\n    case \"dust\": riseRate = 0.3f; expandRate = 0.6f; turbulenceStr = 2f; break;\n    default: riseRate = 0.8f; expandRate = 1f; turbulenceStr = 1f; break;\n}\n\nvar scale = size2 * 3f;\nvar period = Math.Max(1, (int)(size * scale * 0.3f));\n\nvar timeOffX = time * speed * wind * 2f;\nvar timeOffY = time * speed * riseRate * (-1.5f);\nvar windOff = wind * 0.3f;\n\nresult.ParallelForEachPixel((x, y) =>\n{\n    var u = x / (float)size * scale + timeOffX + windOff;\n    var v = y / (float)size * scale + timeOffY;\n\n    var n1 = TileableFractalNoise(u, v, period, 5, 0.5f, 2.1f, seed);\n    var n2 = TileableFractalNoise(u * 1.7f + 20f, v * 1.7f + 20f, period, 3, 0.6f, 2.3f, seed + 500);\n\n    var tu = u + (n2 - 0.5f) * turbulenceStr * 0.2f;\n    var tv = v + (n1 - 0.5f) * turbulenceStr * 0.2f;\n    var n = TileableFractalNoise(tu, tv, period, 4, 0.55f, 2.2f, seed + 200);\n\n    var yFrac = y / (float)size;\n    var riseCenter = 1f - size2 * 0.5f;\n    var riseMask = MathF.Exp(-MathF.Abs(yFrac - riseCenter) * 3f / Math.Max(0.1f, size2));\n\n    var xCenter = 0.5f + wind * 0.1f;\n    var xDist = MathF.Abs(x / (float)size - xCenter);\n    var spreadMask = MathF.Exp(-xDist * xDist * 8f / (size2 * size2 + 0.01f));\n\n    var alpha = Math.Clamp(n * density * riseMask * spreadMask, 0f, 1f);\n    result.SetPixel(x, y, cR, cG, cB, alpha);\n});\nreturn result;\n}"
+  }
+}

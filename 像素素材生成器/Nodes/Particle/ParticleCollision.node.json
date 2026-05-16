@@ -1,0 +1,91 @@
+{
+  "formatVersion": 2,
+  "processorType": "ParticleCollision",
+  "identity": {
+    "typeName": "ParticleCollision",
+    "displayName": {
+      "zh-Hans": "粒子碰撞",
+      "en": "Particle Collision"
+    },
+    "category": "Particle",
+    "description": {
+      "zh-Hans": "粒子之间的碰撞检测与响应，以及粒子与边界的碰撞处理（反弹/销毁/平铺）",
+      "en": "Particle-particle collision detection and response with boundary collision handling (bounce/kill/wrap)"
+    },
+    "tags": ["particle", "collision"],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [
+      {
+        "name": { "zh-Hans": "粒子", "en": "Particles" },
+        "type": "Particle"
+      }
+    ],
+    "outputs": [
+      {
+        "name": { "zh-Hans": "粒子", "en": "Particles" },
+        "type": "Particle"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": { "zh-Hans": "启用粒子碰撞", "en": "Enable Collision" },
+      "kind": "Boolean",
+      "default": true
+    },
+    {
+      "name": { "zh-Hans": "碰撞半径缩放", "en": "Radius Scale" },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.1,
+      "max": 2.0,
+      "step": 0.1
+    },
+    {
+      "name": { "zh-Hans": "弹性系数", "en": "Restitution" },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0,
+      "max": 1.0,
+      "step": 0.05
+    },
+    {
+      "name": { "zh-Hans": "边界碰撞模式", "en": "Wall Mode" },
+      "kind": "Choice",
+      "default": "bounce",
+      "choices": ["bounce", "kill", "wrap"],
+      "displayChoices": ["反弹", "销毁", "平铺"]
+    },
+    {
+      "name": { "zh-Hans": "边界速度衰减", "en": "Wall Damping" },
+      "kind": "Number",
+      "default": 0.8,
+      "min": 0,
+      "max": 1.0,
+      "step": 0.05
+    },
+    {
+      "name": { "zh-Hans": "最大碰撞距离", "en": "Max Collision Distance" },
+      "kind": "Number",
+      "default": 0.1,
+      "min": 0.01,
+      "max": 0.5,
+      "step": 0.01
+    }
+  ],
+  "ai": {
+    "capabilities": ["particle", "collision"],
+    "triggers": {
+      "zh-Hans": "粒子碰撞, 碰撞检测, 边界碰撞, 粒子反弹",
+      "en": "particle collision, collision detection, boundary collision, particle bounce"
+    },
+    "suggestedInputs": ["ParticleEmitter", "ParticleForce"],
+    "exampleUsage": {
+      "zh-Hans": "启用粒子间碰撞和边界反弹，弹性系数0.5使碰撞柔和",
+      "en": "Enable particle-particle collision and boundary bounce with restitution 0.5 for soft collisions"
+    }
+  }
+}

@@ -1,0 +1,205 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "Moss",
+    "displayName": {
+      "zh-Hans": "苔藓",
+      "en": "Moss"
+    },
+    "category": "Material",
+    "description": {
+      "zh-Hans": "使用多尺度斑块噪波生成苔藓/地衣/有机物蔓生纹理。具有斑块状分布、柔和边缘、分层颜色变化（棕色到绿色），并可选基础表面输入。所有噪波均可平铺。",
+      "en": "Generates moss / lichen / organic overgrowth textures using multi-scale patch noise. Features patchy distribution with soft edges, layered color variation (brown to green), and optional base surface input. All noise is tileable."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [
+      {
+        "name": {
+          "zh-Hans": "基础表面",
+          "en": "BaseSurface"
+        },
+        "type": "Image"
+      }
+    ],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "遮罩",
+          "en": "Mask"
+        },
+        "type": "Mask"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "种子",
+        "en": "Seed"
+      },
+      "kind": "Seed",
+      "default": 42,
+      "min": 0,
+      "max": 9999
+    },
+    {
+      "name": {
+        "zh-Hans": "覆盖",
+        "en": "Coverage"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "缩放",
+        "en": "Scale"
+      },
+      "kind": "Number",
+      "default": 3.0,
+      "min": 0.5,
+      "max": 10.0,
+      "step": 0.5
+    },
+    {
+      "name": {
+        "zh-Hans": "斑块大小",
+        "en": "Patch Size"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.1,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "边缘柔化",
+        "en": "Edge Softness"
+      },
+      "kind": "Number",
+      "default": 0.4,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "深色苔藓",
+        "en": "Dark Moss"
+      },
+      "kind": "Color",
+      "default": "#285A1EFF"
+    },
+    {
+      "name": {
+        "zh-Hans": "浅色苔藓",
+        "en": "Light Moss"
+      },
+      "kind": "Color",
+      "default": "#50A032FF"
+    },
+    {
+      "name": {
+        "zh-Hans": "斑点颜色",
+        "en": "Spot Color"
+      },
+      "kind": "Color",
+      "default": "#78B43CFF"
+    },
+    {
+      "name": {
+        "zh-Hans": "颜色变化",
+        "en": "Color Variation"
+      },
+      "kind": "Number",
+      "default": 0.3,
+      "min": 0.0,
+      "max": 0.5,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "细节",
+        "en": "Detail"
+      },
+      "kind": "Number",
+      "default": 0.3,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "高度效果",
+        "en": "Height Effect"
+      },
+      "kind": "Number",
+      "default": 0.3,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "亮度",
+        "en": "Brightness"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": -0.3,
+      "max": 0.3,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "对比度",
+        "en": "Contrast"
+      },
+      "kind": "Number",
+      "default": 0.15,
+      "min": -0.5,
+      "max": 0.5,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "反相",
+        "en": "Invert"
+      },
+      "kind": "Boolean",
+      "default": false
+    }
+  ],
+  "ai": {
+    "capabilities": ["material", "procedural-texture", "nature", "organic", "vegetation"],
+    "triggers": {
+      "zh-Hans": "苔藓, 地衣, 有机物蔓生, 青苔, 墙面覆盖",
+      "en": "moss, lichen, overgrowth, organic, ground cover"
+    },
+    "suggestedInputs": ["Rock", "Brick", "Cobblestone", "Wall"],
+    "exampleUsage": {
+      "zh-Hans": "在基础表面上生成苔藓/地衣蔓生效果，用于旧化岩石或古老建筑。",
+      "en": "Generate moss or lichen overgrowth on a base surface for weathered rocks or ancient buildings."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar seed = GetInt(parameters, \"seed\", context.Seed);\nvar coverage = GetFloat(parameters, \"coverage\", 0.5f);\nvar scale = GetFloat(parameters, \"scale\", 3f);\nvar patchSize = GetFloat(parameters, \"patchSize\", 0.5f);\nvar edgeSoftness = GetFloat(parameters, \"edgeSoftness\", 0.4f);\nvar darkMoss = GetColor(parameters, \"darkMoss\", Color.FromRgb(40, 90, 30));\nvar lightMoss = GetColor(parameters, \"lightMoss\", Color.FromRgb(80, 160, 50));\nvar spotColor = GetColor(parameters, \"spotColor\", Color.FromRgb(120, 180, 60));\nvar colorVar = GetFloat(parameters, \"colorVariation\", 0.3f);\nvar detail = GetFloat(parameters, \"detail\", 0.3f);\nvar heightEffect = GetFloat(parameters, \"heightEffect\", 0.3f);\nvar brightness = GetFloat(parameters, \"brightness\", 0f);\nvar contrast = GetFloat(parameters, \"contrast\", 0f);\nvar invert = GetBool(parameters, \"invert\", false);\n\nvar hasBase = inputs.Length > 0 && inputs[0] != null;\nvar input = hasBase ? inputs[0]! : null;\nvar size = context.TileSize;\nvar buffer = new PixelBuffer(size, size);\n\nvar dR = darkMoss.R / 255f; var dG = darkMoss.G / 255f; var dB = darkMoss.B / 255f;\nvar lR = lightMoss.R / 255f; var lG = lightMoss.G / 255f; var lB = lightMoss.B / 255f;\nvar sR = spotColor.R / 255f; var sG = spotColor.G / 255f; var sB = spotColor.B / 255f;\n\n// Tileable period for noise\nvar period = Math.Max(1, (int)MathF.Round(scale * 4f));\n\n// Pre-compute a Voronoi-like patch distribution for organic clusters\nvar patchCount = Math.Max(1, (int)(patchSize * 12));\nvar patches = new (float x, float y, float strength, float hueShift)[patchCount];\nfor (var i = 0; i < patchCount; i++)\n{\n    patches[i] = (\n        HashToUnit(i * 7, seed, 111),\n        HashToUnit(i * 13, seed * 3, 222),\n        0.5f + HashToUnit(i * 17, seed * 5, 333) * 0.5f,\n        (HashToUnit(i * 23, seed * 7, 444) - 0.5f) * 2f\n    );\n}\n\nbuffer.ParallelForEachPixel((x, y) =>\n{\n    var u = (x + 0.5f) / size;\n    var v = (y + 0.5f) / size;\n\n    // --- Base surface ---\n    float baseR, baseG, baseB;\n    if (hasBase && input != null)\n    {\n        var (br, bg, bb, _) = input.GetPixel(x, y);\n        baseR = br; baseG = bg; baseB = bb;\n    }\n    else\n    {\n        // Default base: stone-like gray\n        var stoneNoise = TileableFractalNoise(\n            u * 2f, v * 2f,\n            Math.Max(1, 2), 2, 0.5f, 2f, seed + 50);\n        baseR = 0.5f + (stoneNoise - 0.5f) * 0.2f;\n        baseG = 0.45f + (stoneNoise - 0.5f) * 0.15f;\n        baseB = 0.4f + (stoneNoise - 0.5f) * 0.15f;\n    }\n\n    // --- Multi-scale moss signal ---\n    // Large-scale patch structure\n    var largePatch = TileableFractalNoise(\n        u * scale * 0.5f, v * scale * 0.5f,\n        period, 3, 0.6f, 2.2f, seed);\n\n    // Medium-scale detail\n    var mediumPatch = TileableFractalNoise(\n        u * scale * 1.5f, v * scale * 1.5f,\n        Math.Max(1, period / 2), 2, 0.5f, 2f, seed + 100);\n\n    // Small-scale fine detail\n    var finePatch = 0f;\n    if (detail > 0f)\n    {\n        finePatch = TileableFractalNoise(\n            u * scale * 4f, v * scale * 4f,\n            Math.Max(1, period / 3), 2, 0.5f, 2f, seed + 200);\n    }\n\n    // --- Distance to nearest patch center ---\n    var minPatchDist = float.MaxValue;\n    var nearestHueShift = 0f;\n    var nearestStrength = 0f;\n\n    foreach (var (px, py, ps, ph) in patches)\n    {\n        var dx = u - px;\n        var dy = v - py;\n        if (dx > 0.5f) dx -= 1f; else if (dx < -0.5f) dx += 1f;\n        if (dy > 0.5f) dy -= 1f; else if (dy < -0.5f) dy += 1f;\n        var dist = dx * dx + dy * dy;\n        if (dist < minPatchDist)\n        {\n            minPatchDist = dist;\n            nearestHueShift = ph;\n            nearestStrength = ps;\n        }\n    }\n\n    var invPatchDist = MathF.Exp(-minPatchDist * 20f / Math.Max(patchSize, 0.1f));\n\n    // --- Combine signals into moss presence ---\n    var mossSignal = largePatch * 0.5f + mediumPatch * 0.3f + invPatchDist * 0.2f;\n\n    if (detail > 0f)\n    {\n        mossSignal += finePatch * detail * 0.15f;\n    }\n\n    // Apply coverage threshold\n    var threshold = 1f - coverage;\n    var hasMoss = mossSignal > threshold;\n\n    if (!hasMoss)\n    {\n        // No moss — show base surface\n        buffer.SetPixel(x, y, baseR, baseG, baseB, 1f);\n        return;\n    }\n\n    // --- Moss intensity (0..1 within moss area) ---\n    var mossIntensity = (mossSignal - threshold) / (1f - threshold);\n    mossIntensity = Math.Clamp(mossIntensity, 0f, 1f);\n\n    // Soft edges\n    if (edgeSoftness > 0f)\n    {\n        mossIntensity = mossIntensity * mossIntensity * (3f - 2f * mossIntensity);\n    }\n\n    // --- Moss color ---\n    // Color varies with intensity, patch hash, and height\n    var hShift = nearestHueShift * colorVar;\n\n    // Height effect: moss looks thicker/thinner\n    if (heightEffect > 0f)\n    {\n        var heightNoise = TileableFractalNoise(\n            u * scale * 2f + 100f, v * scale * 2f + 100f,\n            Math.Max(1, period / 2), 1, 0.5f, 2f, seed + 300);\n        mossIntensity += (heightNoise - 0.5f) * heightEffect * 0.3f;\n        mossIntensity = Math.Clamp(mossIntensity, 0f, 1f);\n    }\n\n    // Blend between dark and light moss\n    var mossR = Lerp(dR, lR, mossIntensity);\n    var mossG = Lerp(dG, lG, mossIntensity);\n    var mossB = Lerp(dB, lB, mossIntensity);\n\n    // Per-patch color variation\n    mossR = Math.Clamp(mossR + hShift * 0.3f, 0f, 1f);\n    mossG = Math.Clamp(mossG + hShift * 0.5f, 0f, 1f);\n    mossB = Math.Clamp(mossB + hShift * 0.2f, 0f, 1f);\n\n    // Bright spot details\n    if (detail > 0f)\n    {\n        var spotNoise = TileableFractalNoise(\n            u * scale * 6f, v * scale * 6f,\n            Math.Max(1, period / 2), 1, 0.5f, 2f, seed + 400);\n        if (spotNoise > 0.7f)\n        {\n            var spot = (spotNoise - 0.7f) / 0.3f * detail;\n            mossR = Lerp(mossR, sR, spot * 0.4f);\n            mossG = Lerp(mossG, sG, spot * 0.4f);\n            mossB = Lerp(mossB, sB, spot * 0.4f);\n        }\n    }\n\n    // --- Compose: blend moss over base ---\n    // Moss partially occludes the base surface\n    var mossOpacity = mossIntensity * (0.7f + coverage * 0.3f);\n\n    var finalR = Lerp(baseR, mossR, mossOpacity);\n    var finalG = Lerp(baseG, mossG, mossOpacity);\n    var finalB = Lerp(baseB, mossB, mossOpacity);\n\n    // Height effect: shadow at thick moss areas\n    if (heightEffect > 0f && mossIntensity > 0.6f)\n    {\n        var shadow = (mossIntensity - 0.6f) / 0.4f * heightEffect * 0.15f;\n        finalR = Math.Clamp(finalR - shadow, 0f, 1f);\n        finalG = Math.Clamp(finalG - shadow * 0.8f, 0f, 1f);\n        finalB = Math.Clamp(finalB - shadow * 0.7f, 0f, 1f);\n    }\n\n    // Brightness and contrast\n    var outR = Math.Clamp(finalR + brightness, 0f, 1f);\n    var outG = Math.Clamp(finalG + brightness, 0f, 1f);\n    var outB = Math.Clamp(finalB + brightness, 0f, 1f);\n\n    if (MathF.Abs(contrast) > 0.001f)\n    {\n        var factor = 1f + contrast;\n        outR = (outR - 0.5f) * factor + 0.5f;\n        outG = (outG - 0.5f) * factor + 0.5f;\n        outB = (outB - 0.5f) * factor + 0.5f;\n    }\n\n    if (invert) { outR = 1f - outR; outG = 1f - outG; outB = 1f - outB; }\n\n    buffer.SetPixel(x, y, Math.Clamp(outR, 0f, 1f), Math.Clamp(outG, 0f, 1f), Math.Clamp(outB, 0f, 1f), 1f);\n});\n\nreturn buffer;\n}"
+  }
+}

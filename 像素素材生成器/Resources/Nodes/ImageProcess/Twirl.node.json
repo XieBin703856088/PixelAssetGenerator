@@ -1,0 +1,101 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "Twirl",
+    "displayName": {
+      "zh-Hans": "旋涡",
+      "en": "Twirl"
+    },
+    "category": "ImageProcess",
+    "description": {
+      "zh-Hans": "旋涡扭曲效果。围绕中心点旋转像素，旋转角度向半径边缘逐渐衰减。",
+      "en": "Twirl (swirl) distortion effect. Rotates pixels around a center point, with the rotation angle falling off toward the edge of the radius."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [
+      {
+        "name": {
+          "zh-Hans": "输入",
+          "en": "Input"
+        },
+        "type": "Image"
+      }
+    ],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "输出",
+          "en": "Output"
+        },
+        "type": "Image"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "中心 X",
+        "en": "Center X"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "中心 Y",
+        "en": "Center Y"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "角度",
+        "en": "Angle"
+      },
+      "kind": "Number",
+      "default": 45.0,
+      "min": 0.0,
+      "max": 360.0,
+      "step": 1.0
+    },
+    {
+      "name": {
+        "zh-Hans": "半径",
+        "en": "Radius"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    }
+  ],
+  "ai": {
+    "capabilities": ["distort"],
+    "triggers": {
+      "zh-Hans": "旋涡, 旋转扭曲, 漩涡效果, 扭曲旋转",
+      "en": "twirl, swirl, vortex, rotational distort"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "在图像中心应用旋涡扭曲效果。",
+      "en": "Apply a twirl distortion effect at the center of an image."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar src = inputs.Length > 0 ? inputs[0] : null;\nif (src == null)\n    return new PixelBuffer(context.TileSize, context.TileSize);\n\nvar centerX = GetFloat(parameters, \"centerX\", 0.5f);\nvar centerY = GetFloat(parameters, \"centerY\", 0.5f);\nvar angleDeg = GetFloat(parameters, \"angle\", 180f);\nvar radius = GetFloat(parameters, \"radius\", 0.5f);\n\nvar size = src.Width;\nvar cx = centerX * size;\nvar cy = centerY * size;\nvar maxAngle = angleDeg * MathF.PI / 180f;\nvar effectRadius = radius * size;\nif (effectRadius < 1f) effectRadius = 1f;\n\nvar result = new PixelBuffer(size, size);\n\nresult.ParallelForEachPixel((x, y) =>\n{\n    var relX = x - cx;\n    var relY = y - cy;\n    var dist = MathF.Sqrt(relX * relX + relY * relY);\n\n    float sampleX, sampleY;\n\n    if (dist < effectRadius)\n    {\n        // Normalized distance [0,1] within the effect radius\n        var t = dist / effectRadius;\n        // Fall off smoothly toward the edge\n        var twistAngle = maxAngle * (1f - t) * (1f - t);\n\n        var cosA = MathF.Cos(twistAngle);\n        var sinA = MathF.Sin(twistAngle);\n\n        sampleX = cx + relX * cosA - relY * sinA;\n        sampleY = cy + relX * sinA + relY * cosA;\n    }\n    else\n    {\n        sampleX = x;\n        sampleY = y;\n    }\n\n    var (r, g, b, a) = src.GetPixelWrapped((int)MathF.Round(sampleX), (int)MathF.Round(sampleY));\n    result.SetPixel(x, y, r, g, b, a);\n});\n\nreturn result;\n}"
+  }
+}

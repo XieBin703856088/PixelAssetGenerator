@@ -1,0 +1,154 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>PixelAssetGenerator</RootNamespace>
+    <AssemblyName>PixelAssetGenerator</AssemblyName>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net9.0-windows7.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <!-- Required by some GPU compute libraries that emit unsafe code -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <!-- Enable Vortice packages and compile GPU code by default. Disabled by default to
+         avoid build failures when the Vortice native packages are not available in the
+         current environment. Set this to true and restore NuGet packages to enable
+         the Direct3D11 GPU code paths. -->
+    <EnableVortice>true</EnableVortice>
+    <!-- For local fixes and validation enable the VORTICE compile symbol by
+         setting DefineVorticeSymbol to true. This will cause GPU code paths to
+         be compiled so we can adapt the source to the resolved Vortice APIs. -->
+    <DefineVorticeSymbol>true</DefineVorticeSymbol>
+    <ApplicationIcon>像素素材生成器.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <!-- Note: Do not auto-define the VORTICE symbol. Set the VORTICE conditional
+       symbol manually (for example: -p:DefineConstants=VORTICE) when you have
+       the matching Vortice packages and want to compile the GPU code paths.
+       This avoids build failures when package versions or APIs differ. -->
+  <!-- Note: VORTICE conditional symbol is NOT defined automatically. -->
+  <!-- To enable GPU code paths define the VORTICE constant (for example:
+       dotnet build -p:DefineConstants=VORTICE) after restoring Vortice packages. -->
+
+  <!-- Note: Do not auto-define the VORTICE symbol. Set the VORTICE
+       conditional symbol manually when you want to compile the Vortice
+       code paths (for example: -p:DefineConstants=VORTICE). This avoids
+       build failures when NuGet packages are unavailable. -->
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.8" />
+    <PackageReference Include="SharpNoise" Version="0.12.1.1" />
+    <!-- Vortice packages are optional. When EnableVortice is true the package will be referenced
+         and NuGet restore will attempt to download it. Leave disabled for offline builds. -->
+  </ItemGroup>
+
+  <!-- Add SharpDX.Direct3D9 for WPF D3DImage interop support -->
+  <ItemGroup>
+    <PackageReference Include="SharpDX.Direct3D9" Version="4.2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="SharpDX.Direct3D11" Version="4.2.0" />
+    <PackageReference Include="SharpDX.DXGI" Version="4.2.0" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(EnableVortice)'=='true'">
+    <!-- Use individual Vortice packages instead of the meta-package to avoid NU1101
+         if the meta-package is not published to the configured sources. -->
+    <!-- Updated to generally available package versions resolved during build. -->
+    <PackageReference Include="Vortice.Direct3D11" Version="1.8.3" />
+    <PackageReference Include="Vortice.DXGI" Version="1.8.3" />
+    <PackageReference Include="Vortice.D3DCompiler" Version="1.8.3" />
+    <PackageReference Include="Vortice.Mathematics" Version="1.8.0" />
+  </ItemGroup>
+
+  <!-- When Vortice support is enabled, the VORTICE compile constant can be
+       defined to include GPU-specific source files in the build. We do not
+       define it automatically here to avoid unexpected compile failures when
+       package API versions differ. To enable compilation of Vortice code set
+       the MSBuild property DefineVorticeSymbol to true (for example:
+       dotnet build -p:EnableVortice=true -p:DefineVorticeSymbol=true). -->
+  <PropertyGroup Condition="'$(EnableVortice)'=='true' and '$(DefineVorticeSymbol)'=='true'">
+    <DefineConstants>$(DefineConstants);VORTICE</DefineConstants>
+  </PropertyGroup>
+
+  <!-- Language JSON files: embed as resources for built-in localization fallback -->
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\Languages\*.json">
+      <LogicalName>PixelAssetGenerator.Resources.Languages.%(Filename)%(Extension)</LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <!-- Node .json resource files: copy to output directory for runtime loading -->
+  <ItemGroup>
+    <Content Include="Resources\Nodes\**\*.node.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>Nodes\%(RecursiveDir)%(Filename)%(Extension)</Link>
+    </Content>
+    <Content Include="Nodes\**\*.node.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>Nodes\%(RecursiveDir)%(Filename)%(Extension)</Link>
+    </Content>
+    <Content Include="Resources\Nodes\_categories.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>Nodes\_categories.json</Link>
+    </Content>
+  </ItemGroup>
+
+  <!-- Shader HLSL content file included in output -->
+  <ItemGroup>
+    <Content Include="Resources\Skills\**\*.skill.md">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Core\\Gpu\\Shaders.hlsl">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="像素素材生成器.ico" />
+  </ItemGroup>
+
+  <!-- Shader entry points to precompile during build when HlslCompiler is provided. -->
+  <ItemGroup>
+    <ShaderEntry Include="CS_SolidColorMain" />
+    <ShaderEntry Include="CS_GradientMain" />
+    <ShaderEntry Include="CS_NoiseMain" />
+    <ShaderEntry Include="CS_FibersMain" />
+    <ShaderEntry Include="CS_WeaveMain" />
+    <ShaderEntry Include="CS_ConvolutionMain" />
+    <ShaderEntry Include="CS_ColorAdjustMain" />
+    <ShaderEntry Include="CS_ShapeMain" />
+  </ItemGroup>
+
+  <!--
+    Precompile HLSL entry points into bytecode (.cso) at build time.
+    To enable, set the MSBuild property HlslCompiler to a shader compiler executable
+    (for example: path to dxc.exe or fxc.exe) and build with -p:HlslCompiler="C:\path\to\dxc.exe"
+
+    Example:
+      dotnet build -p:HlslCompiler="dxc.exe"
+
+    The target will run only when HlslCompiler is provided. Compiled blobs are emitted
+    next to the output as Core/Gpu/Shaders.<Entry>.cso and the runtime loader will prefer
+    these files over compiling HLSL at runtime.
+  -->
+  <Target Name="CompileHlsl" BeforeTargets="BeforeBuild" Condition="'$(HlslCompiler)' != ''">
+    <PropertyGroup>
+      <_HlslSource>$(MSBuildProjectDirectory)\Core\Gpu\Shaders.hlsl</_HlslSource>
+      <_OutDir>$(OutputPath)</_OutDir>
+    </PropertyGroup>
+
+    <Message Importance="High" Text="Precompiling HLSL entry points using '$(HlslCompiler)'." />
+
+    <ItemGroup>
+      <_ShaderCompileList Include="@(ShaderEntry)" />
+    </ItemGroup>
+
+    <!-- For each entry point, invoke the provided compiler. -->
+    <Exec Condition="'%( _ShaderCompileList.Identity)' != ''" Command="&quot;$(HlslCompiler)&quot; -T cs_5_0 -E %( _ShaderCompileList.Identity) -Fo &quot;$(OutputPath)Core\\Gpu\\Shaders.%( _ShaderCompileList.Identity).cso&quot; &quot;%(_HlslSource)&quot;" IgnoreExitCode="true">
+      <Output TaskParameter="ExitCode" PropertyName="_HlslExitCode" />
+    </Exec>
+
+    <Warning Condition="'$(_HlslExitCode)' != '0'" Text="HLSL precompile failed or returned non-zero exit code. Ensure $(HlslCompiler) is a valid compiler (dxc/fxc) and that Shaders.hlsl contains the entry points." />
+  </Target>
+
+</Project>

@@ -1,0 +1,167 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "Scales",
+    "displayName": {
+      "zh-Hans": "鳞片",
+      "en": "Scales"
+    },
+    "category": "Noise",
+    "description": {
+      "zh-Hans": "使用偏移六边形网格的椭圆弧线生成鱼/蛇鳞片图案。每片鳞片具有边缘高光和阴影，呈现交叠的3D立体效果。",
+      "en": "Generates a fish/snake scale pattern using offset hexagonal grid of elliptical arcs. Each scale features edge highlight and shadow for a overlapping 3D look."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "遮罩",
+          "en": "Mask"
+        },
+        "type": "Mask"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "种子",
+        "en": "Seed"
+      },
+      "kind": "Seed",
+      "default": 42,
+      "min": 0,
+      "max": 9999
+    },
+    {
+      "name": {
+        "zh-Hans": "行数",
+        "en": "Rows"
+      },
+      "kind": "Integer",
+      "default": 8,
+      "min": 3,
+      "max": 24,
+      "step": 1
+    },
+    {
+      "name": {
+        "zh-Hans": "列数",
+        "en": "Cols"
+      },
+      "kind": "Integer",
+      "default": 8,
+      "min": 3,
+      "max": 24,
+      "step": 1
+    },
+    {
+      "name": {
+        "zh-Hans": "重叠",
+        "en": "Overlap"
+      },
+      "kind": "Number",
+      "default": 0.3,
+      "min": 0.0,
+      "max": 0.8,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "圆润度",
+        "en": "Roundness"
+      },
+      "kind": "Number",
+      "default": 0.6,
+      "min": 0.1,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "鳞片颜色",
+        "en": "Scale Color"
+      },
+      "kind": "Color",
+      "default": "#4A9C5AFF"
+    },
+    {
+      "name": {
+        "zh-Hans": "间隙颜色",
+        "en": "Gap Color"
+      },
+      "kind": "Color",
+      "default": "#142818FF"
+    },
+    {
+      "name": {
+        "zh-Hans": "高光",
+        "en": "Highlight"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "阴影",
+        "en": "Shadow"
+      },
+      "kind": "Number",
+      "default": 0.35,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "颜色变化",
+        "en": "Color Variation"
+      },
+      "kind": "Number",
+      "default": 0.3,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "反相",
+        "en": "Invert"
+      },
+      "kind": "Boolean",
+      "default": false
+    }
+  ],
+  "ai": {
+    "capabilities": ["generate-noise", "procedural-texture", "organic", "tileable", "pattern"],
+    "triggers": {
+      "zh-Hans": "鳞片, 蛇鳞, 鱼鳞, 龙鳞, 六边形, 动物纹理",
+      "en": "scales, snake scales, fish scales, dragon scales, hexagonal, animal texture"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "生成鱼鳞或蛇鳞图案纹理，带3D立体交叠效果，可用于角色装备生物纹理。",
+      "en": "Generates fish or snake scale patterns with 3D overlapping effect for character armor or creature textures."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar seed = GetInt(parameters, \"seed\", context.Seed);\nvar rows = GetInt(parameters, \"rows\", 8);\nvar cols = GetInt(parameters, \"cols\", 8);\nvar overlap = GetFloat(parameters, \"overlap\", 0.3f);\nvar roundness = GetFloat(parameters, \"roundness\", 0.6f);\nvar scaleColor = GetColor(parameters, \"scaleColor\", System.Windows.Media.Color.FromRgb(60, 140, 80));\nvar gapColor = GetColor(parameters, \"gapColor\", System.Windows.Media.Color.FromRgb(30, 60, 40));\nvar highlight = GetFloat(parameters, \"highlight\", 0.4f);\nvar shadow = GetFloat(parameters, \"shadow\", 0.3f);\nvar colorVar = GetFloat(parameters, \"colorVariation\", 0.2f);\nvar invert = GetBool(parameters, \"invert\", false);\n\nvar size = context.TileSize;\nvar buffer = new PixelBuffer(size, size);\n\nvar sR = scaleColor.R / 255f; var sG = scaleColor.G / 255f; var sB = scaleColor.B / 255f;\nvar gR = gapColor.R / 255f; var gG = gapColor.G / 255f; var gB = gapColor.B / 255f;\n\nvar scaleW = 1f / cols;\nvar scaleH = 1f / rows;\n\nbuffer.ParallelForEachPixel((x, y) =>\n{\n    var u = (x + 0.5f) / size;\n    var v = (y + 0.5f) / size;\n\n    // Determine which scale we're in (offset rows)\n    var row = (int)(v / scaleH);\n    var col = (int)(u / scaleW);\n    var rowOffset = (row % 2) * 0.5f;\n\n    // Local coordinates within scale\n    var localU = (u - col * scaleW) / scaleW;\n    var localV = (v - row * scaleH) / scaleH;\n\n    // Check neighboring scales for overlap\n    var bestScaleU = localU;\n    var bestScaleV = localV;\n    var bestDist = 1f;\n\n    for (var dr = -1; dr <= 1; dr++)\n    {\n        for (var dc = -1; dc <= 1; dc++)\n        {\n            var nr = row + dr;\n            var nc = col + dc;\n            var noff = (nr % 2) * 0.5f;\n            var cx = (nc + noff) * scaleW;\n            var cy = nr * scaleH;\n\n            var dx = (u - cx) / scaleW;\n            var dy = (v - cy) / scaleH;\n\n            // Elliptical distance\n            var dist = dx * dx + dy * dy / (roundness * roundness);\n            if (dist < bestDist)\n            {\n                bestDist = dist;\n                bestScaleU = dx + 0.5f;\n                bestScaleV = dy / roundness + 0.5f;\n            }\n        }\n    }\n\n    // Per-scale hash\n    var nearRow = (int)((v - (bestScaleV - 0.5f) * scaleH * roundness) / scaleH);\n    var nearCol = (int)((u - (bestScaleU - 0.5f) * scaleW) / scaleW);\n    var nearNoff = (nearRow % 2) * 0.5f;\n    if (u < (nearCol + nearNoff) * scaleW) nearCol--;\n    var hash = HashToUnit(nearCol * 31 + nearRow * 17, seed, 999);\n\n    // Distance to scale edge\n    var edgeDist = MathF.Sqrt(bestDist);\n\n    float r, g, b;\n    if (edgeDist > 1f - overlap * 0.8f)\n    {\n        // Gap between scales\n        r = gR; g = gG; b = gB;\n    }\n    else\n    {\n        // Inside scale\n        var varAmt = (hash - 0.5f) * colorVar;\n        r = Math.Clamp(sR + varAmt, 0f, 1f);\n        g = Math.Clamp(sG + varAmt * 0.8f, 0f, 1f);\n        b = Math.Clamp(sB + varAmt * 0.6f, 0f, 1f);\n\n        // Highlight (top-left of scale)\n        var hl = (1f - bestScaleU) * 0.5f + (1f - bestScaleV) * 0.5f;\n        hl = MathF.Max(0f, hl - 0.3f) * highlight;\n\n        // Shadow (bottom-right of scale)\n        var sh = (bestScaleU * 0.5f + bestScaleV * 0.5f - 0.3f) * shadow;\n        sh = MathF.Max(0f, sh);\n\n        r = Math.Clamp(r + hl - sh, 0f, 1f);\n        g = Math.Clamp(g + hl * 0.8f - sh * 0.8f, 0f, 1f);\n        b = Math.Clamp(b + hl * 0.6f - sh * 0.6f, 0f, 1f);\n    }\n\n    if (invert) { r = 1f - r; g = 1f - g; b = 1f - b; }\n\n    buffer.SetPixel(x, y, r, g, b, 1f);\n});\n\nreturn buffer;\n}"
+  }
+}

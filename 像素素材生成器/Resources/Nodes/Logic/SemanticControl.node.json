@@ -1,0 +1,131 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "SemanticControl",
+    "displayName": {
+      "zh-Hans": "语义控制",
+      "en": "Semantic Control"
+    },
+    "category": "Logic",
+    "description": {
+      "zh-Hans": "向图评估上下文注入语义参数覆盖。不处理像素；而是定义语义维度（粗糙度、细节、色彩丰富度、亮度、对比度、风化程度），评估器将这些作为参数覆盖应用到下游节点。",
+      "en": "Injects semantic parameter overrides into the graph evaluation context. Does not process pixels; instead defines semantic dimensions (roughness, detail, color richness, brightness, contrast, weathering) that the evaluator applies as parameter overrides to downstream nodes."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [
+      {
+        "name": {
+          "zh-Hans": "输入",
+          "en": "Input"
+        },
+        "type": "Any"
+      }
+    ],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "输出",
+          "en": "Output"
+        },
+        "type": "Any"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "粗糙-平滑",
+        "en": "Rough Smooth"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "细节级别",
+        "en": "Detail Level"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "色彩丰富度",
+        "en": "Color Richness"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "亮度",
+        "en": "Brightness"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "对比度",
+        "en": "Contrast"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "风化程度",
+        "en": "Weathering"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "启用覆盖",
+        "en": "Enable Override"
+      },
+      "kind": "Boolean",
+      "default": true
+    }
+  ],
+  "ai": {
+    "capabilities": ["logic", "semantic", "control-flow"],
+    "triggers": {
+      "zh-Hans": "语义控制, 语义参数, 全局覆盖, 粗糙度, 细节, 色彩, 风化",
+      "en": "semantic control, semantic override, global parameter, roughness, detail, weathering"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "向管线注入语义参数覆盖，统一控制下游节点的粗糙度、细节和色彩丰富度。",
+      "en": "Inject semantic parameter overrides into the pipeline to uniformly control roughness, detail, and color richness of downstream nodes."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "// Passthrough: this node does not modify pixel data.\n// Semantic overrides are collected by the evaluator and applied\n// to downstream node parameters via context.SemanticOverrides.\nif (inputs.Length > 0 && inputs[0] != null)\n    return inputs[0]!;\n\nvar size = context.GetEffectiveSize();\nreturn new PixelBuffer(size, size);"
+  }
+}

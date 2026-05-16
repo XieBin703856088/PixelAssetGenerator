@@ -1,0 +1,168 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "MaskBlend",
+    "displayName": {
+      "zh-Hans": "遮罩混合",
+      "en": "Mask Blend"
+    },
+    "category": "ImageProcess",
+    "description": {
+      "zh-Hans": "使用遮罩缓冲区混合两幅图像。遮罩为白色时使用图像A，遮罩为黑色时使用图像B。非常适合地形过渡（例如使用噪波遮罩混合沙地和草地）。",
+      "en": "Blends two images using a mask buffer. Where mask is white, image A is used; where mask is black, image B is used. Ideal for terrain transitions (e.g. blending sand and grass using a noise mask)."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [
+      {
+        "name": {
+          "zh-Hans": "图像A",
+          "en": "ImageA"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "图像B",
+          "en": "ImageB"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "遮罩",
+          "en": "Mask"
+        },
+        "type": "Mask"
+      }
+    ],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "反转遮罩",
+        "en": "Invert Mask"
+      },
+      "kind": "Boolean",
+      "default": false
+    },
+    {
+      "name": {
+        "zh-Hans": "硬度",
+        "en": "Hardness"
+      },
+      "kind": "Number",
+      "default": 1.0,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "遮罩对比度",
+        "en": "Mask Contrast"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": -1.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "遮罩偏移",
+        "en": "Mask Offset"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": -1.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "默认混合",
+        "en": "Default Mix"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "遮罩通道",
+        "en": "Mask Channel"
+      },
+      "kind": "Choice",
+      "default": "luminance",
+      "choices": [
+        {
+          "value": "luminance",
+          "label": {
+            "zh-Hans": "亮度",
+            "en": "luminance"
+          }
+        },
+        {
+          "value": "redChannel",
+          "label": {
+            "zh-Hans": "红色通道",
+            "en": "redChannel"
+          }
+        },
+        {
+          "value": "greenChannel",
+          "label": {
+            "zh-Hans": "绿色通道",
+            "en": "greenChannel"
+          }
+        },
+        {
+          "value": "blueChannel",
+          "label": {
+            "zh-Hans": "蓝色通道",
+            "en": "blueChannel"
+          }
+        },
+        {
+          "value": "alphaChannel",
+          "label": {
+            "zh-Hans": "透明通道",
+            "en": "alphaChannel"
+          }
+        }
+      ]
+    }
+  ],
+  "ai": {
+    "capabilities": ["blend"],
+    "triggers": {
+      "zh-Hans": "遮罩混合, 遮罩合成, 图像混合, 图层遮罩, 通道混合",
+      "en": "mask blend, mask composite, image blend, layer mask, channel mix"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "使用遮罩在A和B图像之间进行选择性混合。",
+      "en": "Selectively blend between image A and B using a mask."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar imageA = inputs.Length > 0 ? inputs[0] : null;\n        var imageB = inputs.Length > 1 ? inputs[1] : null;\n        var maskInput = inputs.Length > 2 ? inputs[2] : null;\n        var size = context.TileSize;\n\n        if (imageA is null && imageB is null)\n            return PixelBuffer.CreateSolid(size, size, 0, 0, 0);\n        if (imageA is null)\n            return imageB!.Clone();\n        if (imageB is null)\n            return imageA.Clone();\n\n        var invertMask = GetBool(parameters, \"invertMask\");\n        var hardness = GetFloat(parameters, \"hardness\", 1f);\n        var maskContrast = GetFloat(parameters, \"maskContrast\", 0f);\n        var maskOffset = GetFloat(parameters, \"maskOffset\", 0f);\n        var defaultMix = GetFloat(parameters, \"defaultMix\", 0.5f);\n        var maskChannel = GetChoice(parameters, \"maskChannel\", \"luminance\");\n\n        // If no mask connected, blend using default ratio\n        if (maskInput is null)\n            return PixelBuffer.Lerp(imageA, imageB, defaultMix);\n\n        var result = new PixelBuffer(size, size);\n\n        result.ParallelForEachPixel((x, y) =>\n        {\n            float t;\n            // Extract mask value from chosen channel\n            var (mr, mg, mb, ma) = maskInput.GetPixelWrapped(x, y);\n            switch (maskChannel)\n            {\n                case \"redChannel\": t = mr; break;\n                case \"greenChannel\": t = mg; break;\n                case \"blueChannel\": t = mb; break;\n                case \"alphaChannel\": t = ma; break;\n                default: t = 0.2126f * mr + 0.7152f * mg + 0.0722f * mb; break;\n            }\n\n            if (invertMask) t = 1f - t;\n\n            // Apply mask contrast\n            if (MathF.Abs(maskContrast) > 0.001f)\n            {\n                var contrastFactor = 1f + maskContrast;\n                t = (t - 0.5f) * contrastFactor + 0.5f;\n            }\n\n            // Apply mask offset\n            t += maskOffset;\n            t = Math.Clamp(t, 0f, 1f);\n\n            // Apply hardness: increase contrast of the mask edge\n            if (hardness < 0.99f)\n            {\n                var mid = 0.5f;\n                var range = (1f - hardness) * 0.5f;\n                t = SmoothStep(mid - range, mid + range, t);\n            }\n\n            var (aR, aG, aB, aA) = imageA.GetPixelWrapped(x, y);\n            var (bR, bG, bB, bA) = imageB.GetPixelWrapped(x, y);\n\n            var r = Lerp(aR, bR, t);\n            var g = Lerp(aG, bG, t);\n            var b = Lerp(aB, bB, t);\n            var a = Lerp(aA, bA, t);\n\n            result.SetPixel(x, y, r, g, b, a);\n        });\n\n        return result;\n}"
+  }
+}

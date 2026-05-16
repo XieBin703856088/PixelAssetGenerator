@@ -1,0 +1,150 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "Floor",
+    "displayName": {
+      "zh-Hans": "地板",
+      "en": "Floor"
+    },
+    "category": "Material",
+    "description": {
+      "zh-Hans": "渲染矩形地板区域，支持多种图案（木板、人字形、石砖、地毯）。完全可平铺。",
+      "en": "Renders a rectangular floor section with various patterns (planks, herringbone, stone tile, carpet). Fully tileable."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [
+      {
+        "name": {
+          "zh-Hans": "背景",
+          "en": "Background"
+        },
+        "type": "Image"
+      }
+    ],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "遮罩",
+          "en": "Mask"
+        },
+        "type": "Mask"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "种子",
+        "en": "Seed"
+      },
+      "kind": "Seed",
+      "default": 42,
+      "min": 0,
+      "max": 9999
+    },
+    {
+      "name": {
+        "zh-Hans": "地板类型",
+        "en": "Floor Type"
+      },
+      "kind": "Choice",
+      "default": "planks",
+      "choices": [
+        {
+          "value": "planks",
+          "label": {
+            "zh-Hans": "木板",
+            "en": "planks"
+          }
+        },
+        {
+          "value": "herringbone",
+          "label": {
+            "zh-Hans": "人字形",
+            "en": "herringbone"
+          }
+        },
+        {
+          "value": "stoneTile",
+          "label": {
+            "zh-Hans": "石砖",
+            "en": "stoneTile"
+          }
+        },
+        {
+          "value": "carpet",
+          "label": {
+            "zh-Hans": "地毯",
+            "en": "carpet"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "zh-Hans": "主颜色",
+        "en": "Primary Color"
+      },
+      "kind": "Color",
+      "default": "#A07850FF"
+    },
+    {
+      "name": {
+        "zh-Hans": "辅助色",
+        "en": "Secondary Color"
+      },
+      "kind": "Color",
+      "default": "#C8B496FF"
+    },
+    {
+      "name": {
+        "zh-Hans": "宽度",
+        "en": "Width"
+      },
+      "kind": "Number",
+      "default": 0.9,
+      "min": 0.3,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "高度",
+        "en": "Height"
+      },
+      "kind": "Number",
+      "default": 0.8,
+      "min": 0.3,
+      "max": 1.0,
+      "step": 0.01
+    }
+  ],
+  "ai": {
+    "capabilities": ["material", "procedural-texture", "wood", "stone", "tileable", "architectural"],
+    "triggers": {
+      "zh-Hans": "地板, 木板, 人字形, 石砖, 地毯, 室内地面",
+      "en": "floor, planks, herringbone, stone tile, carpet, flooring"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "渲染不同风格的室内地板（木板、人字形、石砖、地毯），用于建筑或室内场景。",
+      "en": "Render various interior floor styles (planks, herringbone, stone tile, carpet) for architectural or indoor scenes."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar seed = GetInt(parameters, \"seed\", context.Seed);\n    var floorType = GetChoice(parameters, \"floorType\", \"planks\");\n    var primaryColor = GetColor(parameters, \"primaryColor\", Color.FromRgb(160, 120, 80));\n    var secondaryColor = GetColor(parameters, \"secondaryColor\", Color.FromRgb(200, 180, 150));\n    var width = GetFloat(parameters, \"width\", 0.9f);\n    var height = GetFloat(parameters, \"height\", 0.8f);\n\n    var size = context.TileSize;\n    var buffer = new PixelBuffer(size, size);\n    var bg = inputs.Length > 0 ? inputs[0] : null;\n\n    var pR = primaryColor.R / 255f;\n    var pG = primaryColor.G / 255f;\n    var pB = primaryColor.B / 255f;\n    var sR = secondaryColor.R / 255f;\n    var sG = secondaryColor.G / 255f;\n    var sB = secondaryColor.B / 255f;\n\n    var period = Math.Max(1, size / 3);\n\n    buffer.ParallelForEachPixel((x, y) =>\n    {\n        var u = (x + 0.5f) / size;\n        var v = (y + 0.5f) / size;\n\n        // Floor rectangle\n        var left = (1f - width) * 0.5f;\n        var right = left + width;\n        var top = (1f - height) * 0.5f;\n        var bottom = top + height;\n        var edgeW = 0.004f;\n\n        var mask = SmoothStep(left - edgeW, left + edgeW, u)\n                 * (1f - SmoothStep(right - edgeW, right + edgeW, u))\n                 * SmoothStep(top - edgeW, top + edgeW, v)\n                 * (1f - SmoothStep(bottom - edgeW, bottom + edgeW, v));\n\n        if (mask < 0.01f)\n        {\n            if (bg != null) { var (br, bgc, bb, ba) = bg.GetPixel(x, y); buffer.SetPixel(x, y, br, bgc, bb, 0f); }\n            else { buffer.SetPixel(x, y, 0f, 0f, 0f, 0f); }\n            return;\n        }\n\n        var floorU = (u - left) / width;\n        var floorV = (v - top) / height;\n\n        float r, g, b;\n        switch (floorType)\n        {\n            case \"planks\": (r, g, b) = RenderPlanks(floorU, floorV, pR, pG, pB, sR, sG, sB, size, period, seed); break;\n            case \"herringbone\": (r, g, b) = RenderHerringbone(floorU, floorV, pR, pG, pB, sR, sG, sB, size, period, seed); break;\n            case \"stoneTile\": (r, g, b) = RenderStoneTile(floorU, floorV, pR, pG, pB, sR, sG, sB, size, period, seed); break;\n            case \"carpet\": (r, g, b) = RenderCarpet(floorU, floorV, pR, pG, pB, sR, sG, sB, size, period, seed); break;\n            default: r = pR; g = pG; b = pB; break;\n        }\n\n        r = Math.Clamp(r, 0f, 1f);\n        g = Math.Clamp(g, 0f, 1f);\n        b = Math.Clamp(b, 0f, 1f);\n\n        if (bg != null)\n        {\n            var (br, bgc, bb, ba) = bg.GetPixel(x, y);\n            r = r * mask + br * (1f - mask);\n            g = g * mask + bgc * (1f - mask);\n            b = b * mask + bb * (1f - mask);\n        }\n\n        buffer.SetPixel(x, y, r, g, b, mask);\n    });\n\n    return buffer;\n\nprivate static (float r, float g, float b) RenderPlanks(float u, float v, float pR, float pG, float pB, float sR, float sG, float sB, int size, int period, int seed)\n{\n    // Horizontal floor planks with gaps\n    var plankCount = 5f;\n    var plankH = 1f / plankCount;\n    var row = (int)(v * plankCount);\n    var cellV = (v - row * plankH) / plankH;\n    var gap = 0.04f;\n\n    if (cellV < gap || cellV > 1f - gap)\n    {\n        return (0.08f, 0.06f, 0.04f);\n    }\n\n    var plankHash = HashToUnit(row, 0, seed + 50);\n    var shade = 0.75f + 0.25f * plankHash;\n    var r = pR * shade;\n    var g = pG * shade * 0.95f;\n    var b = pB * shade * 0.9f;\n\n    // Horizontal wood grain\n    var grain = MathF.Sin(u * 20f + v * 5f + plankHash * 8f) * 0.03f;\n    var grainNoise = TileableFractalNoise(u * 4f, v * 3f + row * 2f, period, 2, 0.5f, 2.5f, seed + 80);\n    grain += (grainNoise - 0.5f) * 0.03f;\n    r += grain; g += grain * 0.7f; b += grain * 0.4f;\n\n    return (Math.Clamp(r, 0f, 1f), Math.Clamp(g, 0f, 1f), Math.Clamp(b, 0f, 1f));\n}\n\nprivate static (float r, float g, float b) RenderHerringbone(float u, float v, float pR, float pG, float pB, float sR, float sG, float sB, int size, int period, int seed)\n{\n    // Herringbone pattern at 45 degrees\n    var scale = 4f;\n    var su = u * scale;\n    var sv = v * scale;\n\n    // Rotate 45 degrees\n    var ru = (su + sv) * 0.5f;\n    var rv = (sv - su) * 0.5f;\n\n    var plankW = 0.25f;\n    var cellU = (ru % plankW + plankW) % plankW / plankW;\n    var cellV = (rv % 1f + 1f) % 1f;\n\n    var gap = 0.06f;\n    var isGap = cellU < gap || cellU > 1f - gap;\n\n    if (isGap)\n    {\n        return (0.06f, 0.04f, 0.03f);\n    }\n\n    var plankIdx = (int)MathF.Floor(ru / plankW) + (int)MathF.Floor(rv);\n    var hash = HashToUnit(plankIdx, 0, seed + 120);\n    var shade = 0.8f + 0.2f * hash;\n\n    var r = pR * shade;\n    var g = pG * shade * 0.95f;\n    var b = pB * shade * 0.9f;\n\n    var grain = MathF.Sin(rv * 30f + ru * 10f) * 0.03f;\n    r += grain; g += grain * 0.7f; b += grain * 0.4f;\n\n    return (Math.Clamp(r, 0f, 1f), Math.Clamp(g, 0f, 1f), Math.Clamp(b, 0f, 1f));\n}\n\nprivate static (float r, float g, float b) RenderStoneTile(float u, float v, float pR, float pG, float pB, float sR, float sG, float sB, int size, int period, int seed)\n{\n    // Square stone tiles in grid\n    var cols = 4f;\n    var rows = 4f;\n    var cellW = 1f / cols;\n    var cellH = 1f / rows;\n    var col = (int)(u * cols);\n    var row = (int)(v * rows);\n    var cellU = (u - col * cellW) / cellW;\n    var cellV = (v - row * cellH) / cellH;\n    var gap = 0.04f;\n\n    if (cellU < gap || cellU > 1f - gap || cellV < gap || cellV > 1f - gap)\n    {\n        return (0.15f, 0.13f, 0.11f);\n    }\n\n    var tileHash = HashToUnit(col, row, seed + 200);\n    var useSecondary = tileHash > 0.7f;\n    var baseR = useSecondary ? sR : pR;\n    var baseG = useSecondary ? sG : pG;\n    var baseB = useSecondary ? sB : pB;\n\n    var shade = 0.8f + 0.2f * tileHash;\n    var r = baseR * shade;\n    var g = baseG * shade * 0.95f;\n    var b = baseB * shade * 0.9f;\n\n    // Subtle surface noise\n    var noise = TileableFractalNoise(u * 4f, v * 4f, period, 1, 0.5f, 2f, seed + 300);\n    var n = (noise - 0.5f) * 0.04f;\n    r += n; g += n * 0.9f; b += n * 0.85f;\n\n    return (Math.Clamp(r, 0f, 1f), Math.Clamp(g, 0f, 1f), Math.Clamp(b, 0f, 1f));\n}\n\nprivate static (float r, float g, float b) RenderCarpet(float u, float v, float pR, float pG, float pB, float sR, float sG, float sB, int size, int period, int seed)\n{\n    // Woven carpet with checkered/striped pattern\n    var r = pR;\n    var g = pG;\n    var b = pB;\n\n    // Subtle woven texture\n    var weaveX = MathF.Sin(u * 30f * MathF.PI * 2f) * 0.015f;\n    var weaveY = MathF.Sin(v * 30f * MathF.PI * 2f) * 0.015f;\n    r += weaveX + weaveY;\n    g += (weaveX + weaveY) * 0.95f;\n    b += (weaveX + weaveY) * 0.9f;\n\n    // Subtle checkered pattern using secondary color\n    var checkScale = 6f;\n    var checkX = MathF.Floor(u * checkScale);\n    var checkY = MathF.Floor(v * checkScale);\n    var check = ((int)(checkX + checkY) % 2 == 0) ? 0f : 0.08f;\n    r = Lerp(r, sR, check);\n    g = Lerp(g, sG, check);\n    b = Lerp(b, sB, check);\n\n    // Fibrous noise\n    var fiberNoise = TileableFractalNoise(u * 12f, v * 12f, period, 2, 0.5f, 2f, seed + 400);\n    var fiber = (fiberNoise - 0.5f) * 0.04f;\n    r += fiber; g += fiber * 0.95f; b += fiber * 0.9f;\n\n    return (Math.Clamp(r, 0f, 1f), Math.Clamp(g, 0f, 1f), Math.Clamp(b, 0f, 1f));\n    }\n}"
+  }
+}

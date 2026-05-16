@@ -1,0 +1,105 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "Brush",
+    "displayName": {
+      "zh-Hans": "画笔",
+      "en": "Brush"
+    },
+    "category": "Logic",
+    "description": {
+      "zh-Hans": "在指定位置绘制圆形或方形画笔笔触。",
+      "en": "Draws a circular or square brush stroke at a specified position."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [
+      {
+        "name": {
+          "zh-Hans": "位置",
+          "en": "Position"
+        },
+        "type": "Float"
+      },
+      {
+        "name": {
+          "zh-Hans": "颜色",
+          "en": "Color"
+        },
+        "type": "Color"
+      }
+    ],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "输出",
+          "en": "Output"
+        },
+        "type": "Image"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "笔刷颜色",
+        "en": "Color"
+      },
+      "kind": "Color",
+      "default": "#FFFFFFFF"
+    },
+    {
+      "name": {
+        "zh-Hans": "笔刷大小",
+        "en": "Brush Size"
+      },
+      "kind": "Integer",
+      "default": 4,
+      "min": 1,
+      "max": 32,
+      "step": 1
+    },
+    {
+      "name": {
+        "zh-Hans": "硬度",
+        "en": "Hardness"
+      },
+      "kind": "Number",
+      "default": 1.0,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "间距",
+        "en": "Spacing"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.1,
+      "max": 1.0,
+      "step": 0.1
+    }
+  ],
+  "ai": {
+    "capabilities": ["logic", "image-analysis"],
+    "triggers": {
+      "zh-Hans": "画笔, 笔刷, 绘制笔触, 圆形笔刷, 方形笔刷",
+      "en": "brush, paint brush, stroke, draw"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "在指定位置绘制一个圆形画笔笔触，用于像素艺术中的逐像素绘制。",
+      "en": "Draw a circular brush stroke at a specified position for pixel-by-pixel painting."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar size = context.TileSize;\nvar brushSize = Math.Max(1, GetInt(parameters, \"brushSize\", 4));\nvar hardness = Math.Clamp(GetFloat(parameters, \"hardness\", 1f), 0f, 1f);\n\n// Use Color port (inputs[1]) if connected, fall back to parameter\nvar r = 1f; var g = 1f; var b = 1f;\nif (inputs.Length > 1 && inputs[1] != null)\n{\n    // Read color from the center of the color buffer\n    var (cr, cg, cb, _) = inputs[1].GetPixel(inputs[1].Width / 2, inputs[1].Height / 2);\n    r = cr; g = cg; b = cb;\n}\nelse\n{\n    var color = GetColor(parameters, \"color\", Colors.White);\n    r = color.R / 255f;\n    g = color.G / 255f;\n    b = color.B / 255f;\n}\n\n// Use Float position port (inputs[0]) if connected, else center\nvar cx = size / 2;\nvar cy = size / 2;\nif (inputs.Length > 0 && inputs[0] != null)\n{\n    // Read first pixel value as position\n    var (px, py, _, _) = inputs[0].GetPixel(0, 0);\n    cx = Math.Clamp((int)(px * size), 0, size - 1);\n    cy = Math.Clamp((int)(py * size), 0, size - 1);\n}\n\nvar buffer = PixelBufferPool.Borrow(size, size);\nvar halfBrush = brushSize * 0.5f;\nvar radius = halfBrush;\nvar innerRadius = radius * Math.Max(0.001f, hardness);\n\nbuffer.ParallelForEachPixel((x, y) =>\n{\n    var dx = x - cx;\n    var dy = y - cy;\n    var dist = MathF.Sqrt(dx * dx + dy * dy);\n\n    float alpha;\n    if (dist >= radius)\n    {\n        alpha = 0f;\n    }\n    else if (dist <= innerRadius)\n    {\n        alpha = 1f;\n    }\n    else\n    {\n        // Smooth falloff between inner and outer radius\n        var t = (dist - innerRadius) / (radius - innerRadius + 0.0001f);\n        alpha = 1f - (t * t * (3f - 2f * t));\n    }\n\n    buffer.SetPixel(x, y, r, g, b, alpha);\n});\n\nreturn buffer;\n}"
+  }
+}

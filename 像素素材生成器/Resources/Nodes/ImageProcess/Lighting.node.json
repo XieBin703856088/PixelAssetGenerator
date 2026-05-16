@@ -1,0 +1,184 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "Lighting",
+    "displayName": {
+      "zh-Hans": "光照",
+      "en": "Lighting"
+    },
+    "category": "ImageProcess",
+    "description": {
+      "zh-Hans": "使用可选的法线贴图、高度图和光照方向参数，对输入图像应用Blinn-Phong光照。支持平行光、点光源和半球光。为像素艺术素材生成逼真的3D着色。",
+      "en": "Applies Blinn-Phong lighting to an input using optional normal map, height map, and light direction parameters. Supports directional, point, and hemisphere lights. Generates realistic 3D shading for pixel art assets."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [
+      {
+        "name": {
+          "zh-Hans": "漫反射",
+          "en": "Diffuse"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "法线图",
+          "en": "NormalMap"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "高度图",
+          "en": "HeightMap"
+        },
+        "type": "Image"
+      }
+    ],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "输出",
+          "en": "Output"
+        },
+        "type": "Image"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "光照类型",
+        "en": "Light Type"
+      },
+      "kind": "Choice",
+      "default": "directional",
+      "choices": [
+        {
+          "value": "directional",
+          "label": {
+            "zh-Hans": "平行光",
+            "en": "directional"
+          }
+        },
+        {
+          "value": "point",
+          "label": {
+            "zh-Hans": "点光源",
+            "en": "point"
+          }
+        },
+        {
+          "value": "hemisphere",
+          "label": {
+            "zh-Hans": "半球光",
+            "en": "hemisphere"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "zh-Hans": "光照角度X",
+        "en": "Light Angle X"
+      },
+      "kind": "Number",
+      "default": -0.5,
+      "min": -1.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "光照角度Y",
+        "en": "Light Angle Y"
+      },
+      "kind": "Number",
+      "default": -0.5,
+      "min": -1.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "光照角度Z",
+        "en": "Light Angle Z"
+      },
+      "kind": "Number",
+      "default": 1.0,
+      "min": -1.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "亮色",
+        "en": "Light Color"
+      },
+      "kind": "Color",
+      "default": "#FFF0DCFF"
+    },
+    {
+      "name": {
+        "zh-Hans": "环境光",
+        "en": "Ambient"
+      },
+      "kind": "Number",
+      "default": 0.3,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "高光强度",
+        "en": "Spec Intensity"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.0,
+      "max": 2.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "高光幂次",
+        "en": "Spec Power"
+      },
+      "kind": "Number",
+      "default": 8.0,
+      "min": 1.0,
+      "max": 64.0,
+      "step": 1.0
+    },
+    {
+      "name": {
+        "zh-Hans": "翻转法线Y",
+        "en": "Flip Normal Y"
+      },
+      "kind": "Boolean",
+      "default": false
+    }
+  ],
+  "ai": {
+    "capabilities": ["lighting-effect", "filter"],
+    "triggers": {
+      "zh-Hans": "光照, 光照效果, 法线贴图光照, Blinn-Phong, 方向光, 点光, 半球光",
+      "en": "lighting, light effect, normal map lighting, Blinn-Phong, directional light, point light, hemisphere"
+    },
+    "suggestedInputs": ["NormalMap"],
+    "exampleUsage": {
+      "zh-Hans": "使用法线贴图为像素艺术角色应用方向光照明。",
+      "en": "Apply directional lighting to a pixel art character using a normal map."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar diffuse = inputs.Length > 0 && inputs[0] != null ? inputs[0]! :\n        new PixelBuffer(context.TileSize, context.TileSize);\n\n    var normalMap = inputs.Length > 1 && inputs[1] != null ? inputs[1] : null;\n    var heightMap = inputs.Length > 2 && inputs[2] != null ? inputs[2] : null;\n\n    var lightType = GetChoice(parameters, \"lightType\", \"directional\");\n    var lx = GetFloat(parameters, \"lightAngleX\", -0.5f);\n    var ly = GetFloat(parameters, \"lightAngleY\", -0.5f);\n    var lz = GetFloat(parameters, \"lightAngleZ\", 0.8f);\n    var lightColor = GetColor(parameters, \"lightColor\", System.Windows.Media.Color.FromRgb(255, 240, 220));\n    var ambient = GetFloat(parameters, \"ambient\", 0.3f);\n    var specIntensity = GetFloat(parameters, \"specIntensity\", 0.5f);\n    var specPower = GetFloat(parameters, \"specPower\", 8f);\n    var flipNormalY = GetBool(parameters, \"flipNormalY\", false);\n\n    var lightR = lightColor.R / 255f;\n    var lightG = lightColor.G / 255f;\n    var lightB = lightColor.B / 255f;\n\n    var size = context.TileSize;\n    var output = new PixelBuffer(size, size);\n\n    // Normalize light direction\n    var lLen = MathF.Sqrt(lx * lx + ly * ly + lz * lz);\n    if (lLen > 0f) { lx /= lLen; ly /= lLen; lz /= lLen; }\n\n    // View direction (from surface toward camera)\n    var vx = 0f;\n    var vy = 0f;\n    var vz = 1f;\n\n    output.ParallelForEachPixel((x, y) =>\n    {\n        var (dr, dg, db, da) = diffuse.GetPixel(x, y);\n\n        // Get normal from normal map or derive from height map\n        float nx, ny, nz;\n        if (normalMap != null)\n        {\n            var (nr, ng, nb, _) = normalMap.GetPixel(x, y);\n            nx = nr * 2f - 1f;\n            ny = ng * 2f - 1f;\n            nz = nb * 2f - 1f;\n        }\n        else if (heightMap != null)\n        {\n            // Derive normal from height map gradients\n            var hC = SampleHeight(heightMap, x, y);\n            var hL = SampleHeight(heightMap, Math.Max(0, x - 1), y);\n            var hR = SampleHeight(heightMap, Math.Min(size - 1, x + 1), y);\n            var hD = SampleHeight(heightMap, x, Math.Max(0, y - 1));\n            var hU = SampleHeight(heightMap, x, Math.Min(size - 1, y + 1));\n            var gx = (hR - hL) * 2f;\n            var gy = (hU - hD) * 2f;\n            var len = MathF.Sqrt(gx * gx + gy * gy + 1f);\n            nx = -gx / len;\n            ny = -gy / len;\n            nz = 1f / len;\n        }\n        else\n        {\n            // Default: flat normal facing viewer\n            nx = 0f; ny = 0f; nz = 1f;\n        }\n\n        if (flipNormalY) ny = -ny;\n\n        // Normalize normal\n        var nLen = MathF.Sqrt(nx * nx + ny * ny + nz * nz);\n        if (nLen > 0f) { nx /= nLen; ny /= nLen; nz /= nLen; }\n\n        // Diffuse lighting\n        var ndotl = nx * lx + ny * ly + nz * lz;\n        ndotl = MathF.Max(0f, ndotl);\n\n        // Hemisphere light: blend between sky and ground colors\n        float diffuseFactor;\n        if (lightType == \"hemisphere\")\n        {\n            var hemi = ny * 0.5f + 0.5f;\n            diffuseFactor = ambient + (1f - ambient) * hemi * 0.8f;\n        }\n        else\n        {\n            diffuseFactor = ambient + (1f - ambient) * ndotl;\n        }\n\n        // Specular (Blinn-Phong half-vector)\n        var specFactor = 0f;\n        if (specIntensity > 0f && ndotl > 0f)\n        {\n            var hx = lx + vx;\n            var hy = ly + vy;\n            var hz = lz + vz;\n            var hLen = MathF.Sqrt(hx * hx + hy * hy + hz * hz);\n            if (hLen > 0f) { hx /= hLen; hy /= hLen; hz /= hLen; }\n\n            var ndoth = nx * hx + ny * hy + nz * hz;\n            ndoth = MathF.Max(0f, ndoth);\n            specFactor = MathF.Pow(ndoth, specPower) * specIntensity;\n        }\n\n        // Point light: distance attenuation (use normalized coords)\n        if (lightType == \"point\")\n        {\n            var px = (x + 0.5f) / size;\n            var py = (y + 0.5f) / size;\n            var dx = lx - px;\n            var dy = ly - py;\n            var dist = MathF.Sqrt(dx * dx + dy * dy + 0.5f);\n            var atten = 1f / (1f + dist * dist * 2f);\n            diffuseFactor = ambient + (1f - ambient) * ndotl * atten;\n        }\n\n        var outR = dr * diffuseFactor * lightR + specFactor * lightR;\n        var outG = dg * diffuseFactor * lightG + specFactor * lightG;\n        var outB = db * diffuseFactor * lightB + specFactor * lightB;\n\n        output.SetPixel(x, y, Math.Clamp(outR, 0f, 1f), Math.Clamp(outG, 0f, 1f), Math.Clamp(outB, 0f, 1f), da);\n    });\n\n    return output;\n\nprivate static float SampleHeight(PixelBuffer buffer, int x, int y)\n{\n    x = Math.Clamp(x, 0, buffer.Width - 1);\n    y = Math.Clamp(y, 0, buffer.Height - 1);\n    var (r, g, b, _) = buffer.GetPixel(x, y);\n    return r * 0.299f + g * 0.587f + b * 0.114f;\n    }\n}"
+  }
+}

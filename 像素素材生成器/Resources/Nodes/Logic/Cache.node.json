@@ -1,0 +1,127 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "Cache",
+    "displayName": {
+      "zh-Hans": "缓存",
+      "en": "Cache"
+    },
+    "category": "Logic",
+    "description": {
+      "zh-Hans": "直通节点，根据缓存键字符串缓存输入图像。当expireFrames为0且缓存中存在该键时，返回缓存副本。当expireFrames不为0时，忽略缓存并直接直通输入。",
+      "en": "Pass-through node that caches the input image keyed by a cache key string. When expireFrames is 0 and the key exists in cache, returns the cached copy. When expireFrames is non-zero, ignores cache and passes through the input directly."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [
+      {
+        "name": {
+          "zh-Hans": "源图像",
+          "en": "SourceImage"
+        },
+        "type": "Image"
+      }
+    ],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "遮罩",
+          "en": "Mask"
+        },
+        "type": "Mask"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "缓存键",
+        "en": "Cache Key"
+      },
+      "kind": "Choice",
+      "default": "default",
+      "choices": [
+        {
+          "value": "default",
+          "label": {
+            "zh-Hans": "默认",
+            "en": "default"
+          }
+        },
+        {
+          "value": "cache1",
+          "label": {
+            "zh-Hans": "缓存1",
+            "en": "cache1"
+          }
+        },
+        {
+          "value": "cache2",
+          "label": {
+            "zh-Hans": "缓存2",
+            "en": "cache2"
+          }
+        },
+        {
+          "value": "cache3",
+          "label": {
+            "zh-Hans": "缓存3",
+            "en": "cache3"
+          }
+        },
+        {
+          "value": "cache4",
+          "label": {
+            "zh-Hans": "缓存4",
+            "en": "cache4"
+          }
+        },
+        {
+          "value": "cache5",
+          "label": {
+            "zh-Hans": "缓存5",
+            "en": "cache5"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "zh-Hans": "过期帧数",
+        "en": "Expire Frames"
+      },
+      "kind": "Integer",
+      "default": 0,
+      "min": 0,
+      "max": 100,
+      "step": 1
+    }
+  ],
+  "ai": {
+    "capabilities": ["logic", "control-flow"],
+    "triggers": {
+      "zh-Hans": "缓存, 缓存节点, 图像缓存",
+      "en": "cache, caching, image cache"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "使用缓存节点避免重复计算相同的图像输出，提升管线性能。",
+      "en": "Use the cache node to avoid recomputing the same image output, improving pipeline performance."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\n// Cache node: pass-through the input image (runtime cache management is handled by the evaluator)\nvar src = inputs[0];\nif (src != null) return src;\nreturn new PixelBuffer(context.TileSize, context.TileSize);\n}"
+  }
+}

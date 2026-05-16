@@ -1,0 +1,134 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "Tree",
+    "displayName": {
+      "zh-Hans": "树木",
+      "en": "Tree"
+    },
+    "category": "Material",
+    "description": {
+      "zh-Hans": "生成像素艺术树木，可配置类型、树干和树冠参数。支持圆形、圆锥形、层叠形、棕榈形和仙人掌形，通过有机噪波扰动呈现自然效果。输出图像和覆盖遮罩。",
+      "en": "Generates pixel-art trees with configurable type, trunk, and canopy parameters. Supports round, conical, layered, palm, and cactus shapes with organic noise perturbation for a natural look. Outputs both the image and a coverage mask."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "遮罩",
+          "en": "Mask"
+        },
+        "type": "Mask"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "种子",
+        "en": "Seed"
+      },
+      "kind": "Seed",
+      "default": 42,
+      "min": 0,
+      "max": 9999
+    },
+    {
+      "name": {
+        "zh-Hans": "树干高度",
+        "en": "Trunk Height"
+      },
+      "kind": "Number",
+      "default": 0.3,
+      "min": 0.1,
+      "max": 0.8,
+      "step": 0.05
+    },
+    {
+      "name": {
+        "zh-Hans": "树冠大小",
+        "en": "Canopy Size"
+      },
+      "kind": "Number",
+      "default": 0.5,
+      "min": 0.2,
+      "max": 1.0,
+      "step": 0.05
+    },
+    {
+      "name": {
+        "zh-Hans": "树干颜色",
+        "en": "Trunk Color"
+      },
+      "kind": "Color",
+      "default": "#8B5E3CFF"
+    },
+    {
+      "name": {
+        "zh-Hans": "叶子颜色",
+        "en": "Leaf Color"
+      },
+      "kind": "Color",
+      "default": "#4A8C3FFF"
+    },
+    {
+      "name": {
+        "zh-Hans": "叶子颜色2",
+        "en": "Leaf Color 2"
+      },
+      "kind": "Color",
+      "default": "#50C83CFF"
+    },
+    {
+      "name": {
+        "zh-Hans": "树干宽度",
+        "en": "Trunk Width"
+      },
+      "kind": "Integer",
+      "default": 3,
+      "min": 1,
+      "max": 8,
+      "step": 1
+    },
+    {
+      "name": {
+        "zh-Hans": "像素大小",
+        "en": "Pixel Size"
+      },
+      "kind": "Integer",
+      "default": 2,
+      "min": 1,
+      "max": 8,
+      "step": 1
+    }
+  ],
+  "ai": {
+    "capabilities": ["material", "procedural-texture", "nature", "organic", "vegetation"],
+    "triggers": {
+      "zh-Hans": "树木, 树, 森林, 植被, 植物, 自然环境, 棕榈树, 仙人掌",
+      "en": "tree, forest, flora, vegetation, plant, palm, cactus"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "生成像素艺术树木，用于森林场景或自然环境装饰。",
+      "en": "Generate pixel-art trees for forest scenes or natural environment decoration."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar seed = GetInt(parameters, \"seed\", context.Seed);\nvar trunkColor = GetColor(parameters, \"trunkColor\", System.Windows.Media.Color.FromRgb(100, 65, 30));\nvar leafColor = GetColor(parameters, \"leafColor\", System.Windows.Media.Color.FromRgb(50, 150, 50));\nvar leafColor2 = GetColor(parameters, \"leafColor2\", System.Windows.Media.Color.FromRgb(80, 200, 60));\nvar trunkWidth = GetFloat(parameters, \"trunkWidth\", 0.08f);\nvar trunkHeight = GetFloat(parameters, \"trunkHeight\", 0.4f);\nvar canopySize = GetFloat(parameters, \"canopySize\", 0.45f);\nvar pixelSize = Math.Max(1, GetInt(parameters, \"pixelSize\", 2));\nvar size = context.TileSize;\nvar result = new PixelBuffer(size, size);\nvar tR=trunkColor.R/255f; var tG=trunkColor.G/255f; var tB=trunkColor.B/255f;\nvar lR=leafColor.R/255f; var lG=leafColor.G/255f; var lB=leafColor.B/255f;\nvar l2R=leafColor2.R/255f; var l2G=leafColor2.G/255f; var l2B=leafColor2.B/255f;\nvar period = Math.Max(1, size);\nvar centerX = size / 2;\nvar trunkTop = (int)(size * (1f - trunkHeight));\nvar trunkPx = Math.Max(1, (int)(size * trunkWidth));\nvar canopyRadius = (int)(size * canopySize);\nresult.ParallelForEachPixel((x, y) =>\n{\n    var dx = x - centerX;\n    var dy = y - trunkTop;\n    var dist = MathF.Sqrt(dx*dx + dy*dy);\n    var noiseMask = TileableFractalNoise(x * 0.05f, y * 0.05f, period, 2, 0.5f, 2f, seed);\n    var trunkBase = size - 1;\n    if (dist < canopyRadius * (0.8f + noiseMask * 0.3f))\n    {\n        var t = dist / canopyRadius;\n        result.SetPixel(x, y, Lerp(l2R, lR, t), Lerp(l2G, lG, t), Lerp(l2B, lB, t), 1f);\n    }\n    else if (MathF.Abs(x - centerX) <= trunkPx && y >= trunkTop && y <= trunkBase)\n    {\n        result.SetPixel(x, y, tR, tG, tB, 1f);\n    }\n    else { result.SetPixel(x, y, 0, 0, 0, 0); }\n});\nreturn result;\n}"
+  }
+}

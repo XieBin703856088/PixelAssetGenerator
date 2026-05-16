@@ -1,0 +1,160 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "MathOp",
+    "displayName": {
+      "zh-Hans": "数学运算",
+      "en": "Math"
+    },
+    "category": "Logic",
+    "description": {
+      "zh-Hans": "在两个图像输入之间，或在图像与常量值之间，执行逐像素数学运算。",
+      "en": "Performs per-pixel mathematical operations between two image inputs or between an image and a constant value."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [
+      {
+        "name": {
+          "zh-Hans": "图像A",
+          "en": "ImageA"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "图像B",
+          "en": "ImageB"
+        },
+        "type": "Image"
+      }
+    ],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "结果",
+          "en": "Result"
+        },
+        "type": "Image"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "运算",
+        "en": "Operation"
+      },
+      "kind": "Choice",
+      "default": "add",
+      "choices": [
+        {
+          "value": "add",
+          "label": {
+            "zh-Hans": "加",
+            "en": "add"
+          }
+        },
+        {
+          "value": "subtract",
+          "label": {
+            "zh-Hans": "减",
+            "en": "subtract"
+          }
+        },
+        {
+          "value": "multiply",
+          "label": {
+            "zh-Hans": "乘",
+            "en": "multiply"
+          }
+        },
+        {
+          "value": "divide",
+          "label": {
+            "zh-Hans": "除",
+            "en": "divide"
+          }
+        },
+        {
+          "value": "max",
+          "label": {
+            "zh-Hans": "取最大",
+            "en": "max"
+          }
+        },
+        {
+          "value": "min",
+          "label": {
+            "zh-Hans": "取最小",
+            "en": "min"
+          }
+        },
+        {
+          "value": "absoluteDifference",
+          "label": {
+            "zh-Hans": "绝对差",
+            "en": "absoluteDifference"
+          }
+        },
+        {
+          "value": "screenBlend",
+          "label": {
+            "zh-Hans": "滤色混合",
+            "en": "screenBlend"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "zh-Hans": "强度",
+        "en": "Strength"
+      },
+      "kind": "Number",
+      "default": 1.0,
+      "min": 0.0,
+      "max": 2.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "常量",
+        "en": "Constant"
+      },
+      "kind": "Number",
+      "default": 0.1,
+      "min": -1.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "使用常量",
+        "en": "Use Constant"
+      },
+      "kind": "Boolean",
+      "default": true
+    }
+  ],
+  "ai": {
+    "capabilities": ["logic", "math", "image-analysis"],
+    "triggers": {
+      "zh-Hans": "数学运算, 加减乘除, 混合模式, 图像运算, 逐像素运算",
+      "en": "math, math operation, add, subtract, multiply, blend, pixel operation"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "对两个输入图像进行乘法混合，叠加纹理效果。",
+      "en": "Multiply-blend two input images to overlay texture effects."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar op = GetChoice(parameters, \"operation\", \"add\");\n    var strength = GetFloat(parameters, \"strength\", 1f);\n    var constant = GetFloat(parameters, \"constant\", 0f);\n    var useConstant = GetBool(parameters, \"useConstant\", true);\n\n    var size = context.TileSize;\n    var result = new PixelBuffer(size, size);\n\n    var inputA = inputs.Length > 0 ? inputs[0] : null;\n    var inputB = useConstant ? null : (inputs.Length > 1 ? inputs[1] : null);\n\n    result.ParallelForEachPixel((x, y) =>\n    {\n        float ra, ga, ba, aa;\n        float rb, gb, bb, ab;\n\n        if (inputA != null)\n        {\n            (ra, ga, ba, aa) = inputA.GetPixel(x, y);\n        }\n        else\n        {\n            ra = ga = ba = aa = 0f;\n        }\n\n        if (inputB != null)\n        {\n            (rb, gb, bb, ab) = inputB.GetPixel(x, y);\n        }\n        else if (useConstant)\n        {\n            rb = gb = bb = constant;\n            ab = 1f;\n        }\n        else\n        {\n            rb = gb = bb = 0f;\n            ab = 1f;\n        }\n\n        float rr, gr, br, ar;\n        ApplyOp(ra, ga, ba, aa, rb, gb, bb, ab, op, strength, out rr, out gr, out br, out ar);\n\n        result.SetPixel(x, y, rr, gr, br, ar);\n    });\n\n    return result;\n\nprivate static void ApplyOp(float ra, float ga, float ba, float aa,\n    float rb, float gb, float bb, float ab,\n    string op, float strength,\n    out float rr, out float gr, out float br, out float ar)\n{\n    switch (op)\n    {\n        case \"add\":\n            rr = Math.Clamp(ra + rb * strength, 0, 1);\n            gr = Math.Clamp(ga + gb * strength, 0, 1);\n            br = Math.Clamp(ba + bb * strength, 0, 1);\n            break;\n        case \"subtract\":\n            rr = Math.Clamp(ra - rb * strength, 0, 1);\n            gr = Math.Clamp(ga - gb * strength, 0, 1);\n            br = Math.Clamp(ba - bb * strength, 0, 1);\n            break;\n        case \"multiply\":\n            rr = Math.Clamp(ra * Math.Max(0, rb * strength + (1 - strength)), 0, 1);\n            gr = Math.Clamp(ga * Math.Max(0, gb * strength + (1 - strength)), 0, 1);\n            br = Math.Clamp(ba * Math.Max(0, bb * strength + (1 - strength)), 0, 1);\n            break;\n        case \"divide\":\n            rr = rb > 0.001f ? Math.Clamp(ra / (rb * strength + 0.001f), 0, 1) : ra;\n            gr = gb > 0.001f ? Math.Clamp(ga / (gb * strength + 0.001f), 0, 1) : ga;\n            br = bb > 0.001f ? Math.Clamp(ba / (bb * strength + 0.001f), 0, 1) : ba;\n            break;\n        case \"max\":\n            rr = Math.Max(ra, rb * strength + ra * (1 - strength));\n            gr = Math.Max(ga, gb * strength + ga * (1 - strength));\n            br = Math.Max(ba, bb * strength + ba * (1 - strength));\n            break;\n        case \"min\":\n            rr = Math.Min(ra, rb * strength + ra * (1 - strength));\n            gr = Math.Min(ga, gb * strength + ga * (1 - strength));\n            br = Math.Min(ba, bb * strength + ba * (1 - strength));\n            break;\n        case \"absoluteDifference\":\n            rr = Math.Clamp(Math.Abs(ra - rb) * strength + ra * (1 - strength), 0, 1);\n            gr = Math.Clamp(Math.Abs(ga - gb) * strength + ga * (1 - strength), 0, 1);\n            br = Math.Clamp(Math.Abs(ba - bb) * strength + ba * (1 - strength), 0, 1);\n            break;\n        case \"screenBlend\":\n            rr = Math.Clamp(1 - (1 - ra) * (1 - rb * strength), 0, 1);\n            gr = Math.Clamp(1 - (1 - ga) * (1 - gb * strength), 0, 1);\n            br = Math.Clamp(1 - (1 - ba) * (1 - bb * strength), 0, 1);\n            break;\n        default:\n            rr = ra; gr = ga; br = ba;\n            break;\n    }\n    ar = Math.Max(aa, ab);\n    }\n}"
+  }
+}

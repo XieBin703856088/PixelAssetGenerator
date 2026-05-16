@@ -1,0 +1,70 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "Grayscale",
+    "displayName": {
+      "zh-Hans": "灰度",
+      "en": "Grayscale"
+    },
+    "category": "ImageProcess",
+    "description": {
+      "zh-Hans": "双端口灰度转换器。输入端口0「图像」为彩色（或灰度）图像，端口1「灰度遮罩」为灰度遮罩。输出端口0「图像」为中性灰RGB图像（R=G=B=灰度），源自任一可用输入（图像端口优先于遮罩端口）。端口1「灰度遮罩」以遮罩类型端口暴露相同灰度数据。无需模式切换，两种转换同时进行。将遮罩转换为图像（端口0输出）时不会施加颜色着色，结果始终为纯中性灰RGB图像。",
+      "en": "Dual-port grayscale converter. Inputs Port 0 \"image\" – a color (or grayscale) image Port 1 \"grayMask\" – a grayscale mask Outputs Port 0 \"image\" – neutral-gray RGB image (R = G = B = gray) derived from whichever input is available (image port takes priority over mask port). Port 1 \"grayMask\" – same grayscale data exposed as a Mask-typed port. No mode switch is needed: both conversions happen simultaneously. Converting a mask to an image (port 0 output) never applies color tinting – the result is always a pure neutral-gray RGB image."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "灰度遮罩",
+          "en": "GrayMask"
+        },
+        "type": "Mask"
+      }
+    ],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "灰度遮罩",
+          "en": "GrayMask"
+        },
+        "type": "Mask"
+      }
+    ]
+  },
+  "parameters": [],
+  "ai": {
+    "capabilities": ["color-adjust", "channel"],
+    "triggers": {
+      "zh-Hans": "灰度, 去色, 黑白, 单色",
+      "en": "grayscale, desaturate, black and white, monochrome"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "将彩色图像转换为灰度进行进一步处理。",
+      "en": "Convert a color image to grayscale for further processing."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar src = inputs[0] ?? inputs[1];\nif (src == null) return PixelBuffer.CreateSolid(context.TileSize, context.TileSize, 0.5f, 0.5f, 0.5f, 1f);\nvar size = src.Width;\nvar result = new PixelBuffer(size, src.Height);\nresult.ParallelForEachPixel((x, y) =>\n{\n    var (r, g, b, a) = src.GetPixel(x, y);\n    var gray = 0.2126f * r + 0.7152f * g + 0.0722f * b;\n    result.SetPixel(x, y, gray, gray, gray, a);\n});\nreturn result;\n}"
+  }
+}

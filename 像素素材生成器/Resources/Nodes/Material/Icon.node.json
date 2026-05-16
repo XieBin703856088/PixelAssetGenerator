@@ -1,0 +1,145 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "Icon",
+    "displayName": {
+      "zh-Hans": "图标",
+      "en": "Icon"
+    },
+    "category": "Material",
+    "description": {
+      "zh-Hans": "生成游戏UI中常用的像素艺术图标（心形、星形、齿轮、地图标记）。每个图标使用基于SDF的形状合成渲染。",
+      "en": "Generates pixel art icons (heart, star, gear, map marker) commonly used in game UIs. Each icon is rendered using SDF-based shape composition."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "图像",
+          "en": "Image"
+        },
+        "type": "Image"
+      },
+      {
+        "name": {
+          "zh-Hans": "遮罩",
+          "en": "Mask"
+        },
+        "type": "Mask"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "种子",
+        "en": "Seed"
+      },
+      "kind": "Seed",
+      "default": 42,
+      "min": 0,
+      "max": 9999
+    },
+    {
+      "name": {
+        "zh-Hans": "图标类型",
+        "en": "Icon Type"
+      },
+      "kind": "Choice",
+      "default": "heart",
+      "choices": [
+        {
+          "value": "heart",
+          "label": {
+            "zh-Hans": "心形",
+            "en": "heart"
+          }
+        },
+        {
+          "value": "star",
+          "label": {
+            "zh-Hans": "星形",
+            "en": "star"
+          }
+        },
+        {
+          "value": "gear",
+          "label": {
+            "zh-Hans": "齿轮",
+            "en": "gear"
+          }
+        },
+        {
+          "value": "mapMarker",
+          "label": {
+            "zh-Hans": "地图标记",
+            "en": "mapMarker"
+          }
+        },
+        {
+          "value": "trophy",
+          "label": {
+            "zh-Hans": "奖杯",
+            "en": "trophy"
+          }
+        },
+        {
+          "value": "skull",
+          "label": {
+            "zh-Hans": "骷髅",
+            "en": "skull"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "zh-Hans": "大小",
+        "en": "Size"
+      },
+      "kind": "Number",
+      "default": 0.6,
+      "min": 0.1,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "主颜色",
+        "en": "Primary Color"
+      },
+      "kind": "Color",
+      "default": "#DC3C3CFF"
+    },
+    {
+      "name": {
+        "zh-Hans": "辅助色",
+        "en": "Secondary Color"
+      },
+      "kind": "Color",
+      "default": "#B42828FF"
+    }
+  ],
+  "ai": {
+    "capabilities": ["material", "procedural-texture", "ui-element", "icon", "game-ui"],
+    "triggers": {
+      "zh-Hans": "图标, 心形, 星形, 齿轮, 地图标记, 奖杯, 骷髅, UI图标",
+      "en": "icon, heart, star, gear, map marker, trophy, skull, UI icon"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "生成各种像素艺术UI图标（心形、星形、齿轮等），用于游戏界面或菜单。",
+      "en": "Generate various pixel-art UI icons (heart, star, gear, etc.) for game interfaces or menus."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar seed = GetInt(parameters, \"seed\", context.Seed);\n    var iconType = GetChoice(parameters, \"iconType\", \"heart\");\n    var size = GetFloat(parameters, \"size\", 0.6f);\n    var primary = GetColor(parameters, \"primaryColor\", Color.FromRgb(220, 60, 60));\n    var secondary = GetColor(parameters, \"secondaryColor\", Color.FromRgb(180, 40, 40));\n\n    var tileSize = context.TileSize;\n    var buffer = new PixelBuffer(tileSize, tileSize);\n\n    var pR = primary.R / 255f; var pG = primary.G / 255f; var pB = primary.B / 255f;\n    var sR = secondary.R / 255f; var sG = secondary.G / 255f; var sB = secondary.B / 255f;\n\n    var halfSize = tileSize * 0.5f;\n    var radius = halfSize * size;\n\n    buffer.ParallelForEachPixel((x, y) =>\n    {\n        var px = (x + 0.5f - halfSize) / radius;\n        var py = (y + 0.5f - halfSize) / radius;\n\n        float alpha = 0f;\n        float fr = pR, fg = pG, fb = pB;\n\n        switch (iconType)\n        {\n            case \"heart\":\n                RenderHeart(px, py, out alpha);\n                break;\n            case \"star\":\n                RenderStar(px, py, out alpha);\n                // Gold color\n                fr = 0.95f; fg = 0.8f; fb = 0.15f;\n                break;\n            case \"gear\":\n                RenderGear(px, py, out alpha);\n                fr = 0.6f; fg = 0.6f; fb = 0.65f;\n                break;\n            case \"mapMarker\":\n                RenderMapMarker(px, py, out alpha);\n                break;\n            case \"trophy\":\n                RenderTrophy(px, py, out alpha);\n                fr = 0.9f; fg = 0.75f; fb = 0.2f;\n                break;\n            case \"skull\":\n                RenderSkull(px, py, seed, out alpha);\n                fr = 0.85f; fg = 0.85f; fb = 0.85f;\n                break;\n        }\n\n        if (alpha <= 0.01f)\n        {\n            buffer.SetPixel(x, y, 0, 0, 0, 0);\n            return;\n        }\n\n        // Apply shading (center lighter, edges darker)\n        var shade = 0.7f + 0.3f * (1f - MathF.Sqrt(px * px + py * py) * 0.8f);\n        var hR = fr * shade; var hG = fg * shade; var hB = fb * shade;\n\n        // Inner highlight offset to upper-left\n        var hlDist = MathF.Sqrt((px + 0.3f) * (px + 0.3f) + (py + 0.3f) * (py + 0.3f));\n        var hl = MathF.Exp(-hlDist * hlDist * 3f) * 0.3f;\n\n        buffer.SetPixel(x, y,\n            Math.Clamp(hR + hl, 0f, 1f),\n            Math.Clamp(hG + hl, 0f, 1f),\n            Math.Clamp(hB + hl, 0f, 1f), alpha);\n    });\n\n    return buffer;\n\nprivate static void RenderHeart(float px, float py, out float alpha)\n{\n    // Heart SDF: two circles + inverted triangle\n    var leftLobe = MathF.Sqrt((px + 0.3f) * (px + 0.3f) + (py - 0.15f) * (py - 0.15f));\n    var rightLobe = MathF.Sqrt((px - 0.3f) * (px - 0.3f) + (py - 0.15f) * (py - 0.15f));\n    var bottom = MathF.Sqrt(px * px + (py + 0.4f) * (py + 0.4f));\n\n    var d = MathF.Min(MathF.Min(leftLobe, rightLobe), bottom) - 0.5f;\n\n    // The bottom triangle between lobes\n    var tri = MathF.Abs(px) * 0.8f + (py + 0.1f) * 0.6f;\n    d = MathF.Max(d, tri - 0.15f);\n\n    alpha = 1f - SmoothStep(0f, 0.12f, d);\n}\n\nprivate static void RenderStar(float px, float py, out float alpha)\n{\n    // 5-pointed star using angular modulation\n    var angle = MathF.Atan2(py, px);\n    var dist = MathF.Sqrt(px * px + py * py);\n    var spikes = MathF.Cos(angle * 5f) * 0.4f + 0.6f;\n    var starDist = dist / (spikes * 0.9f);\n\n    alpha = 1f - SmoothStep(0.7f, 1f, starDist);\n}\n\nprivate static void RenderGear(float px, float py, out float alpha)\n{\n    var dist = MathF.Sqrt(px * px + py * py);\n    var angle = MathF.Atan2(py, px);\n\n    // Tooth modulation\n    var teeth = MathF.Cos(angle * 8f) * 0.15f;\n    var innerR = 0.4f + teeth;\n    var outerR = 0.55f + teeth;\n\n    if (dist < innerR)\n    {\n        // Inner solid circle\n        alpha = 1f;\n    }\n    else if (dist < outerR)\n    {\n        // Tooth zone: check if we're on a tooth or in a gap\n        var toothMask = MathF.Cos(angle * 8f);\n        if (toothMask > 0f)\n            alpha = 1f; // Tooth\n        else\n            alpha = dist < 0.5f ? 1f : 0f; // Inner ring in gap\n    }\n    else\n    {\n        alpha = 0f;\n    }\n\n    // Center hole\n    if (dist < 0.12f) alpha = 0f;\n}\n\nprivate static void RenderMapMarker(float px, float py, out float alpha)\n{\n    // Map marker: circle on top + triangle pointing down\n    var circleDist = MathF.Sqrt(px * px + (py + 0.15f) * (py + 0.15f));\n    var inCircle = circleDist < 0.35f;\n\n    var triX = MathF.Abs(px);\n    var triY = py - 0.2f;\n    var inTriangle = triX < 0.15f * (1f - triY * 1.5f) && triY > 0f && triY < 0.6f;\n\n    if (inCircle || inTriangle)\n    {\n        // Feather edges\n        var edge = inCircle ? circleDist / 0.35f : 1f;\n        alpha = Math.Clamp(1f - (edge - 0.85f) / 0.15f, 0f, 1f);\n    }\n    else\n    {\n        alpha = 0f;\n    }\n}\n\nprivate static void RenderTrophy(float px, float py, out float alpha)\n{\n    // Trophy: cup shape with handles\n    var cupBody = MathF.Max(MathF.Abs(px) - 0.3f, MathF.Abs(py + 0.1f) - 0.3f);\n    cupBody = MathF.Max(cupBody, -0.1f);\n\n    // Handles (left and right arcs)\n    var leftHandle = MathF.Sqrt((px + 0.35f) * (px + 0.35f) + (py + 0.1f) * (py + 0.1f));\n    var rightHandle = MathF.Sqrt((px - 0.35f) * (px - 0.35f) + (py + 0.1f) * (py + 0.1f));\n    var handleWidth = 0.06f;\n\n    // Base\n    var baseRect = MathF.Max(MathF.Abs(px) - 0.2f, py - 0.4f);\n\n    var d = MathF.Min(MathF.Min(cupBody, MathF.Abs(leftHandle - 0.35f) - handleWidth), MathF.Abs(rightHandle - 0.35f) - handleWidth);\n    d = MathF.Min(d, baseRect + 0.05f);\n\n    alpha = 1f - SmoothStep(-0.05f, 0.08f, d);\n}\n\nprivate static void RenderSkull(float px, float py, int seed, out float alpha)\n{\n    // Skull: rounded head shape\n    var headDist = MathF.Sqrt(px * px * 1.2f + py * py);\n    var headR = 0.55f;\n\n    if (headDist > headR)\n    {\n        alpha = 0f;\n        return;\n    }\n\n    // Jaw cutout\n    var jawCut = MathF.Max(MathF.Abs(px) - 0.2f, -py - 0.1f);\n\n    // Eye sockets\n    var leftEye = MathF.Sqrt((px + 0.2f) * (px + 0.2f) + (py - 0.1f) * (py - 0.1f));\n    var rightEye = MathF.Sqrt((px - 0.2f) * (px - 0.2f) + (py - 0.1f) * (py - 0.1f));\n\n    // Nose\n    var nose = MathF.Sqrt(px * px * 0.5f + (py + 0.05f) * (py + 0.05f) * 2f);\n\n    // Mouth: horizontal slit\n    var mouth = MathF.Max(MathF.Abs(px) - 0.25f, MathF.Abs(py + 0.25f) - 0.03f);\n\n    if (jawCut > 0f)\n    {\n        alpha = (jawCut < 0.05f) ? 1f - jawCut / 0.05f : 0f;\n        return;\n    }\n\n    if (leftEye < 0.1f || rightEye < 0.1f)\n    {\n        alpha = 0f; // Eye sockets are empty\n        return;\n    }\n\n    if (nose < 0.06f)\n    {\n        alpha = 0f;\n        return;\n    }\n\n    if (mouth < 0f)\n    {\n        alpha = 0f;\n        return;\n    }\n\n    alpha = 1f;\n    }\n}"
+  }
+}

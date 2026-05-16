@@ -1,0 +1,182 @@
+{
+  "formatVersion": 2,
+  "processorType": null,
+  "identity": {
+    "typeName": "Colorize",
+    "displayName": {
+      "zh-Hans": "着色",
+      "en": "Colorize"
+    },
+    "category": "ImageProcess",
+    "description": {
+      "zh-Hans": "将灰度输入通过多段颜色渐变映射。每个色标定义亮度范围内特定位置的颜色。支持抖动以获得像素艺术风格效果。",
+      "en": "Maps grayscale input through a multi-stop color gradient. Each stop defines a color at a specific position along the luminance range. Supports dithering for a pixel-art look."
+    },
+    "tags": [],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [
+      {
+        "name": {
+          "zh-Hans": "输入",
+          "en": "Input"
+        },
+        "type": "Image"
+      }
+    ],
+    "outputs": [
+      {
+        "name": {
+          "zh-Hans": "输出",
+          "en": "Output"
+        },
+        "type": "Image"
+      }
+    ]
+  },
+  "parameters": [
+    {
+      "name": {
+        "zh-Hans": "种子",
+        "en": "Seed"
+      },
+      "kind": "Seed",
+      "default": 42,
+      "min": 0,
+      "max": 9999
+    },
+    {
+      "name": {
+        "zh-Hans": "输入通道",
+        "en": "Input Channel"
+      },
+      "kind": "Choice",
+      "default": "luminance",
+      "choices": [
+        {
+          "value": "luminance",
+          "label": {
+            "zh-Hans": "亮度",
+            "en": "luminance"
+          }
+        },
+        {
+          "value": "red",
+          "label": {
+            "zh-Hans": "红色",
+            "en": "red"
+          }
+        },
+        {
+          "value": "green",
+          "label": {
+            "zh-Hans": "绿色",
+            "en": "green"
+          }
+        },
+        {
+          "value": "blue",
+          "label": {
+            "zh-Hans": "蓝色",
+            "en": "blue"
+          }
+        },
+        {
+          "value": "alpha",
+          "label": {
+            "zh-Hans": "透明通道",
+            "en": "alpha"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "zh-Hans": "颜色0",
+        "en": "Color0"
+      },
+      "kind": "Color",
+      "default": "#14082AFF"
+    },
+    {
+      "name": {
+        "zh-Hans": "颜色1",
+        "en": "Color1"
+      },
+      "kind": "Color",
+      "default": "#3C1E64FF"
+    },
+    {
+      "name": {
+        "zh-Hans": "颜色2",
+        "en": "Color2"
+      },
+      "kind": "Color",
+      "default": "#6450B4FF"
+    },
+    {
+      "name": {
+        "zh-Hans": "颜色3",
+        "en": "Color3"
+      },
+      "kind": "Color",
+      "default": "#B4A0DCFF"
+    },
+    {
+      "name": {
+        "zh-Hans": "颜色4",
+        "en": "Color4"
+      },
+      "kind": "Color",
+      "default": "#FFF0FFFF"
+    },
+    {
+      "name": {
+        "zh-Hans": "颜色数量",
+        "en": "Color Count"
+      },
+      "kind": "Number",
+      "default": 5.0,
+      "min": 2.0,
+      "max": 5.0,
+      "step": 1.0
+    },
+    {
+      "name": {
+        "zh-Hans": "抖动",
+        "en": "Dither"
+      },
+      "kind": "Number",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "反相",
+        "en": "Invert"
+      },
+      "kind": "Boolean",
+      "default": false
+    }
+  ],
+  "ai": {
+    "capabilities": ["color-adjust"],
+    "triggers": {
+      "zh-Hans": "着色, 渐变着色, 伪彩色, 亮度映射, 颜色渐变",
+      "en": "colorize, gradient color, pseudo-color, luminance map, color gradient"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "将灰度图像着色为从深蓝到白色的渐变。",
+      "en": "Colorize a grayscale image with a gradient from dark blue to white."
+    }
+  },
+  "script": {
+    "language": "csharp",
+    "code": "{\nvar input = inputs.Length > 0 && inputs[0] != null ? inputs[0]! :\n    new PixelBuffer(context.TileSize, context.TileSize);\n\nvar seed = GetInt(parameters, \"seed\", context.Seed);\nvar channel = GetChoice(parameters, \"inputChannel\", \"luminance\");\nvar colorCount = Math.Clamp(GetInt(parameters, \"colorCount\", 5), 2, 5);\nvar dither = GetFloat(parameters, \"dither\", 0f);\nvar invert = GetBool(parameters, \"invert\", false);\n\n// Collect gradient stops\nvar stopColors = new (float Pos, float R, float G, float B)[colorCount];\nvar colorNames = new[] { \"color0\", \"color1\", \"color2\", \"color3\", \"color4\" };\nfor (var i = 0; i < colorCount; i++)\n{\n    var col = GetColor(parameters, colorNames[i], System.Windows.Media.Color.FromRgb(0, 0, 0));\n    stopColors[i] = (\n        i / (float)(colorCount - 1),\n        col.R / 255f, col.G / 255f, col.B / 255f\n    );\n}\n\nvar size = context.TileSize;\nvar output = new PixelBuffer(size, size);\n\n// Pre-compute dither pattern (Bayer 4x4)\nvar bayer = new[,]\n{\n    { 0, 8, 2, 10 },\n    { 12, 4, 14, 6 },\n    { 3, 11, 1, 9 },\n    { 15, 7, 13, 5 }\n};\n\noutput.ParallelForEachPixel((x, y) =>\n{\n    var (r, g, b, a) = input.GetPixel(x, y);\n\n    var val = channel switch\n    {\n        \"red\" => r,\n        \"green\" => g,\n        \"blue\" => b,\n        \"alpha\" => a,\n        _ => r * 0.299f + g * 0.587f + b * 0.114f\n    };\n\n    if (invert) val = 1f - val;\n\n    // Dither\n    if (dither > 0f)\n    {\n        var ditherVal = (bayer[y % 4, x % 4] + 0.5f) / 16f - 0.5f;\n        val += ditherVal * dither;\n        val = Math.Clamp(val, 0f, 1f);\n    }\n\n    // Sample gradient\n    float outR, outG, outB;\n    if (val <= 0f)\n    {\n        outR = stopColors[0].R;\n        outG = stopColors[0].G;\n        outB = stopColors[0].B;\n    }\n    else if (val >= 1f)\n    {\n        outR = stopColors[colorCount - 1].R;\n        outG = stopColors[colorCount - 1].G;\n        outB = stopColors[colorCount - 1].B;\n    }\n    else\n    {\n        var idx = 0;\n        for (var i = 0; i < colorCount - 1; i++)\n        {\n            if (val >= stopColors[i].Pos && val <= stopColors[i + 1].Pos)\n            {\n                idx = i;\n                break;\n            }\n        }\n\n        var t = (val - stopColors[idx].Pos) /\n                (stopColors[idx + 1].Pos - stopColors[idx].Pos);\n        t = Math.Clamp(t, 0f, 1f);\n\n        outR = Lerp(stopColors[idx].R, stopColors[idx + 1].R, t);\n        outG = Lerp(stopColors[idx].G, stopColors[idx + 1].G, t);\n        outB = Lerp(stopColors[idx].B, stopColors[idx + 1].B, t);\n    }\n\n    output.SetPixel(x, y, outR, outG, outB, a);\n});\n\nreturn output;\n}"
+  }
+}
