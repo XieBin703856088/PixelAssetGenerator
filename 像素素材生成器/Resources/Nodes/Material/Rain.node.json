@@ -1,6 +1,6 @@
 {
   "formatVersion": 2,
-  "processorType": null,
+  "processorType": "Rain",
   "identity": {
     "typeName": "Rain",
     "displayName": {
@@ -9,8 +9,8 @@
     },
     "category": "Material",
     "description": {
-      "zh-Hans": "使用哈希散列生成雨滴效果，支持Time参数驱动动画（0→1循环）。雨滴受重力和风力影响，可平铺。",
-      "en": "Generates rain using hash-distributed particles with Time-driven animation (0→1 loop). Raindrops fall with gravity and wind. Tileable."
+      "zh-Hans": "生成适用于32/64位RPG场景的透明硬边雨水特效，包含深色描边、亮部雨丝、风向倾斜、落地飞溅和循环动画。",
+      "en": "Generates a transparent hard-edge 32/64px RPG rain effect with outlined streaks, bright tips, wind shear, ground splashes, and looping animation."
     },
     "tags": [],
     "author": "BuiltIn",

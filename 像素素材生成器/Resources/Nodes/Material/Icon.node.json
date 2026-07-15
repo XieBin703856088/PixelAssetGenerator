@@ -1,6 +1,6 @@
 {
   "formatVersion": 2,
-  "processorType": null,
+  "processorType": "Icon",
   "identity": {
     "typeName": "Icon",
     "displayName": {
@@ -9,8 +9,8 @@
     },
     "category": "Material",
     "description": {
-      "zh-Hans": "生成游戏UI中常用的像素艺术图标（心形、星形、齿轮、地图标记）。每个图标使用基于SDF的形状合成渲染。",
-      "en": "Generates pixel art icons (heart, star, gear, map marker) commonly used in game UIs. Each icon is rendered using SDF-based shape composition."
+      "zh-Hans": "生成带硬边描边和离散明暗的游戏UI像素图标，支持心形、星形、齿轮、地图标记、奖杯和骷髅。",
+      "en": "Generates hard-outlined game UI pixel icons with discrete shading for hearts, stars, gears, map markers, trophies, and skulls."
     },
     "tags": [],
     "author": "BuiltIn",

@@ -75,6 +75,24 @@ namespace PixelAssetGenerator
         }
 
         /// <summary>
+        /// Use the source port colour so mixed image/value/particle graphs remain easy to scan.
+        /// </summary>
+        public Brush WireBrush
+        {
+            get
+            {
+                if (StartNode != null
+                    && StartPortIndex >= 0
+                    && StartPortIndex < StartNode.OutputPorts.Count)
+                {
+                    return StartNode.OutputPorts[StartPortIndex].FillBrush;
+                }
+
+                return Brushes.DeepSkyBlue;
+            }
+        }
+
+        /// <summary>
         /// Cubic B��zier geometry for the connection wire.
         /// Control points extend horizontally from each port so the curve
         /// leaves/arrives tangent to the port direction.
@@ -84,8 +102,12 @@ namespace PixelAssetGenerator
             get
             {
                 double dx = EndX - StartX;
-                // Minimum tangent length so short connections still look smooth.
-                double tangent = Math.Max(Math.Abs(dx) * 0.5, 60);
+                double dy = EndY - StartY;
+                // Keep short links soft without letting long or backwards links form huge loops.
+                double tangent = Math.Clamp(
+                    Math.Abs(dx) * 0.45 + Math.Abs(dy) * 0.12,
+                    48,
+                    180);
 
                 var figure = new PathFigure
                 {

@@ -153,6 +153,7 @@ public sealed class NodeGraphController
             var nd = new ProjectFileService.NodeData
             {
                 Title = node.Title,
+                TypeName = node.TypeName,
                 X = node.X,
                 Y = node.Y,
                 Kind = node.Kind,
@@ -169,6 +170,8 @@ public sealed class NodeGraphController
                         Name = p.Name, Kind = p.Kind,
                         NumberValue = p.NumberValue, IntValue = p.IntValue,
                         BoolValue = p.BoolValue, SelectedChoice = p.SelectedChoice,
+                        TextValue = p.TextValue,
+                        ColorArgb = PackColor(p.ColorValue),
                         PointListData = new List<Point>(p.PointListValue)
                     });
                 }
@@ -201,6 +204,8 @@ public sealed class NodeGraphController
     {
         var result = new List<NodeViewModel>();
         if (data == null || data.Nodes.Count == 0) return result;
+
+        RecordUndoSnapshot?.Invoke();
 
         Point viewport;
         try { viewport = getMousePosition(); } catch { viewport = new Point(0, 0); }
@@ -239,13 +244,24 @@ public sealed class NodeGraphController
             node.Parameters.Clear();
             if (node.Kind != NodeLibraryItemKind.Tile)
             {
+                var definitions = GraphNodeRegistry.Create(node.RegistryKey)?.Parameters;
                 foreach (var pd in nd.Parameters)
                 {
-                    var param = new NodeParameterViewModel(pd.Name, pd.Kind, 0, 1, 0.01, new List<string>());
+                    var definition = definitions?.FirstOrDefault(item =>
+                        string.Equals(item.Name, pd.Name, StringComparison.Ordinal));
+                    var param = definition?.CreateViewModel()
+                        ?? new NodeParameterViewModel(pd.Name, pd.Kind, 0, 1, 0.01, new List<string>());
                     param.NumberValue = pd.NumberValue;
                     param.IntValue = pd.IntValue;
                     param.BoolValue = pd.BoolValue;
                     param.SelectedChoice = pd.SelectedChoice;
+                    param.TextValue = pd.TextValue;
+                    if (pd.ColorArgb is uint argb)
+                    {
+                        param.ColorValue = System.Windows.Media.Color.FromArgb(
+                            (byte)(argb >> 24), (byte)(argb >> 16),
+                            (byte)(argb >> 8), (byte)argb);
+                    }
                     if (pd.PointListData.Count > 0)
                         param.PointListValue = new ObservableCollection<Point>(pd.PointListData);
                     node.Parameters.Add(param);
@@ -263,9 +279,9 @@ public sealed class NodeGraphController
                 if (proto != null)
                 {
                     foreach (var port in proto.InputPorts)
-                        node.InputPorts.Add(new NodePortViewModel(port.Name, MapGraphPortType(port.Type), false));
+                        node.InputPorts.Add(new NodePortViewModel(port.Name, MapGraphPortType(port.Type), false, port.StableKey));
                     foreach (var port in proto.OutputPorts)
-                        node.OutputPorts.Add(new NodePortViewModel(port.Name, MapGraphPortType(port.Type), true));
+                        node.OutputPorts.Add(new NodePortViewModel(port.Name, MapGraphPortType(port.Type), true, port.StableKey));
                 }
             }
 
@@ -308,13 +324,23 @@ public sealed class NodeGraphController
         copy.TileProperties = source.TileProperties?.Clone();
 
         foreach (var p in source.InputPorts)
-            copy.InputPorts.Add(new NodePortViewModel(p.Name, p.Type, p.IsOutput));
+            copy.InputPorts.Add(new NodePortViewModel(p.Name, p.Type, p.IsOutput, p.Key));
         foreach (var p in source.OutputPorts)
-            copy.OutputPorts.Add(new NodePortViewModel(p.Name, p.Type, p.IsOutput));
+            copy.OutputPorts.Add(new NodePortViewModel(p.Name, p.Type, p.IsOutput, p.Key));
 
         foreach (var p in source.Parameters)
         {
-            var newParam = new NodeParameterViewModel(p.Name, p.Kind, p.Min, p.Max, p.Step, p.Choices.ToList());
+            var newParam = new NodeParameterViewModel(
+                p.Name, p.DisplayName, p.Kind, p.Min, p.Max, p.Step,
+                p.Choices.ToList(), p.DisplayChoices.ToList())
+            {
+                DefaultNumberValue = p.DefaultNumberValue,
+                DefaultIntValue = p.DefaultIntValue,
+                DefaultBoolValue = p.DefaultBoolValue,
+                DefaultChoiceValue = p.DefaultChoiceValue,
+                DefaultColorValue = p.DefaultColorValue,
+                DefaultTextValue = p.DefaultTextValue
+            };
             // Preserve display choices for Choice parameters so they retain the current locale
             if (p.Kind == NodeParameterKind.Choice && p.DisplayChoices.Count > 0)
             {
@@ -330,6 +356,7 @@ public sealed class NodeGraphController
                 case NodeParameterKind.Boolean: newParam.BoolValue = p.BoolValue; break;
                 case NodeParameterKind.Choice:  newParam.SelectedChoice = p.SelectedChoice; break;
                 case NodeParameterKind.Color:   newParam.ColorValue = p.ColorValue; break;
+                case NodeParameterKind.Text:    newParam.TextValue = p.TextValue; break;
                 case NodeParameterKind.PointList:
                     newParam.PointListValue = new ObservableCollection<Point>(p.PointListValue); break;
                 default: newParam.NumberValue = p.NumberValue; break;
@@ -360,7 +387,7 @@ public sealed class NodeGraphController
             var node = selectedNodes[i];
             var nd = new ProjectFileService.NodeData
             {
-                Title = node.Title, X = node.X, Y = node.Y,
+                Title = node.Title, TypeName = node.TypeName, X = node.X, Y = node.Y,
                 Kind = node.Kind, TileType = node.TileType,
                 Properties = node.TileProperties?.Clone() ?? new TileProperties()
             };
@@ -373,6 +400,8 @@ public sealed class NodeGraphController
                         Name = p.Name, Kind = p.Kind,
                         NumberValue = p.NumberValue, IntValue = p.IntValue,
                         BoolValue = p.BoolValue, SelectedChoice = p.SelectedChoice,
+                        TextValue = p.TextValue,
+                        ColorArgb = PackColor(p.ColorValue),
                         PointListData = new List<Point>(p.PointListValue)
                     });
             }
@@ -387,6 +416,9 @@ public sealed class NodeGraphController
 
         return data;
     }
+
+    private static uint PackColor(System.Windows.Media.Color color)
+        => ((uint)color.A << 24) | ((uint)color.R << 16) | ((uint)color.G << 8) | color.B;
 
     // ─── Connection management ───────────────────────────────────────
 
@@ -413,6 +445,16 @@ public sealed class NodeGraphController
     public bool CanAcceptConnection(NodeViewModel startNode, int startPortIndex, NodeViewModel endNode, int endPortIndex, out string? rejectionMessage)
     {
         rejectionMessage = null;
+        if (ReferenceEquals(startNode, endNode))
+        {
+            rejectionMessage = "A node cannot connect to itself.";
+            return false;
+        }
+        if (startPortIndex < 0 || startPortIndex >= startNode.OutputPorts.Count)
+        {
+            rejectionMessage = "Invalid source output port";
+            return false;
+        }
         if (endPortIndex < 0 || endPortIndex >= endNode.InputPorts.Count)
         {
             rejectionMessage = "Invalid target input port";
@@ -442,6 +484,20 @@ public sealed class NodeGraphController
                 rejectionMessage = "This node can only connect to one input port at a time.";
                 return false;
             }
+        }
+
+        var existingEdges = _connections
+            .Where(connection => !connection.IsPreview
+                && connection.StartNode != null && connection.EndNode != null
+                && !(ReferenceEquals(connection.EndNode, endNode) && connection.EndPortIndex == endPortIndex))
+            .Select(connection => new GraphConnection(
+                connection.StartNode!.Id, connection.StartPortIndex,
+                connection.EndNode!.Id, connection.EndPortIndex));
+        var candidate = new GraphConnection(startNode.Id, startPortIndex, endNode.Id, endPortIndex);
+        if (GraphValidator.WouldCreateCycle(_nodes.Select(node => node.Id), existingEdges, candidate))
+        {
+            rejectionMessage = "This connection would create a circular dependency.";
+            return false;
         }
 
         if (endNode.TileType != TileType.Grass || !string.Equals(inputPort.Name, GrassCustomFlowerPortName, StringComparison.Ordinal))
@@ -519,6 +575,7 @@ public sealed class NodeGraphController
         for (var i = 0; i < existing.Count; i++)
         {
             if (!string.Equals(existing[i].Name, desired[i].Name, StringComparison.Ordinal) ||
+                !string.Equals(existing[i].Key, desired[i].Key, StringComparison.Ordinal) ||
                 existing[i].Type != desired[i].Type || existing[i].IsOutput != desired[i].IsOutput)
                 return false;
         }
@@ -555,17 +612,30 @@ public sealed class NodeGraphController
         GraphPortType.Float => PortValueType.Float,
         GraphPortType.Color => PortValueType.Color,
         GraphPortType.Any   => PortValueType.Any,
+        GraphPortType.Particle => PortValueType.Particle,
         _                   => PortValueType.Float
     };
 
     public static bool ArePortTypesCompatible(PortValueType outputType, PortValueType inputType)
     {
-        if (inputType == PortValueType.Any || outputType == inputType) return true;
+        return GraphValidator.AreCompatible(MapPortValueType(outputType), MapPortValueType(inputType));
+        /*if (inputType == PortValueType.Any || outputType == inputType) return true;
         // Image/Tile can connect to Mask — mask blending reads the R channel
         if (outputType is PortValueType.Image or PortValueType.Tile)
             return inputType is PortValueType.Image or PortValueType.Tile or PortValueType.Mask;
-        return false;
+        return false;*/
     }
+
+    public static GraphPortType MapPortValueType(PortValueType portType) => portType switch
+    {
+        PortValueType.Image or PortValueType.Tile => GraphPortType.Image,
+        PortValueType.Mask => GraphPortType.Mask,
+        PortValueType.Color => GraphPortType.Color,
+        PortValueType.Any => GraphPortType.Any,
+        PortValueType.Particle => GraphPortType.Particle,
+        PortValueType.Float or PortValueType.Integer or PortValueType.Boolean => GraphPortType.Float,
+        _ => GraphPortType.Any
+    };
 
     public static bool IsGraphPortTypeCompatible(PortValueType outputType, GraphPortType inputType)
     {

@@ -7,58 +7,12 @@
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize"
         ShowInTaskbar="False"
-        Background="{DynamicResource PanelBackground}"
+        Background="{DynamicResource WindowBackground}"
         Foreground="{DynamicResource PrimaryText}"
-        FontFamily="Segoe UI"
+        FontFamily="{DynamicResource AppFontFamily}"
         Loaded="Window_Loaded">
 
-    <Window.Resources>
-        <Style TargetType="TextBox">
-            <Setter Property="Background" Value="{DynamicResource ControlBackground}" />
-            <Setter Property="Foreground" Value="{DynamicResource PrimaryText}" />
-            <Setter Property="BorderBrush" Value="{DynamicResource ControlBorder}" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="Padding" Value="4,2" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="TextBox">
-                        <Border Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="4">
-                            <ScrollViewer x:Name="PART_ContentHost"
-                                          Margin="{TemplateBinding Padding}"
-                                          VerticalAlignment="Center" />
-                        </Border>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-        <Style TargetType="Button">
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="Bd"
-                                Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="4">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bd" Property="Opacity" Value="0.85" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-    </Window.Resources>
-
-    <Grid Margin="16">
+    <Grid Margin="20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
@@ -69,10 +23,12 @@
 
         <!-- ===== 色环 + SV 方块 ===== -->
         <Border Grid.Row="0"
-                Background="{DynamicResource WindowBackground}"
-                CornerRadius="6"
-                Padding="12"
-                Margin="0,0,0,12"
+                Background="{DynamicResource PanelBackground}"
+                BorderBrush="{DynamicResource PanelBorder}"
+                BorderThickness="1"
+                CornerRadius="12"
+                Padding="14"
+                Margin="0,0,0,16"
                 HorizontalAlignment="Center">
             <Canvas x:Name="WheelCanvas"
                     Width="280" Height="280"
@@ -151,7 +107,7 @@
                            Foreground="{DynamicResource MutedText}"
                            Margin="0,0,0,3" />
                 <TextBox x:Name="HexTextBox"
-                         Height="28"
+                          MinHeight="36"
                          FontSize="13"
                          FontFamily="Consolas"
                          VerticalContentAlignment="Center"
@@ -172,7 +128,7 @@
             </Grid.ColumnDefinitions>
             <StackPanel Grid.Column="0">
                 <TextBlock Text="R" FontSize="10" Foreground="#FF6B6B" Margin="0,0,0,2" />
-                <TextBox x:Name="RTextBox" Height="26" FontSize="11"
+                <TextBox x:Name="RTextBox" MinHeight="34" FontSize="12"
                          VerticalContentAlignment="Center"
                          HorizontalContentAlignment="Center"
                          KeyDown="RGBTextBox_KeyDown"
@@ -180,7 +136,7 @@
             </StackPanel>
             <StackPanel Grid.Column="2">
                 <TextBlock Text="G" FontSize="10" Foreground="#6BFF6B" Margin="0,0,0,2" />
-                <TextBox x:Name="GTextBox" Height="26" FontSize="11"
+                <TextBox x:Name="GTextBox" MinHeight="34" FontSize="12"
                          VerticalContentAlignment="Center"
                          HorizontalContentAlignment="Center"
                          KeyDown="RGBTextBox_KeyDown"
@@ -188,7 +144,7 @@
             </StackPanel>
             <StackPanel Grid.Column="4">
                 <TextBlock Text="B" FontSize="10" Foreground="#6B9FFF" Margin="0,0,0,2" />
-                <TextBox x:Name="BTextBox" Height="26" FontSize="11"
+                <TextBox x:Name="BTextBox" MinHeight="34" FontSize="12"
                          VerticalContentAlignment="Center"
                          HorizontalContentAlignment="Center"
                          KeyDown="RGBTextBox_KeyDown"
@@ -209,7 +165,7 @@
                 <TextBlock Text="H°" FontSize="10"
                            Foreground="{DynamicResource MutedText}"
                            Margin="0,0,0,2" />
-                <TextBox x:Name="HTextBox" Height="26" FontSize="11"
+                <TextBox x:Name="HTextBox" MinHeight="34" FontSize="12"
                          VerticalContentAlignment="Center"
                          HorizontalContentAlignment="Center"
                          KeyDown="HSVTextBox_KeyDown"
@@ -219,7 +175,7 @@
                 <TextBlock Text="S%" FontSize="10"
                            Foreground="{DynamicResource MutedText}"
                            Margin="0,0,0,2" />
-                <TextBox x:Name="STextBox" Height="26" FontSize="11"
+                <TextBox x:Name="STextBox" MinHeight="34" FontSize="12"
                          VerticalContentAlignment="Center"
                          HorizontalContentAlignment="Center"
                          KeyDown="HSVTextBox_KeyDown"
@@ -229,7 +185,7 @@
                 <TextBlock Text="V%" FontSize="10"
                            Foreground="{DynamicResource MutedText}"
                            Margin="0,0,0,2" />
-                <TextBox x:Name="VTextBox" Height="26" FontSize="11"
+                <TextBox x:Name="VTextBox" MinHeight="34" FontSize="12"
                          VerticalContentAlignment="Center"
                          HorizontalContentAlignment="Center"
                          KeyDown="HSVTextBox_KeyDown"
@@ -239,16 +195,11 @@
 
         <!-- ===== 按钮 ===== -->
         <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right">
-            <Button Content="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[ColorWheel_Cancel]}" Width="72" Height="30" Margin="0,0,8,0"
-                    Click="Cancel_Click"
-                    Background="{DynamicResource ControlBackground}"
-                    Foreground="{DynamicResource PrimaryText}"
-                    BorderBrush="{DynamicResource ControlBorder}" />
-            <Button Content="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[ColorWheel_OK]}" Width="72" Height="30"
+            <Button Content="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[ColorWheel_Cancel]}" MinWidth="96" Margin="0,0,8,0"
+                    Click="Cancel_Click" />
+            <Button Content="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[ColorWheel_OK]}" MinWidth="96"
                     Click="Ok_Click"
-                    Background="{DynamicResource Accent}"
-                    Foreground="{DynamicResource AccentForeground}"
-                    BorderBrush="{DynamicResource Accent}" />
+                    Style="{StaticResource AccentButton}" />
         </StackPanel>
     </Grid>
 </Window>

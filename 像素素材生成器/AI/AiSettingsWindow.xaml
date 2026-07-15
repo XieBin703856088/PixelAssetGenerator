@@ -3,9 +3,9 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:loc="clr-namespace:PixelAssetGenerator.Services.Localization"
         xmlns:local="clr-namespace:PixelAssetGenerator"
-        Title="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[AI_SettingsTitle]}" Width="760" Height="640"
+        Title="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[AI_SettingsTitle]}" Width="860" Height="720" MinWidth="780" MinHeight="600"
         WindowStartupLocation="CenterOwner"
-        ResizeMode="NoResize"
+        ResizeMode="CanResize"
         Background="{DynamicResource WindowBackground}"
         Foreground="{DynamicResource PrimaryText}">
 
@@ -14,124 +14,9 @@
             <local:BoolToToggleBrushConverter x:Key="BoolToBrushConverter" />
             <local:BoolToToggleAlignmentConverter x:Key="BoolToAlignmentConverter" />
 
-            <!-- ── Horizontal Slider style (for Temperature/ContextLimit) ── -->
-            <Style TargetType="Slider">
-                <Setter Property="Foreground" Value="{DynamicResource Accent}" />
-                <Setter Property="IsMoveToPointEnabled" Value="True" />
-                <Setter Property="SmallChange" Value="0.01" />
-                <Setter Property="LargeChange" Value="0.05" />
-                <Setter Property="BorderThickness" Value="0" />
-                <Setter Property="Height" Value="22" />
-                <Setter Property="IsHitTestVisible" Value="True" />
+            <!-- 使用共享滑块模板，确保滑块、轨道和点击区域完全对齐。 -->
+            <Style TargetType="Slider" BasedOn="{StaticResource {x:Type Slider}}">
                 <EventSetter Event="PreviewMouseWheel" Handler="Slider_PreviewMouseWheel" />
-                <Setter Property="Template">
-                    <Setter.Value>
-                        <ControlTemplate TargetType="Slider">
-                            <Grid>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" MinHeight="20" />
-                                    <RowDefinition Height="Auto" />
-                                </Grid.RowDefinitions>
-                                <TickBar x:Name="TopTick" Grid.Row="0" Visibility="Collapsed" />
-
-                                <!-- 轨道 -->
-                                <Border x:Name="TrackBackground"
-                                        Grid.Row="1"
-                                        Height="6"
-                                        Margin="8,0"
-                                        CornerRadius="3"
-                                        Background="{DynamicResource ControlBackground}"
-                                        BorderThickness="1"
-                                        BorderBrush="{DynamicResource ControlBorder}">
-                                    <Border x:Name="SelectionRange"
-                                            CornerRadius="3"
-                                            HorizontalAlignment="Left"
-                                            Margin="0"
-                                            Background="{TemplateBinding Foreground}" />
-                                </Border>
-
-                                <Track x:Name="PART_Track" Grid.Row="1">
-                                    <Track.Thumb>
-                                        <Thumb x:Name="Thumb"
-                                               Width="18" Height="18"
-                                               Cursor="Hand">
-                                            <Thumb.Style>
-                                                <Style TargetType="Thumb">
-                                                    <Setter Property="Template">
-                                                        <Setter.Value>
-                                                            <ControlTemplate TargetType="Thumb">
-                                                                <Grid>
-                                                                    <Ellipse x:Name="Glow"
-                                                                             Width="28" Height="28"
-                                                                             Fill="{DynamicResource Accent}"
-                                                                             Opacity="0" />
-                                                                    <Ellipse x:Name="OuterRing"
-                                                                             Width="18" Height="18"
-                                                                             Fill="{DynamicResource Accent}" />
-                                                                    <Ellipse x:Name="InnerDot"
-                                                                             Width="8" Height="8"
-                                                                             Fill="{DynamicResource AccentForeground}" />
-                                                                </Grid>
-                                                                <ControlTemplate.Triggers>
-                                                                    <Trigger Property="IsMouseOver" Value="True">
-                                                                        <Trigger.EnterActions>
-                                                                            <BeginStoryboard>
-                                                                                <Storyboard>
-                                                                                    <DoubleAnimation Storyboard.TargetName="Glow" Storyboard.TargetProperty="Opacity" To="0.2" Duration="0:0:0.15" />
-                                                                                    <DoubleAnimation Storyboard.TargetName="OuterRing" Storyboard.TargetProperty="Width" To="20" Duration="0:0:0.15" />
-                                                                                    <DoubleAnimation Storyboard.TargetName="OuterRing" Storyboard.TargetProperty="Height" To="20" Duration="0:0:0.15" />
-                                                                                </Storyboard>
-                                                                            </BeginStoryboard>
-                                                                        </Trigger.EnterActions>
-                                                                        <Trigger.ExitActions>
-                                                                            <BeginStoryboard>
-                                                                                <Storyboard>
-                                                                                    <DoubleAnimation Storyboard.TargetName="Glow" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.15" />
-                                                                                    <DoubleAnimation Storyboard.TargetName="OuterRing" Storyboard.TargetProperty="Width" To="18" Duration="0:0:0.15" />
-                                                                                    <DoubleAnimation Storyboard.TargetName="OuterRing" Storyboard.TargetProperty="Height" To="18" Duration="0:0:0.15" />
-                                                                                </Storyboard>
-                                                                            </BeginStoryboard>
-                                                                        </Trigger.ExitActions>
-                                                                    </Trigger>
-                                                                    <Trigger Property="IsDragging" Value="True">
-                                                                        <Trigger.EnterActions>
-                                                                            <BeginStoryboard>
-                                                                                <Storyboard>
-                                                                                    <DoubleAnimation Storyboard.TargetName="Glow" Storyboard.TargetProperty="Opacity" To="0.35" Duration="0:0:0.1" />
-                                                                                    <DoubleAnimation Storyboard.TargetName="OuterRing" Storyboard.TargetProperty="Width" To="22" Duration="0:0:0.1" />
-                                                                                    <DoubleAnimation Storyboard.TargetName="OuterRing" Storyboard.TargetProperty="Height" To="22" Duration="0:0:0.1" />
-                                                                                    <DoubleAnimation Storyboard.TargetName="InnerDot" Storyboard.TargetProperty="Width" To="10" Duration="0:0:0.1" />
-                                                                                    <DoubleAnimation Storyboard.TargetName="InnerDot" Storyboard.TargetProperty="Height" To="10" Duration="0:0:0.1" />
-                                                                                </Storyboard>
-                                                                            </BeginStoryboard>
-                                                                        </Trigger.EnterActions>
-                                                                        <Trigger.ExitActions>
-                                                                            <BeginStoryboard>
-                                                                                <Storyboard>
-                                                                                    <DoubleAnimation Storyboard.TargetName="Glow" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.15" />
-                                                                                    <DoubleAnimation Storyboard.TargetName="OuterRing" Storyboard.TargetProperty="Width" To="18" Duration="0:0:0.15" />
-                                                                                    <DoubleAnimation Storyboard.TargetName="OuterRing" Storyboard.TargetProperty="Height" To="18" Duration="0:0:0.15" />
-                                                                                    <DoubleAnimation Storyboard.TargetName="InnerDot" Storyboard.TargetProperty="Width" To="8" Duration="0:0:0.15" />
-                                                                                    <DoubleAnimation Storyboard.TargetName="InnerDot" Storyboard.TargetProperty="Height" To="8" Duration="0:0:0.15" />
-                                                                                </Storyboard>
-                                                                            </BeginStoryboard>
-                                                                        </Trigger.ExitActions>
-                                                                    </Trigger>
-                                                                </ControlTemplate.Triggers>
-                                                            </ControlTemplate>
-                                                        </Setter.Value>
-                                                    </Setter>
-                                                </Style>
-                                            </Thumb.Style>
-                                        </Thumb>
-                                    </Track.Thumb>
-                                </Track>
-                                <TickBar x:Name="BottomTick" Grid.Row="2" Visibility="Collapsed" />
-                            </Grid>
-                        </ControlTemplate>
-                    </Setter.Value>
-                </Setter>
             </Style>
 
             <!-- ── Vertical Scroll Slider Style (side rail scroll thumb) ── -->
@@ -239,24 +124,16 @@
             </Style>
 
             <!-- ── Inputs ── -->
-            <Style x:Key="FlatInput" TargetType="TextBox">
-                <Setter Property="Background" Value="{DynamicResource ControlBackground}" />
-                <Setter Property="Foreground" Value="{DynamicResource PrimaryText}" />
-                <Setter Property="BorderBrush" Value="{DynamicResource ControlBorder}" />
-                <Setter Property="BorderThickness" Value="1" />
+            <Style x:Key="FlatInput" TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
                 <Setter Property="Padding" Value="8,6" />
                 <Setter Property="FontSize" Value="12" />
-                <Setter Property="MinHeight" Value="30" />
+                <Setter Property="MinHeight" Value="36" />
             </Style>
 
-            <Style x:Key="FlatPassword" TargetType="PasswordBox">
-                <Setter Property="Background" Value="{DynamicResource ControlBackground}" />
-                <Setter Property="Foreground" Value="{DynamicResource PrimaryText}" />
-                <Setter Property="BorderBrush" Value="{DynamicResource ControlBorder}" />
-                <Setter Property="BorderThickness" Value="1" />
+            <Style x:Key="FlatPassword" TargetType="PasswordBox" BasedOn="{StaticResource {x:Type PasswordBox}}">
                 <Setter Property="Padding" Value="8,6" />
                 <Setter Property="FontSize" Value="12" />
-                <Setter Property="MinHeight" Value="30" />
+                <Setter Property="MinHeight" Value="36" />
             </Style>
 
             <!-- ── Section Card ── -->
@@ -264,8 +141,8 @@
                 <Setter Property="Background" Value="{DynamicResource PanelBackground}" />
                 <Setter Property="BorderBrush" Value="{DynamicResource PanelBorder}" />
                 <Setter Property="BorderThickness" Value="1" />
-                <Setter Property="CornerRadius" Value="8" />
-                <Setter Property="Padding" Value="16" />
+                <Setter Property="CornerRadius" Value="12" />
+                <Setter Property="Padding" Value="18" />
                 <Setter Property="Margin" Value="0,0,0,12" />
             </Style>
 
@@ -275,12 +152,12 @@
                 <Setter Property="Margin" Value="0,0,0,2" />
                 <Setter Property="Padding" Value="10,0" />
                 <Setter Property="Cursor" Value="Hand" />
-                <Setter Property="CornerRadius" Value="6" />
+                <Setter Property="CornerRadius" Value="7" />
             </Style>
 
             <!-- ── Section title ── -->
             <Style x:Key="SectionTitle" TargetType="TextBlock">
-                <Setter Property="FontSize" Value="13" />
+                <Setter Property="FontSize" Value="14" />
                 <Setter Property="FontWeight" Value="SemiBold" />
                 <Setter Property="Margin" Value="0,0,0,12" />
             </Style>
@@ -301,11 +178,7 @@
         </Grid.RowDefinitions>
 
         <!-- ══════ 顶栏 ══════ -->
-        <Border Grid.Row="0"
-                Background="{DynamicResource PanelBackground}"
-                BorderBrush="{DynamicResource PanelBorder}"
-                BorderThickness="0,0,0,1"
-                Padding="16,10,16,10">
+        <Border Grid.Row="0" Style="{StaticResource DialogHeader}">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
@@ -315,18 +188,18 @@
 
                 <TextBlock Grid.Column="0"
                            Text="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[AI_SettingsHeader]}"
-                           FontSize="15" FontWeight="Bold"
+                           Style="{StaticResource WindowTitleText}"
                            VerticalAlignment="Center" />
 
                 <StackPanel Grid.Column="2" Orientation="Horizontal">
                     <Button x:Name="CancelButton"
                             Content="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[AI_Cancel]}"
-                            Padding="14,5" MinWidth="70" MinHeight="26"
+                            Padding="16,6" MinWidth="88"
                             Margin="0,0,8,0"
                             Click="CancelButton_Click" />
                     <Button x:Name="OkButton"
                             Content="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[AI_Save]}"
-                            Padding="14,5" MinWidth="70" MinHeight="26"
+                            Padding="16,6" MinWidth="88"
                             IsDefault="True"
                             Click="OkButton_Click"
                             Style="{DynamicResource AccentButton}" />
@@ -337,7 +210,7 @@
         <!-- ══════ 主体：左（配置列表）+ 分割 + 右（带侧边滚动滑块的内容区） ══════ -->
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="180" />
+                <ColumnDefinition Width="210" />
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
@@ -364,7 +237,7 @@
                                    FontSize="12" FontWeight="SemiBold"
                                    VerticalAlignment="Center" />
                         <Button Grid.Column="1" x:Name="AddProfileButton"
-                                Content="＋" Width="24" Height="24" FontSize="13"
+                                Content="＋" Width="32" Height="32" FontSize="14"
                                 Padding="0" FontWeight="Bold"
                                 ToolTip="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[AI_NewConfig]}"
                                 Click="AddProfileButton_Click"
@@ -399,7 +272,7 @@
                 <ScrollViewer x:Name="SettingsScrollViewer"
                               Grid.Column="0"
                               VerticalScrollBarVisibility="Hidden"
-                              Padding="16,12,4,16"
+                              Padding="20,16,6,20"
                               BorderThickness="0"
                               Background="Transparent">
                     <StackPanel>
@@ -422,7 +295,7 @@
 
                                 <TextBox Grid.Column="1" x:Name="ProfileNameBox"
                                          FontSize="12" FontWeight="SemiBold"
-                                         MinHeight="28"
+                                         MinHeight="36"
                                          Background="{DynamicResource ControlBackground}"
                                          Foreground="{DynamicResource PrimaryText}"
                                          BorderBrush="{DynamicResource ControlBorder}"
@@ -431,14 +304,14 @@
 
                                 <Button Grid.Column="2" x:Name="DuplicateProfileButton"
                                         Content="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[AI_Duplicate]}" FontSize="10.5"
-                                        Padding="8,3" MinHeight="26"
+                                        Padding="10,5" MinHeight="34"
                                         Margin="6,0,4,0"
                                         ToolTip="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[AI_CopyConfig]}"
                                         Click="DuplicateProfileButton_Click" />
 
                                 <Button Grid.Column="3" x:Name="DeleteProfileButton"
                                         Content="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[AI_DeleteProfile]}" FontSize="10.5"
-                                        Padding="8,3" MinHeight="26"
+                                        Padding="10,5" MinHeight="34"
                                         ToolTip="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[AI_DeleteConfig]}"
                                         Click="DeleteProfileButton_Click" />
                             </Grid>
@@ -455,9 +328,9 @@
                                         <ColumnDefinition Width="*" />
                                     </Grid.ColumnDefinitions>
 
-                                    <StackPanel Grid.Column="0" Margin="0,0,6,0">
+                                    <StackPanel Grid.Column="0" Grid.ColumnSpan="2">
                                         <TextBlock Style="{StaticResource SectionLabel}" Text="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[AI_APIProvider]}" />
-                                        <ComboBox x:Name="ProviderCombo" SelectedIndex="0" MinHeight="30"
+                                        <ComboBox x:Name="ProviderCombo" SelectedIndex="0" MinHeight="36"
                                                   Background="{DynamicResource ControlBackground}"
                                                   Foreground="{DynamicResource PrimaryText}"
                                                   BorderBrush="{DynamicResource ControlBorder}"
@@ -476,7 +349,7 @@
                                                 <ColumnDefinition Width="Auto" />
                                             </Grid.ColumnDefinitions>
                                             <ComboBox Grid.Column="0" x:Name="ModelCombo"
-                                                      MinHeight="30" IsEditable="True"
+                                                      MinHeight="36" IsEditable="True"
                                                       MaxDropDownHeight="300"
                                                       Background="{DynamicResource ControlBackground}"
                                                       Foreground="{DynamicResource PrimaryText}"
@@ -484,7 +357,7 @@
                                                       SelectionChanged="ModelCombo_SelectionChanged"
                                                       LostFocus="ModelCombo_LostFocus" />
                                             <Button Grid.Column="1" x:Name="AddModelButton"
-                                                    Content="＋" Width="24" Height="24" FontSize="13"
+                                                    Content="＋" Width="34" Height="34" FontSize="14"
                                                     Padding="0" Margin="4,0,0,0" FontWeight="Bold"
                                                     ToolTip="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[AI_AddModelToQuickSwitch]}"
                                                     Click="AddModelButton_Click"
@@ -576,7 +449,7 @@
 
                                     <StackPanel Grid.Column="0" Margin="0,0,6,0">
                                         <TextBlock Style="{StaticResource SectionLabel}" Text="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[AI_ReasoningEffort]}" />
-                                        <ComboBox x:Name="ReasoningEffortCombo" MinHeight="30"
+                                        <ComboBox x:Name="ReasoningEffortCombo" MinHeight="36"
                                                   Background="{DynamicResource ControlBackground}"
                                                   Foreground="{DynamicResource PrimaryText}"
                                                   BorderBrush="{DynamicResource ControlBorder}"
@@ -590,10 +463,6 @@
                                         </ComboBox>
                                     </StackPanel>
 
-                                    <StackPanel Grid.Column="1" Margin="6,0,0,0">
-                                        <TextBlock Style="{StaticResource SectionLabel}" Text="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[AI_MaxTokens]}" />
-                                        <TextBox Text="65536" Style="{StaticResource FlatInput}" />
-                                    </StackPanel>
                                 </Grid>
 
                                 <Grid Margin="0,12,0,0">
@@ -639,7 +508,7 @@
                                 </Grid.ColumnDefinitions>
 
                                 <Button Grid.Column="0" x:Name="TestButton"
-                                        Content="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[AI_TestConnection]}" Padding="14,6" MinHeight="30"
+                                        Content="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[AI_TestConnection]}" Padding="16,7" MinHeight="36"
                                         Click="TestButton_Click"
                                         Style="{DynamicResource AccentButton}" />
 

@@ -1,0 +1,25 @@
+{
+  "formatVersion": 2,
+  "processorType": "MaterialEffectStackMeta",
+  "identity": {
+    "typeName": "MaterialEffectStackMeta",
+    "displayName": { "zh-Hans": "材质效果栈元节点", "en": "Material Effect Stack Meta" },
+    "category": "Meta",
+    "description": { "zh-Hans": "将裂纹破损与苔藓、腐蚀、潮湿、霜冻、烟熏或积尘组合成可调效果栈。", "en": "Combines crack damage with moss, corrosion, damp, frost, soot or dust as a controllable stack." },
+    "tags": ["meta", "material", "weathering", "damage", "texture"],
+    "author": "BuiltIn", "version": "1.0"
+  },
+  "ports": {
+    "inputs": [{ "name": { "zh-Hans": "基础材质", "en": "Base Material" }, "type": "Image" }],
+    "outputs": [
+      { "name": { "zh-Hans": "材质图像", "en": "Material Image" }, "type": "Image" },
+      { "name": { "zh-Hans": "综合遮罩", "en": "Combined Mask" }, "type": "Mask" }
+    ]
+  },
+  "parameters": [],
+  "ai": {
+    "capabilities": ["meta", "smart-material", "weathering-stack"],
+    "triggers": { "zh-Hans": "材质效果栈, 苔藓遗迹, 腐蚀砖墙, 潮湿地牢, 霜冻石材", "en": "material stack, mossy ruins, corroded brick, damp dungeon, frozen stone" },
+    "suggestedInputs": ["Wall", "Flagstone", "Floor", "Cobblestone"]
+  }
+}

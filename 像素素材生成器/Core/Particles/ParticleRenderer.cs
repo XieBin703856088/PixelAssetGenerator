@@ -9,13 +9,19 @@ namespace PixelAssetGenerator.Core.Particles;
 public sealed class ParticleRenderer
 {
     /// <summary>Particle sprite shape.</summary>
-    public ParticleTextureType TextureType { get; set; } = ParticleTextureType.SoftCircle;
+    public ParticleTextureType TextureType { get; set; } = ParticleTextureType.PixelCircle;
 
     /// <summary>How particles are blended with the background.</summary>
     public ParticleBlendMode BlendMode { get; set; } = ParticleBlendMode.Alpha;
 
     /// <summary>Whether to use soft (anti-aliased) edges.</summary>
-    public bool SoftEdges { get; set; } = true;
+    public bool SoftEdges { get; set; }
+
+    /// <summary>Snaps particle centers/sizes and opacity bands to the pixel grid.</summary>
+    public bool PixelSnap { get; set; } = true;
+
+    /// <summary>Number of discrete opacity levels used by pixel particle textures.</summary>
+    public int AlphaSteps { get; set; } = 4;
 
     /// <summary>Global alpha multiplier applied to all particles.</summary>
     public float GlobalAlpha { get; set; } = 1f;
@@ -42,9 +48,18 @@ public sealed class ParticleRenderer
             if (!p.Active) continue;
 
             var pixelSize = Math.Max(p.Size * Scale * w, 1f);
+            if (PixelSnap)
+                pixelSize = Math.Max(1f, MathF.Round(pixelSize));
             var halfSize = pixelSize * 0.5f;
             var centerX = p.X * w;
             var centerY = p.Y * h;
+            if (PixelSnap)
+            {
+                // Pixel samples live at n + 0.5. Snapping to an integer placed a
+                // one-pixel particle between four samples and could make it vanish.
+                centerX = MathF.Floor(centerX) + 0.5f;
+                centerY = MathF.Floor(centerY) + 0.5f;
+            }
             var rot = p.Rotation;
 
             // Compute bounding box
@@ -83,7 +98,12 @@ public sealed class ParticleRenderer
                     var srcR = texR * p.R;
                     var srcG = texG * p.G;
                     var srcB = texB * p.B;
-                    var srcA = alpha * p.A * globalA;
+                    if (PixelSnap && alpha > 0f)
+                    {
+                        var steps = Math.Clamp(AlphaSteps, 1, 8);
+                        alpha = MathF.Round(alpha * steps) / steps;
+                    }
+                    var srcA = Math.Clamp(alpha * p.A * globalA, 0f, 1f);
 
                     if (srcA <= 0f) continue;
 
@@ -103,12 +123,14 @@ public sealed class ParticleRenderer
                             data[idx] = Math.Min(1f, data[idx] + srcR * srcA);
                             data[idx + 1] = Math.Min(1f, data[idx + 1] + srcG * srcA);
                             data[idx + 2] = Math.Min(1f, data[idx + 2] + srcB * srcA);
+                            data[idx + 3] = Math.Min(1f, data[idx + 3] + srcA);
                             break;
 
                         case ParticleBlendMode.Screen:
                             data[idx] = 1f - (1f - data[idx]) * (1f - srcR * srcA);
                             data[idx + 1] = 1f - (1f - data[idx + 1]) * (1f - srcG * srcA);
                             data[idx + 2] = 1f - (1f - data[idx + 2]) * (1f - srcB * srcA);
+                            data[idx + 3] = Math.Min(1f, data[idx + 3] + srcA);
                             break;
                     }
                 }
@@ -122,6 +144,102 @@ public sealed class ParticleRenderer
 
         switch (TextureType)
         {
+            case ParticleTextureType.PixelCircle:
+            {
+                var ax = MathF.Abs(x);
+                var ay = MathF.Abs(y);
+                var octagon = MathF.Max(ax, ay) + MathF.Min(ax, ay) * 0.42f;
+                if (octagon > 1f) { r = g = b = 0f; return 0f; }
+                r = g = b = 1f;
+                return octagon < 0.58f ? 1f : 0.72f;
+            }
+
+            case ParticleTextureType.SmokePuff:
+            {
+                var d1 = (x + 0.28f) * (x + 0.28f) + (y + 0.02f) * (y + 0.02f);
+                var d2 = (x - 0.27f) * (x - 0.27f) + (y + 0.08f) * (y + 0.08f);
+                var d3 = x * x + (y - 0.28f) * (y - 0.28f);
+                var puff = MathF.Min(d1 / 0.78f, MathF.Min(d2 / 0.74f, d3 / 0.7f));
+                if (puff > 1f) { r = g = b = 0f; return 0f; }
+                r = g = b = 1f;
+                return puff < 0.42f ? 1f : puff < 0.74f ? 0.72f : 0.42f;
+            }
+
+            case ParticleTextureType.Flame:
+            {
+                if (y < -1f || y > 1f) { r = g = b = 0f; return 0f; }
+                var width = 0.22f + (y + 1f) * 0.34f;
+                var flicker = MathF.Sin((y + 1f) * 8f) * 0.07f;
+                if (MathF.Abs(x + flicker) > width) { r = g = b = 0f; return 0f; }
+                r = g = b = 1f;
+                return MathF.Abs(x) < width * 0.45f && y > -0.25f ? 1f : 0.68f;
+            }
+
+            case ParticleTextureType.Spark:
+            {
+                var cross = MathF.Min(MathF.Abs(x) * 0.42f + MathF.Abs(y),
+                    MathF.Abs(x) + MathF.Abs(y) * 0.42f);
+                if (cross > 0.72f) { r = g = b = 0f; return 0f; }
+                r = g = b = 1f;
+                return cross < 0.28f ? 1f : 0.65f;
+            }
+
+            case ParticleTextureType.Streak:
+            {
+                var shape = MathF.Max(MathF.Abs(x) * 2.6f, MathF.Abs(y));
+                if (shape > 1f) { r = g = b = 0f; return 0f; }
+                r = g = b = 1f;
+                return MathF.Abs(x) < 0.16f ? 1f : 0.62f;
+            }
+
+            case ParticleTextureType.RainDrop:
+            {
+                var body = MathF.Abs(x) <= 0.22f && y >= -1f && y <= 0.78f;
+                var tip = y > 0.55f && MathF.Abs(x) <= Math.Max(0f, (1f - y) * 0.5f);
+                if (!body && !tip) { r = g = b = 0f; return 0f; }
+                r = g = b = 1f;
+                return MathF.Abs(x) < 0.1f ? 1f : 0.7f;
+            }
+
+            case ParticleTextureType.Snowflake:
+            {
+                var cross = MathF.Min(MathF.Abs(x), MathF.Abs(y));
+                var diagonal = MathF.Min(MathF.Abs(x - y), MathF.Abs(x + y));
+                var extent = MathF.Max(MathF.Abs(x), MathF.Abs(y));
+                if (extent > 1f || MathF.Min(cross, diagonal * 0.72f) > 0.19f)
+                { r = g = b = 0f; return 0f; }
+                r = g = b = 1f;
+                return extent < 0.28f ? 1f : 0.76f;
+            }
+
+            case ParticleTextureType.Leaf:
+            {
+                var shape = MathF.Abs(y) + MathF.Abs(x) * 0.72f;
+                if (shape > 1f) { r = g = b = 0f; return 0f; }
+                r = g = b = 1f;
+                return MathF.Abs(x) < 0.13f ? 1f : shape < 0.68f ? 0.86f : 0.62f;
+            }
+
+            case ParticleTextureType.Bubble:
+            {
+                var dist = MathF.Sqrt(distSq);
+                var highlight = (x + 0.36f) * (x + 0.36f) + (y + 0.36f) * (y + 0.36f) < 0.055f;
+                if (!highlight && (dist < 0.62f || dist > 1f)) { r = g = b = 0f; return 0f; }
+                r = g = b = 1f;
+                return highlight ? 1f : dist > 0.82f ? 0.82f : 0.48f;
+            }
+
+            case ParticleTextureType.Rune:
+            {
+                var dist = MathF.Sqrt(distSq);
+                var ring = dist >= 0.58f && dist <= 0.88f;
+                var cross = MathF.Min(MathF.Abs(x), MathF.Abs(y)) < 0.13f && dist < 0.68f;
+                var diagonal = MathF.Min(MathF.Abs(x - y), MathF.Abs(x + y)) < 0.12f && dist < 0.54f;
+                if (!ring && !cross && !diagonal) { r = g = b = 0f; return 0f; }
+                r = g = b = 1f;
+                return ring ? 0.72f : 1f;
+            }
+
             case ParticleTextureType.Circle:
                 if (distSq > 1f) { r = g = b = 0; return 0f; }
                 r = g = b = 1f;
@@ -189,6 +307,16 @@ public sealed class ParticleRenderer
 /// <summary>Particle sprite texture shapes.</summary>
 public enum ParticleTextureType
 {
+    PixelCircle,
+    SmokePuff,
+    Flame,
+    Spark,
+    Streak,
+    RainDrop,
+    Snowflake,
+    Leaf,
+    Bubble,
+    Rune,
     Circle,
     SoftCircle,
     Square,

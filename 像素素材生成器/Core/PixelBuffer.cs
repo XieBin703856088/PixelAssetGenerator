@@ -35,6 +35,9 @@ public sealed class PixelBuffer : IDisposable
         PixelBufferPool.Return(this);
     }
 
+    /// <summary>Reactivates an instance that has been exclusively borrowed from the pool.</summary>
+    internal void ResetForReuse() => _disposed = false;
+
     /// <summary>
     /// Creates a buffer filled with a solid color.
     /// </summary>

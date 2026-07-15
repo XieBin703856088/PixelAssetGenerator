@@ -583,8 +583,6 @@ namespace PixelAssetGenerator
             {
                 return;
             }
-            _graphEvaluator.ClearSourceCache();
-
             _pendingShowStatus |= showStatus;
             _previewDebounceTimer.Stop();
 
@@ -1072,11 +1070,8 @@ namespace PixelAssetGenerator
         /// <summary>
         /// Finds the best node to use as the preview target.
         /// In Still mode, returns the selected node itself so users see its output.
-        /// In Animation mode, uses the existing priority logic:
-        ///   1. ParticleRenderNode (if any exists in the graph)
-        ///   2. Output node (if any)
-        ///   3. A node with no outgoing connections (terminal)
-        ///   4. The currently selected node (fallback)
+        /// In Animation mode, resolves only inside the selected workflow so
+        /// independent graphs never steal each other's preview.
         /// </summary>
         private NodeViewModel? FindPreviewTargetNode(NodeViewModel? selected)
         {
@@ -1084,30 +1079,7 @@ namespace PixelAssetGenerator
             if (_previewMode == PreviewMode.Still && selected != null)
                 return selected;
 
-            // Animation mode: following priority logic
-            // Priority 1: ParticleRenderNode — show particles when they exist
-            foreach (var n in Nodes)
-            {
-                if (n.TypeName == "ParticleRender" && IsGraphNode(n))
-                    return n;
-            }
-
-            // Priority 2: Output node
-            var outputNode = GetOutputNode();
-            if (outputNode != null)
-                return outputNode;
-
-            // Priority 3: Terminal node (no outgoing connections)
-            foreach (var n in Nodes)
-            {
-                var hasOutgoing = NodeConnections.Any(c =>
-                    !c.IsPreview && c.StartNode != null && c.StartNode.Id == n.Id);
-                if (!hasOutgoing && IsGraphNode(n))
-                    return n;
-            }
-
-            // Priority 4: Fallback to selected node
-            return selected;
+            return WorkflowPreviewResolver.Resolve(Nodes, NodeConnections, selected, IsGraphNode);
         }
 
         private static BitmapSource TileToGrid(BitmapSource tile, int tileSize, int outputSize)

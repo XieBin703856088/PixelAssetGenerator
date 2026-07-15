@@ -57,6 +57,10 @@ public sealed class ParticleEmitter
     public float ShapeWidth { get; set; } = 0.1f;
     public float ShapeHeight { get; set; } = 0.1f;
 
+    /// <summary>Normalized center of the emission shape.</summary>
+    public float PositionX { get; set; } = 0.5f;
+    public float PositionY { get; set; } = 0.5f;
+
     /// <summary>If true, emit all burst particles at once on first update.</summary>
     public bool OneShot { get; set; }
 
@@ -155,14 +159,14 @@ public sealed class ParticleEmitter
         // Position based on emission shape
         var (px, py) = Shape switch
         {
-            EmissionShape.Point => (0.5f, 0.5f),
-            EmissionShape.Line => (0.5f + (float)_rng.NextDouble() * ShapeWidth - ShapeWidth * 0.5f, 0.5f),
+            EmissionShape.Point => (PositionX, PositionY),
+            EmissionShape.Line => (PositionX + (float)_rng.NextDouble() * ShapeWidth - ShapeWidth * 0.5f, PositionY),
             EmissionShape.Rectangle => (
-                0.5f + (float)_rng.NextDouble() * ShapeWidth - ShapeWidth * 0.5f,
-                0.5f + (float)_rng.NextDouble() * ShapeHeight - ShapeHeight * 0.5f),
-            EmissionShape.Circle => RandomInCircle(0.5f, 0.5f, Math.Min(ShapeWidth, ShapeHeight) * 0.5f),
-            EmissionShape.Ring => RandomOnRing(0.5f, 0.5f, Math.Min(ShapeWidth, ShapeHeight) * 0.5f),
-            _ => (0.5f, 0.5f)
+                PositionX + (float)_rng.NextDouble() * ShapeWidth - ShapeWidth * 0.5f,
+                PositionY + (float)_rng.NextDouble() * ShapeHeight - ShapeHeight * 0.5f),
+            EmissionShape.Circle => RandomInCircle(PositionX, PositionY, Math.Min(ShapeWidth, ShapeHeight) * 0.5f),
+            EmissionShape.Ring => RandomOnRing(PositionX, PositionY, Math.Min(ShapeWidth, ShapeHeight) * 0.5f),
+            _ => (PositionX, PositionY)
         };
 
         // Speed and direction

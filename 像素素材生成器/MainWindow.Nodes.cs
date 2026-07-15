@@ -148,54 +148,11 @@ namespace PixelAssetGenerator
             var target = targetNode ?? SelectedNode;
             if (target == null) return null;
 
-            // Build full graph for connected nodes
-            var instanceMap = new Dictionary<int, GraphNodeInstance>();
-            var instances = new List<GraphNodeInstance>();
-            var graphConnections = new List<GraphConnection>();
-
-            foreach (var node in Nodes)
-            {
-                IGraphNode? graphNode = GraphNodeRegistry.Create(node.RegistryKey);
-                if (graphNode is null && node.TileType != null)
-                {
-                    var tileBuffer = TryRenderTileNodeAsPixelBuffer(node, size);
-                    if (tileBuffer != null)
-                        graphNode = new PixelBufferSourceNode(tileBuffer);
-                }
-                if (graphNode is null)
-                    continue;
-
-                var instance = new GraphNodeInstance(node.Id, graphNode);
-
-                foreach (var param in node.Parameters)
-                {
-                    var value = param.Kind switch
-                    {
-                        NodeParameterKind.Seed => (object)param.IntValue,
-                        NodeParameterKind.Integer => (object)param.IntValue,
-                        NodeParameterKind.Boolean => param.BoolValue,
-                        NodeParameterKind.Choice => param.SelectedChoice ?? string.Empty,
-                        NodeParameterKind.PointList => (object)(System.Collections.Generic.IReadOnlyList<System.Windows.Point>)param.PointListValue.ToArray(),
-                        NodeParameterKind.Color => (object)param.ColorValue,
-                        NodeParameterKind.Text => param.TextValue ?? string.Empty,
-                        _ => (object)param.NumberValue
-                    };
-                    instance.ParameterValues[param.Name] = value;
-                }
-
-                instanceMap[node.Id] = instance;
-                instances.Add(instance);
-            }
-
-            foreach (var conn in NodeConnections.Where(c => !c.IsPreview && c.StartNode != null && c.EndNode != null))
-            {
-                if (instanceMap.ContainsKey(conn.StartNode!.Id) && instanceMap.ContainsKey(conn.EndNode!.Id))
-                {
-                    graphConnections.Add(new GraphConnection(
-                        conn.StartNode!.Id, conn.StartPortIndex,
-                        conn.EndNode!.Id, conn.EndPortIndex));
-                }
-            }
+            using var runtimeSnapshot = _graphEvalService.BuildSnapshot(
+                Nodes.ToList(), NodeConnections.ToList(), size);
+            var instances = runtimeSnapshot.Instances;
+            var instanceMap = runtimeSnapshot.InstanceMap;
+            var graphConnections = runtimeSnapshot.Connections;
 
             if (instances.Count == 0)
                 return null;
@@ -228,6 +185,8 @@ namespace PixelAssetGenerator
                 animFrameCount = _animationService?.FrameCount ?? 1;
             }
 
+            var frameRate = (float)(_animationService?.FrameRate ?? 60d);
+
             var ctx = new PixelGraphContext
             {
                 TileSize = size,
@@ -237,86 +196,54 @@ namespace PixelAssetGenerator
                 AnimationTime = animTime,
                 AnimationFrame = animFrame,
                 AnimationFrameCount = animFrameCount,
-                DeltaTime = _animationService != null ? 1f / (float)(_animationService.FrameRate) : 1f / 60f,
+                DeltaTime = 1f / frameRate,
+                GlobalTime = animFrame.GetValueOrDefault() / frameRate,
             };
 
-            // Use EvaluateAll to get results for all nodes, so particle rendering
-            // can overlay particles onto the ParticleRenderNode output.
-            // During animation playback, skip EvaluateAll since particles are already
-            // simulated by UpdateParticleSimulation — just create output buffers for rendering.
-            Dictionary<int, PixelBuffer>? allResults = null;
             var isAnimating = _animationService?.IsPlaying == true;
-
-            if (isAnimating && !isStillMode)
-            {
-                // Animation playing: skip full graph evaluation, only allocate output buffers
-                // for ParticleRenderNode so RenderParticles can draw onto them.
-                allResults = new Dictionary<int, PixelBuffer>();
-                foreach (var inst in instances)
-                {
-                    if (inst.Node is ParticleRenderNode)
-                    {
-                        var buf = PixelBuffer.CreateSolid(size, size, 0f, 0f, 0f, 0f);
-                        allResults[inst.Id] = buf;
-                    }
-                }
-                // Fallback: if there's a target node that's not a particle node, evaluate normally
-                if (allResults.Count == 0)
-                {
-                    allResults = _graphEvaluator.EvaluateAll(instances, graphConnections, ctx);
-                }
-            }
-            else
-            {
-                allResults = _graphEvaluator.EvaluateAll(instances, graphConnections, ctx);
-            }
-
-            if (_particleEvalService == null)
-                _particleEvalService = new Services.ParticleEvaluationService();
-
-            // Still mode: always run one frame of particle simulation from cleared state
+            _particleEvalService ??= new Services.ParticleEvaluationService();
             if (isStillMode)
-            {
                 _particleEvalService.ClearState();
-                _particleEvalService.RestoreState(instances);
-                _particleEvalService.SimulateParticleFrame(instances, new Dictionary<string, object>(), ctx);
-                _particleEvalService.SaveState(instances);
-            }
-            // If animation is not playing, still run one frame of particle simulation
-            else if (!isAnimating)
-            {
-                _particleEvalService.RestoreState(instances);
-                _particleEvalService.SimulateParticleFrame(instances, new Dictionary<string, object>(), ctx);
-                _particleEvalService.SaveState(instances);
-            }
 
-            if (allResults != null)
-            {
-                _particleEvalService!.RenderParticles(instances, allResults);
+            // Always evaluate the complete image and scalar graph. Time, wave and path
+            // outputs therefore reach particle parameters on the same animation frame.
+            _particleEvalService.RestoreState(instances);
+            var allResults = _graphEvalService.Evaluator.EvaluateAll(instances, graphConnections, ctx);
 
-                int? targetId = null;
+            // Playback ticks advance state before this preview. Still mode and a newly
+            // opened paused graph receive one initialization step for a useful preview.
+            if (isStillMode || (!isAnimating && !_particleEvalService.HasParticleState))
+            {
+                _particleEvalService.SimulateParticleFrame(instances, graphConnections, ctx);
+            }
+            _particleEvalService.SaveState(instances);
+
+            if (allResults.Count > 0)
+            {
+                _particleEvalService.RenderParticles(instances, graphConnections, allResults);
+
+                PixelBuffer? selectedResult = null;
                 if (instanceMap.ContainsKey(target.Id))
-                    targetId = target.Id;
+                    allResults.TryGetValue(target.Id, out selectedResult);
 
-                if (targetId.HasValue && allResults.TryGetValue(targetId.Value, out var targetResult))
+                selectedResult ??= instances
+                    .Where(instance => instance.Node is ParticleRenderNode)
+                    .Select(instance => allResults.TryGetValue(instance.Id, out var result) ? result : null)
+                    .LastOrDefault(result => result != null);
+                selectedResult ??= allResults.Values.LastOrDefault();
+
+                try
                 {
-                    return targetResult.ToBitmapSource();
+                    return selectedResult?.ToBitmapSource();
                 }
-
-                // Return the last particle render node's output
-                foreach (var inst in instances)
+                finally
                 {
-                    if (inst.Node is ParticleRenderNode && allResults.TryGetValue(inst.Id, out var prResult))
-                    {
-                        return prResult.ToBitmapSource();
-                    }
+                    foreach (var buffer in allResults.Values.Distinct<PixelBuffer>(ReferenceEqualityComparer.Instance))
+                        buffer.Dispose();
                 }
-
-                return allResults.Values.LastOrDefault()?.ToBitmapSource();
             }
 
-            var result = _graphEvaluator.Evaluate(instances, graphConnections, ctx);
-            return result?.ToBitmapSource();
+            return null;
         }
 
         /// <summary>
@@ -396,52 +323,10 @@ namespace PixelAssetGenerator
             List<NodeConnectionViewModel> connectionsSnapshot,
             int previewSize)
         {
-            var instanceMap = new Dictionary<int, GraphNodeInstance>();
-            var instances = new List<GraphNodeInstance>();
-            var graphConnections = new List<GraphConnection>();
-
-            foreach (var node in nodesSnapshot)
-            {
-                IGraphNode? graphNode = GraphNodeRegistry.Create(node.RegistryKey);
-                if (graphNode is null && node.TileType != null)
-                {
-                    var tileBuffer = TryRenderTileNodeAsPixelBuffer(node, previewSize);
-                    if (tileBuffer != null)
-                        graphNode = new PixelBufferSourceNode(tileBuffer);
-                }
-                if (graphNode is null)
-                    continue;
-
-                var instance = new GraphNodeInstance(node.Id, graphNode);
-                foreach (var param in node.Parameters)
-                {
-                    var value = param.Kind switch
-                    {
-                        NodeParameterKind.Seed => (object)param.IntValue,
-                        NodeParameterKind.Integer => (object)param.IntValue,
-                        NodeParameterKind.Boolean => param.BoolValue,
-                        NodeParameterKind.Choice => param.SelectedChoice ?? string.Empty,
-                        NodeParameterKind.PointList => (object)(System.Collections.Generic.IReadOnlyList<System.Windows.Point>)param.PointListValue.ToArray(),
-                        NodeParameterKind.Color => (object)param.ColorValue,
-                        NodeParameterKind.Text => param.TextValue ?? string.Empty,
-                        _ => (object)param.NumberValue
-                    };
-                    instance.ParameterValues[param.Name] = value;
-                }
-
-                instanceMap[node.Id] = instance;
-                instances.Add(instance);
-            }
-
-            foreach (var conn in connectionsSnapshot.Where(c => !c.IsPreview && c.StartNode != null && c.EndNode != null))
-            {
-                if (instanceMap.ContainsKey(conn.StartNode!.Id) && instanceMap.ContainsKey(conn.EndNode!.Id))
-                {
-                    graphConnections.Add(new GraphConnection(
-                        conn.StartNode!.Id, conn.StartPortIndex,
-                        conn.EndNode!.Id, conn.EndPortIndex));
-                }
-            }
+            using var runtimeSnapshot = _graphEvalService.BuildSnapshot(
+                nodesSnapshot, connectionsSnapshot, previewSize);
+            var instances = runtimeSnapshot.Instances;
+            var graphConnections = runtimeSnapshot.Connections;
 
             if (instances.Count == 0)
                 return null;
@@ -454,14 +339,16 @@ namespace PixelAssetGenerator
                 AnimationFrame = _animationService?.CurrentFrame,
                 AnimationFrameCount = _animationService?.FrameCount ?? 1,
                 DeltaTime = _animationService != null ? 1f / (float)(_animationService.FrameRate) : 1f / 60f,
+                GlobalTime = _animationService?.CurrentTimeSeconds ?? 0f,
             };
 
-            var results = _graphEvaluator.EvaluateAll(instances, graphConnections, context);
+            _particleEvalService?.RestoreState(instances);
+            var results = _graphEvalService.Evaluator.EvaluateAll(instances, graphConnections, context);
 
             // Render particles onto output buffers for thumbnails
             if (_particleEvalService != null && results != null)
             {
-                _particleEvalService.RenderParticles(instances, results);
+                _particleEvalService.RenderParticles(instances, graphConnections, results);
             }
 
             return results;
@@ -548,13 +435,13 @@ namespace PixelAssetGenerator
                     {
                         var localizedName = i < libraryItem.InputPorts.Count
                             ? libraryItem.InputPorts[i] : protoInputs[i].Name;
-                        node.InputPorts.Add(new NodePortViewModel(localizedName, MapGraphPortType(protoInputs[i].Type), false));
+                        node.InputPorts.Add(new NodePortViewModel(localizedName, MapGraphPortType(protoInputs[i].Type), false, protoInputs[i].StableKey));
                     }
                     for (var i = 0; i < protoOutputs.Count; i++)
                     {
                         var localizedName = i < libraryItem.OutputPorts.Count
                             ? libraryItem.OutputPorts[i] : protoOutputs[i].Name;
-                        node.OutputPorts.Add(new NodePortViewModel(localizedName, MapGraphPortType(protoOutputs[i].Type), true));
+                        node.OutputPorts.Add(new NodePortViewModel(localizedName, MapGraphPortType(protoOutputs[i].Type), true, protoOutputs[i].StableKey));
                     }
                 }
                 else
@@ -1295,6 +1182,10 @@ namespace PixelAssetGenerator
 
         private bool CanSnapConnectionTarget(NodeViewModel startNode, int startPortIndex, NodeViewModel endNode, int endPortIndex)
         {
+            if (_nodeGraphController != null &&
+                !_nodeGraphController.CanSnapConnectionTarget(startNode, startPortIndex, endNode, endPortIndex))
+                return false;
+
             if (endPortIndex < 0 || endPortIndex >= endNode.InputPorts.Count)
             {
                 return false;
@@ -1321,6 +1212,10 @@ namespace PixelAssetGenerator
         private bool CanAcceptConnection(NodeViewModel startNode, int startPortIndex, NodeViewModel endNode, int endPortIndex, out string? rejectionMessage)
         {
             rejectionMessage = null;
+            if (_nodeGraphController != null &&
+                !_nodeGraphController.CanAcceptConnection(startNode, startPortIndex, endNode, endPortIndex, out rejectionMessage))
+                return false;
+
             if (endPortIndex < 0 || endPortIndex >= endNode.InputPorts.Count)
             {
                 rejectionMessage = "Invalid target input port";
@@ -1741,7 +1636,7 @@ namespace PixelAssetGenerator
                 return TryGetSelectedSize(out size);
             }
 
-            var sizeParam = output.Parameters.FirstOrDefault(item => item.Name == "Output Size")?.SelectedChoice;
+            var sizeParam = output.Parameters.FirstOrDefault(item => item.Name == "outputSize")?.SelectedChoice;
             if (!string.IsNullOrWhiteSpace(sizeParam) && int.TryParse(sizeParam, out var parsedSize))
             {
                 size = parsedSize;
@@ -1838,7 +1733,7 @@ namespace PixelAssetGenerator
                 return TryGetSelectedSize(out size);
             }
 
-            var sizeParam = output.Parameters.FirstOrDefault(item => item.Name == "Output Size")?.SelectedChoice;
+            var sizeParam = output.Parameters.FirstOrDefault(item => item.Name == "outputSize")?.SelectedChoice;
             if (!string.IsNullOrWhiteSpace(sizeParam) && int.TryParse(sizeParam, out var parsedSize))
             {
                 size = parsedSize;
@@ -1917,49 +1812,6 @@ namespace PixelAssetGenerator
                 || node is PixelAssetGenerator.Core.Particles.Nodes.ParticleRenderNode
                 || node is PixelAssetGenerator.Core.Physics.Nodes.PhysicsSimulateNode
                 || node is PixelAssetGenerator.Core.Physics.Nodes.PhysicsFieldNode;
-        }
-
-        /// <summary>
-        /// Adapts a pre-rendered PixelBuffer as a graph node so tile nodes can participate
-        /// in the graph evaluation pipeline. Produces both the color Bitmap (port 0) and
-        /// a grayscale Mask (port 1) from the same source buffer.
-        /// </summary>
-        private sealed class PixelBufferSourceNode : IGraphNode, IMultiOutputNode, IDisposable
-        {
-            private readonly PixelBuffer _buffer;
-            private readonly PixelBuffer _maskBuffer;
-            private static readonly IReadOnlyList<GraphNodePort> _outputPorts = new[]
-            {
-                new GraphNodePort("Bitmap", GraphPortType.Image),
-                new GraphNodePort("Mask", GraphPortType.Mask)
-            };
-
-            public PixelBufferSourceNode(PixelBuffer buffer)
-            {
-                _buffer = buffer;
-                // Pre-compute mask from alpha/luminance once
-                _maskBuffer = PixelBuffer.CreateMaskView(buffer);
-            }
-
-            public string TypeName => "__TileSource__";
-            public string Category => "Source";
-            public IReadOnlyList<GraphNodePort> InputPorts => Array.Empty<GraphNodePort>();
-            public IReadOnlyList<GraphNodePort> OutputPorts => _outputPorts;
-            public IReadOnlyList<NodeParameterDefinition> Parameters => Array.Empty<NodeParameterDefinition>();
-
-            /// <summary>Safety fallback — the evaluator always goes through ProcessMulti for IMultiOutputNode.</summary>
-            public PixelBuffer Process(PixelBuffer?[] inputs, IReadOnlyDictionary<string, object> parameters, PixelGraphContext context) => _buffer.Clone();
-
-            public PixelBuffer[] ProcessMulti(PixelBuffer?[] inputs, IReadOnlyDictionary<string, object> parameters, PixelGraphContext context)
-            {
-                return new[] { _buffer.Clone(), _maskBuffer.Clone() };
-            }
-
-            public void Dispose()
-            {
-                _buffer.Dispose();
-                _maskBuffer.Dispose();
-            }
         }
 
         /// <summary>

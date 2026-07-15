@@ -9,187 +9,252 @@ using PixelAssetGenerator.Core.Physics.Nodes;
 namespace PixelAssetGenerator.Services;
 
 /// <summary>
-/// Coordinates particle system evaluation across frames.
-/// Manages the persistent state of particle emitter/force/render nodes
-/// and bridges particle data to the pixel rendering pipeline.
-/// Now also integrates PhysicsSimulateNode into the simulation loop.
+/// Stateful particle graph runtime. Particle buffers are routed by actual Particle
+/// connections, while image/float ports continue through the normal graph evaluator.
 /// </summary>
 public sealed class ParticleEvaluationService
 {
     private readonly Dictionary<int, object> _persistentStates = new();
 
+    public bool HasParticleState => _persistentStates.Values.Any(state => state is ParticleEmitterNode.EmitterState);
+
     public void RestoreState(IReadOnlyList<GraphNodeInstance> instances)
     {
-        foreach (var inst in instances)
-        {
-            if (inst.Node is IPersistentStateNode psNode)
-            {
-                if (_persistentStates.TryGetValue(inst.Id, out var state))
-                    psNode.PersistentState = state;
-            }
-        }
+        foreach (var instance in instances)
+            if (instance.Node is IPersistentStateNode stateful &&
+                _persistentStates.TryGetValue(instance.Id, out var state))
+                stateful.PersistentState = state;
     }
 
     public void SaveState(IReadOnlyList<GraphNodeInstance> instances)
     {
-        foreach (var inst in instances)
-        {
-            if (inst.Node is IPersistentStateNode psNode && psNode.PersistentState != null)
-                _persistentStates[inst.Id] = psNode.PersistentState;
-        }
+        foreach (var instance in instances)
+            if (instance.Node is IPersistentStateNode { PersistentState: not null } stateful)
+                _persistentStates[instance.Id] = stateful.PersistentState;
     }
 
-    public void SimulateParticleFrame(
-        IReadOnlyList<GraphNodeInstance> instances,
-        IReadOnlyDictionary<string, object> globalParameters,
-        PixelGraphContext context)
+    /// <summary>Backward-compatible single-emitter simulation entry point.</summary>
+    public void SimulateParticleFrame(IReadOnlyList<GraphNodeInstance> instances,
+        IReadOnlyDictionary<string, object> globalParameters, PixelGraphContext context)
+        => SimulateParticleFrame(instances, Array.Empty<GraphConnection>(), context);
+
+    public void SimulateParticleFrame(IReadOnlyList<GraphNodeInstance> instances,
+        IReadOnlyList<GraphConnection> connections, PixelGraphContext context)
     {
-        // Step 1: Simulate all emitter nodes
-        foreach (var inst in instances)
+        var instanceMap = instances.ToDictionary(instance => instance.Id);
+        var emitters = instances
+            .Where(instance => instance.Node is ParticleEmitterNode)
+            .ToDictionary(instance => instance.Id);
+
+        // Initialize emitters and rebuild the force list every frame. The previous
+        // implementation accumulated duplicate force objects indefinitely.
+        foreach (var instance in emitters.Values)
         {
-            if (inst.Node is ParticleEmitterNode emitter)
-            {
-                emitter.GetOrCreateState(inst.ParameterValues, context);
-                emitter.SimulateFrame(inst.ParameterValues, context);
-            }
+            var emitterNode = (ParticleEmitterNode)instance.Node;
+            var state = emitterNode.GetOrCreateState(instance.ParameterValues, context);
+            state.Simulator.ClearForces();
         }
 
-        // Step 2: Apply force nodes
-        foreach (var inst in instances)
+        foreach (var instance in instances)
         {
-            if (inst.Node is ParticleForceNode forceNode)
+            IParticleForce? force = instance.Node switch
             {
-                var force = forceNode.CreateForce(inst.ParameterValues);
-                // Pass global time to noise-based forces
-                if (force is NoiseMotionForce nmf)
-                    nmf.GlobalTime = context.GlobalTime;
-                ApplyForceToEmitters(instances, force, context.DeltaTime);
-            }
+                ParticleForceNode forceNode => forceNode.CreateForce(instance.ParameterValues, context),
+                InteractiveForceNode interactive => interactive.CreateForce(instance.ParameterValues,
+                    interactive.LastPositionXInput, interactive.LastPositionYInput),
+                PhysicsFieldNode field => field.CreateForce(instance.ParameterValues, context.GlobalTime),
+                _ => null
+            };
+            if (force == null) continue;
+
+            foreach (var emitter in FindUpstreamEmitters(instance.Id, instanceMap, connections, emitters))
+                ((ParticleEmitterNode.EmitterState)((IPersistentStateNode)emitter.Node).PersistentState!)
+                    .Simulator.AddForce(force);
         }
 
-        // Step 3: Apply physics simulation nodes
-        foreach (var inst in instances)
+        // Emit and integrate only after the complete same-frame force graph is ready.
+        foreach (var instance in emitters.Values)
         {
-            if (inst.Node is PhysicsSimulateNode physNode)
-            {
-                var particleBuffer = FindUpstreamParticleBuffer(inst.Id, instances);
-                if (particleBuffer != null)
-                    physNode.SimulateFrame(inst.ParameterValues, context, particleBuffer);
-            }
+            var emitterNode = (ParticleEmitterNode)instance.Node;
+            emitterNode.SimulateFrame(instance.ParameterValues, context,
+                ReadScalar(emitterNode.LastPositionXInput), ReadScalar(emitterNode.LastPositionYInput),
+                ReadScalar(emitterNode.LastEmissionRateInput), ReadScalar(emitterNode.LastSpeedInput),
+                ReadScalar(emitterNode.LastSizeInput));
         }
 
-        // Step 3b: Apply trail nodes
-        foreach (var inst in instances)
+        // Stateful/post-integration modifiers follow graph topology instead of
+        // applying globally to every emitter in the document.
+        foreach (var instance in instances)
         {
-            if (inst.Node is ParticleTrailNode trailNode)
+            var upstream = FindUpstreamEmitters(instance.Id, instanceMap, connections, emitters).ToArray();
+            if (upstream.Length == 0) continue;
+            foreach (var emitter in upstream)
             {
-                var particleBuffer = FindUpstreamParticleBuffer(inst.Id, instances);
-                if (particleBuffer != null)
-                    trailNode.SimulateFrame(inst.ParameterValues, context, particleBuffer);
-            }
-        }
-
-        // Step 4: Apply physics field nodes
-        foreach (var inst in instances)
-        {
-            if (inst.Node is PhysicsFieldNode fieldNode)
-            {
-                var force = fieldNode.CreateForce(inst.ParameterValues, context.GlobalTime);
-                ApplyForceToEmitters(instances, force, context.DeltaTime);
-            }
-        }
-    }
-
-    private static void ApplyForceToEmitters(
-        IReadOnlyList<GraphNodeInstance> instances,
-        IParticleForce force,
-        float deltaTime)
-    {
-        foreach (var inst in instances)
-        {
-            if (inst.Node is ParticleEmitterNode emitter)
-            {
-                if (emitter.PersistentState is ParticleEmitterNode.EmitterState es)
+                var state = (ParticleEmitterNode.EmitterState)((IPersistentStateNode)emitter.Node).PersistentState!;
+                switch (instance.Node)
                 {
-                    es.Simulator.AddForce(force);
+                    case ParticleCollisionNode collision:
+                        collision.ApplyCollisions(state.Buffer, context.DeltaTime, instance.ParameterValues);
+                        break;
+                    case ParticleTrailNode trail:
+                        trail.SimulateFrame(instance.ParameterValues, context, state.Buffer);
+                        break;
+                    case ParticleBehaviorNode behavior:
+                        behavior.ApplyBehavior(state.Buffer, instance.ParameterValues, context);
+                        break;
+                    case PhysicsSimulateNode physics:
+                        var constraints = FindDownstreamConstraints(instance.Id, instanceMap, connections)
+                            .Select(constraint => ((PhysicsConstraintNode)constraint.Node,
+                                (IReadOnlyDictionary<string, object>)constraint.ParameterValues));
+                        physics.SimulateFrame(instance.ParameterValues, context, state.Buffer, constraints);
+                        break;
                 }
             }
         }
     }
 
-    /// <summary>
-    /// Finds the upstream particle buffer for a physics node.
-    /// Currently scans all emitters (works for single-emitter graphs).
-    /// TODO: Use graph topology for multi-emitter support.
-    /// </summary>
-    private static ParticleBuffer? FindUpstreamParticleBuffer(
-        int physicsNodeId,
-        IReadOnlyList<GraphNodeInstance> instances)
-    {
-        // Try matching by PersistedStateKey if available
-        foreach (var inst in instances)
-        {
-            if (inst.Node is ParticleEmitterNode emitter)
-            {
-                if (emitter.PersistentState is ParticleEmitterNode.EmitterState es
-                    && es.Initialized && es.Buffer.ActiveCount > 0)
-                    return es.Buffer;
-            }
-        }
-        return null;
-    }
-
-    public void RenderParticles(
-        IReadOnlyList<GraphNodeInstance> instances,
+    public void RenderParticles(IReadOnlyList<GraphNodeInstance> instances,
         Dictionary<int, PixelBuffer> frameBuffers)
+        => RenderParticles(instances, Array.Empty<GraphConnection>(), frameBuffers);
+
+    public void RenderParticles(IReadOnlyList<GraphNodeInstance> instances,
+        IReadOnlyList<GraphConnection> connections, Dictionary<int, PixelBuffer> frameBuffers)
     {
-        foreach (var inst in instances)
+        var instanceMap = instances.ToDictionary(instance => instance.Id);
+        var emitters = instances
+            .Where(instance => instance.Node is ParticleEmitterNode)
+            .ToDictionary(instance => instance.Id);
+
+        foreach (var instance in instances)
         {
-            if (inst.Node is ParticleRenderNode renderNode)
+            if (!frameBuffers.TryGetValue(instance.Id, out var output))
+                continue;
+            var upstream = FindUpstreamEmitters(instance.Id, instanceMap, connections, emitters).ToArray();
+            if (upstream.Length == 0)
+                continue;
+
+            switch (instance.Node)
             {
-                renderNode.ApplyParameters(inst.ParameterValues);
-                var renderer = renderNode.PersistentState as ParticleRenderer;
-                if (renderer == null) continue;
+                case ParticleRenderNode renderNode:
+                    renderNode.ApplyParameters(instance.ParameterValues);
+                    if (renderNode.PersistentState is not ParticleRenderer renderer)
+                        continue;
+                    foreach (var emitter in upstream)
+                    {
+                        var emitterPreset = GraphNodeBase.GetChoice(emitter.ParameterValues, "preset", "manual");
+                        renderNode.ApplyParameters(instance.ParameterValues, emitterPreset);
+                        var state = (ParticleEmitterNode.EmitterState)((IPersistentStateNode)emitter.Node).PersistentState!;
+                        renderer.Render(state.Buffer.ActiveSpan(), output, state.Buffer.ActiveCount);
+                    }
+                    break;
 
-                var emitterBuffer = FindUpstreamEmitterBuffer(inst.Id, instances);
-                if (emitterBuffer == null) continue;
-
-                if (frameBuffers.TryGetValue(inst.Id, out var output))
-                    renderer.Render(emitterBuffer.ActiveSpan(), output, emitterBuffer.ActiveCount);
+                case ParticleLightNode lightNode:
+                    foreach (var emitter in upstream)
+                    {
+                        var state = (ParticleEmitterNode.EmitterState)((IPersistentStateNode)emitter.Node).PersistentState!;
+                        lightNode.RenderGlow(state.Buffer, output, instance.ParameterValues);
+                    }
+                    break;
             }
         }
     }
 
-    /// <summary>
-    /// Finds the upstream particle buffer for a render node.
-    /// Currently scans all emitters (works for single-emitter graphs).
-    /// TODO: Use graph topology for multi-emitter support.
-    /// </summary>
-    private static ParticleBuffer? FindUpstreamEmitterBuffer(
-        int renderNodeId,
-        IReadOnlyList<GraphNodeInstance> instances)
+    private static IEnumerable<GraphNodeInstance> FindUpstreamEmitters(int targetNodeId,
+        IReadOnlyDictionary<int, GraphNodeInstance> instanceMap,
+        IReadOnlyList<GraphConnection> connections,
+        IReadOnlyDictionary<int, GraphNodeInstance> emitters)
     {
-        foreach (var inst in instances)
+        var found = new HashSet<int>();
+        var visited = new HashSet<int>();
+        var stack = new Stack<int>();
+        stack.Push(targetNodeId);
+
+        while (stack.Count > 0)
         {
-            if (inst.Node is ParticleEmitterNode emitter)
+            var current = stack.Pop();
+            if (!visited.Add(current)) continue;
+            if (emitters.ContainsKey(current))
             {
-                if (emitter.PersistentState is ParticleEmitterNode.EmitterState es
-                    && es.Initialized && es.Buffer.ActiveCount > 0)
-                    return es.Buffer;
+                found.Add(current);
+                continue;
+            }
+
+            foreach (var connection in connections.Where(connection => connection.TargetNodeId == current))
+            {
+                if (!instanceMap.TryGetValue(connection.TargetNodeId, out var target) ||
+                    !instanceMap.TryGetValue(connection.SourceNodeId, out var source) ||
+                    connection.TargetPortIndex < 0 || connection.TargetPortIndex >= target.Node.InputPorts.Count ||
+                    connection.SourcePortIndex < 0 || connection.SourcePortIndex >= source.Node.OutputPorts.Count)
+                    continue;
+                if (target.Node.InputPorts[connection.TargetPortIndex].Type == GraphPortType.Particle &&
+                    source.Node.OutputPorts[connection.SourcePortIndex].Type == GraphPortType.Particle)
+                    stack.Push(connection.SourceNodeId);
             }
         }
-        return null;
+
+        // Old projects could not connect ParticleRender to a particle port because it
+        // did not exist. Preserve a useful migration path only when unambiguous.
+        if (found.Count == 0 && emitters.Count == 1)
+            found.Add(emitters.Keys.Single());
+        return found.Select(id => emitters[id]);
+    }
+
+    private static IEnumerable<GraphNodeInstance> FindDownstreamConstraints(int sourceNodeId,
+        IReadOnlyDictionary<int, GraphNodeInstance> instanceMap,
+        IReadOnlyList<GraphConnection> connections)
+    {
+        var visited = new HashSet<int>();
+        var queue = new Queue<int>();
+        queue.Enqueue(sourceNodeId);
+        while (queue.Count > 0)
+        {
+            var current = queue.Dequeue();
+            if (!visited.Add(current)) continue;
+            if (current != sourceNodeId && instanceMap.TryGetValue(current, out var instance)
+                && instance.Node is PhysicsConstraintNode)
+                yield return instance;
+
+            foreach (var connection in connections.Where(connection => connection.SourceNodeId == current))
+            {
+                if (!instanceMap.TryGetValue(connection.SourceNodeId, out var source)
+                    || !instanceMap.TryGetValue(connection.TargetNodeId, out var target)
+                    || connection.SourcePortIndex < 0 || connection.SourcePortIndex >= source.Node.OutputPorts.Count
+                    || connection.TargetPortIndex < 0 || connection.TargetPortIndex >= target.Node.InputPorts.Count)
+                    continue;
+                if (source.Node.OutputPorts[connection.SourcePortIndex].Type == GraphPortType.Particle
+                    && target.Node.InputPorts[connection.TargetPortIndex].Type == GraphPortType.Particle)
+                    queue.Enqueue(connection.TargetNodeId);
+            }
+        }
+    }
+
+    private static float? ReadScalar(PixelBuffer? buffer)
+        => buffer == null ? null : buffer.GetPixel(0, 0).R;
+
+    /// <summary>
+    /// Clears one node's simulation state without restarting unrelated particle
+    /// workflows on the same canvas.
+    /// </summary>
+    public bool ClearState(int nodeId)
+    {
+        if (!_persistentStates.Remove(nodeId, out var state))
+            return false;
+        DisposeState(state);
+        return true;
     }
 
     public void ClearState()
     {
         foreach (var state in _persistentStates.Values)
-        {
-            if (state is ParticleEmitterNode.EmitterState es)
-            {
-                es.Buffer.Dispose();
-            }
-        }
+            DisposeState(state);
         _persistentStates.Clear();
+    }
+
+    private static void DisposeState(object state)
+    {
+        if (state is ParticleEmitterNode.EmitterState emitterState)
+            emitterState.Buffer.Dispose();
+        else if (state is IDisposable disposable)
+            disposable.Dispose();
     }
 }

@@ -38,5 +38,13 @@
   "Animation": {
     "zh-Hans": "动画",
     "en": "Animation"
+  },
+  "Smart": {
+    "zh-Hans": "智能处理",
+    "en": "Smart Tools"
+  },
+  "Meta": {
+    "zh-Hans": "元节点",
+    "en": "Meta Nodes"
   }
 }

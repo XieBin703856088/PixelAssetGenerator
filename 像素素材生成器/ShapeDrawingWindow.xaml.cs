@@ -134,24 +134,22 @@ namespace PixelAssetGenerator
             _displayScale = Math.Max(1, (int)Math.Floor(512.0 / _canvasSize));
 
             InitializeComponent();
+            var drawCanvas = DrawCanvas ?? throw new InvalidOperationException("Drawing canvas failed to initialize.");
             _colorSwatch = ColorPickerSwatch;
             UpdateColorSwatchButton();
 
             // Ensure pixel-perfect display: enable layout rounding and snapping
             UseLayoutRounding = true;
             SnapsToDevicePixels = true;
-            if (DrawCanvas != null)
-            {
-                DrawCanvas.SnapsToDevicePixels = true;
-                RenderOptions.SetEdgeMode(DrawCanvas, EdgeMode.Aliased);
-            }
+            drawCanvas.SnapsToDevicePixels = true;
+            RenderOptions.SetEdgeMode(drawCanvas, EdgeMode.Aliased);
 
-            DrawCanvas.Cursor = Cursors.Cross;
+            drawCanvas.Cursor = Cursors.Cross;
             // ensure canvas element matches requested physical size (logical size * scale)
 
             // Apply canvas dimensions
-            DrawCanvas.Width = _canvasSize * _displayScale;
-            DrawCanvas.Height = _canvasSize * _displayScale;
+            drawCanvas.Width = _canvasSize * _displayScale;
+            drawCanvas.Height = _canvasSize * _displayScale;
 
             // Configure pencil size slider limits and default.
             // Pencil size is expressed in logical pixels (1..canvasSize).

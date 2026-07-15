@@ -58,7 +58,7 @@ namespace PixelAssetGenerator.Controls
                 }
                 else if (e.Key == System.Windows.Input.Key.C && System.Windows.Input.Keyboard.Modifiers == System.Windows.Input.ModifierKeys.Control)
                 {
-                    CopySelected_Click(null, null!);
+                    CopySelectedToClipboard();
                     e.Handled = true;
                 }
                 else if (e.Key == System.Windows.Input.Key.C && System.Windows.Input.Keyboard.Modifiers == (System.Windows.Input.ModifierKeys.Control | System.Windows.Input.ModifierKeys.Shift))
@@ -156,6 +156,11 @@ namespace PixelAssetGenerator.Controls
 
         private void CopySelected_Click(object sender, RoutedEventArgs e)
         {
+            CopySelectedToClipboard();
+        }
+
+        private void CopySelectedToClipboard()
+        {
             var selected = MessageList.SelectedItems;
             var text = selected.Count == 0
                 ? string.Join(Environment.NewLine, _filtered.Select(e => e.FormattedText))
@@ -194,7 +199,7 @@ namespace PixelAssetGenerator.Controls
                         Clipboard.SetText(text, TextDataFormat.UnicodeText);
                         return;
                     }
-                    catch (Exception ex) when (i < maxRetries - 1)
+                    catch (Exception) when (i < maxRetries - 1)
                     {
                         System.Threading.Thread.Sleep(50);
                     }

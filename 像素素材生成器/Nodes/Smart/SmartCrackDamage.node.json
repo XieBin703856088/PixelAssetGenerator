@@ -1,0 +1,36 @@
+{
+  "formatVersion": 2,
+  "processorType": "SmartCrackDamage",
+  "identity": {
+    "typeName": "SmartCrackDamage",
+    "displayName": { "zh-Hans": "智能裂纹破损", "en": "Smart Crack Damage" },
+    "category": "Smart",
+    "description": {
+      "zh-Hans": "生成连续裂纹、凹陷与崩边，可按砖墙、石材、灰泥、木材或金属调整破损质感。",
+      "en": "Generates connected cracks, recessed damage and chipped edges for several material families."
+    },
+    "tags": ["smart", "texture", "cracks", "damage", "brick", "stone"],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [{ "name": { "zh-Hans": "图像", "en": "Image" }, "type": "Image" }],
+    "outputs": [
+      { "name": { "zh-Hans": "图像", "en": "Image" }, "type": "Image" },
+      { "name": { "zh-Hans": "破损遮罩", "en": "Damage Mask" }, "type": "Mask" }
+    ]
+  },
+  "parameters": [],
+  "ai": {
+    "capabilities": ["smart-texture", "cracks", "damage"],
+    "triggers": {
+      "zh-Hans": "砖块破碎, 墙面裂纹, 石头崩边, 材质损坏",
+      "en": "broken bricks, wall cracks, chipped stone, damaged material"
+    },
+    "suggestedInputs": ["Wall", "Flagstone", "Rock"],
+    "exampleUsage": {
+      "zh-Hans": "接在墙壁节点后，调节破损程度、裂纹宽度和崩边碎块。",
+      "en": "Place after a wall node and tune damage, crack width and chipped areas."
+    }
+  }
+}

@@ -50,23 +50,16 @@ public sealed class ParticleForceNode : IGraphNode
     public IReadOnlyList<GraphNodePort> OutputPorts => _outputs;
     public IReadOnlyList<NodeParameterDefinition> Parameters => _parameters;
 
-    private static PixelBuffer? _sharedPlaceholder;
-
     public PixelBuffer Process(PixelBuffer?[] inputs, IReadOnlyDictionary<string, object> parameters, PixelGraphContext context)
     {
-        // ParticleForceNode doesn't produce a PixelBuffer directly — it modifies
-        // the particle buffer via IPersistentStateNode. Return a shared 1x1 placeholder.
-        if (_sharedPlaceholder == null)
-        {
-            _sharedPlaceholder = PixelBuffer.CreateSolid(1, 1, 0f, 0f, 0f, 0f);
-        }
-        return _sharedPlaceholder;
+        return PixelBuffer.CreateSolid(1, 1, 0f, 0f, 0f, 0f);
     }
 
     /// <summary>
     /// Creates a force field from the node parameters.
     /// </summary>
-    public IParticleForce CreateForce(IReadOnlyDictionary<string, object> parameters)
+    public IParticleForce CreateForce(IReadOnlyDictionary<string, object> parameters,
+        PixelGraphContext? context = null)
     {
         var forceType = GraphNodeBase.GetChoice(parameters, "forceType", "gravity");
         var strength = GraphNodeBase.GetFloat(parameters, "strength", 1f);
@@ -97,6 +90,7 @@ public sealed class ParticleForceNode : IGraphNode
                 {
                     Strength = strength,
                     Frequency = GraphNodeBase.GetFloat(parameters, "turbulenceFrequency", 2f),
+                    Seed = context?.Seed ?? 42,
                 };
 
             case "noiseMotion":
@@ -107,18 +101,17 @@ public sealed class ParticleForceNode : IGraphNode
                     Strength = GraphNodeBase.GetFloat(parameters, "strength", 0.5f),
                     TimeScale = GraphNodeBase.GetFloat(parameters, "timeScale", 0.3f),
                     Octaves = GraphNodeBase.GetInt(parameters, "noiseOctaves", 3),
-                    Seed = 42,
+                    Seed = context?.Seed ?? 42,
                     Anisotropy = GraphNodeBase.GetFloat(parameters, "anisotropy", 1f),
+                    GlobalTime = context?.GlobalTime ?? 0f,
                 };
 
             case "gravity":
+                return new UniformForce { AccelerationY = strength };
             case "wind":
+                return new UniformForce { AccelerationX = strength };
             default:
-                // Gravity and wind are handled by the emitter's simulator directly
-                return new PointForce
-                {
-                    Strength = 0, // no-op, handled externally
-                };
+                return new UniformForce();
         }
     }
 

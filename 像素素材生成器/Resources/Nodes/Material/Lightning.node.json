@@ -1,6 +1,6 @@
 {
   "formatVersion": 2,
-  "processorType": null,
+  "processorType": "Lightning",
   "identity": {
     "typeName": "Lightning",
     "displayName": {
@@ -9,8 +9,8 @@
     },
     "category": "Material",
     "description": {
-      "zh-Hans": "使用分形中点位移和分支生成逼真的闪电。Time参数（0-1）通过改变闪电路径驱动动画效果。支持辉光效果和像素化量化。",
-      "en": "Generates realistic lightning bolts with fractal midpoint displacement and branching. Time parameter (0-1) drives animation by varying bolt paths. Glow and pixel-art quantized."
+      "zh-Hans": "生成带深色外轮廓、亮色主体、白色电芯和可控分支的硬边像素闪电；时间参数会重组闪电路径。",
+      "en": "Generates hard-edged pixel lightning with a dark outline, bright body, white core, controllable branches, and time-driven path changes."
     },
     "tags": [],
     "author": "BuiltIn",

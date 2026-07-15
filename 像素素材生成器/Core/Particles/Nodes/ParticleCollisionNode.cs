@@ -40,17 +40,11 @@ public sealed class ParticleCollisionNode : IGraphNode
     public IReadOnlyList<GraphNodePort> OutputPorts => _outputs;
     public IReadOnlyList<NodeParameterDefinition> Parameters => _parameters;
 
-    private static PixelBuffer? _sharedPlaceholder;
-
     public PixelBuffer Process(PixelBuffer?[] inputs, IReadOnlyDictionary<string, object> parameters, PixelGraphContext context)
     {
         // ParticleCollisionNode doesn't produce a PixelBuffer directly — it modifies
         // the particle buffer via IPersistentStateNode. Return a shared 1x1 placeholder.
-        if (_sharedPlaceholder == null)
-        {
-            _sharedPlaceholder = PixelBuffer.CreateSolid(1, 1, 0f, 0f, 0f, 0f);
-        }
-        return _sharedPlaceholder;
+        return PixelBuffer.CreateSolid(1, 1, 0f, 0f, 0f, 0f);
     }
 
     /// <summary>

@@ -1,6 +1,6 @@
 {
   "formatVersion": 2,
-  "processorType": null,
+  "processorType": "Floor",
   "identity": {
     "typeName": "Floor",
     "displayName": {
@@ -9,8 +9,8 @@
     },
     "category": "Material",
     "description": {
-      "zh-Hans": "渲染矩形地板区域，支持多种图案（木板、人字形、石砖、地毯）。完全可平铺。",
-      "en": "Renders a rectangular floor section with various patterns (planks, herringbone, stone tile, carpet). Fully tileable."
+      "zh-Hans": "生成带硬边接缝、板材明暗和有限色阶的RPG地板区域，支持木板、人字拼、石砖和地毯，并保留背景输入。",
+      "en": "Generates RPG floor regions with crisp seams, discrete board shading, planks, herringbone, stone tile, and carpet styles while preserving the background input."
     },
     "tags": [],
     "author": "BuiltIn",

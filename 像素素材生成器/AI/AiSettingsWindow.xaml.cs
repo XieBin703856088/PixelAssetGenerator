@@ -410,7 +410,7 @@ public partial class AiSettingsWindow : Window
 			settings.Models.Remove(modelName);
 			ModelCombo.Items.Remove(modelName);
 
-			if (!settings.Models.Contains(settings.Model))
+			if (string.IsNullOrWhiteSpace(settings.Model) || !settings.Models.Contains(settings.Model))
 			{
 				settings.Model = settings.Models.FirstOrDefault() ?? "";
 				settings.ActiveModelIndex = settings.Models.IndexOf(settings.Model);

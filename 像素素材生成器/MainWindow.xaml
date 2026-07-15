@@ -10,14 +10,14 @@
         xmlns:converters="clr-namespace:PixelAssetGenerator.Converters"
         mc:Ignorable="d"
         Title="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[AppTitle]}"
-        Height="720" Width="1200" WindowState="Maximized"
+        Height="760" Width="1360" MinWidth="1080" MinHeight="680" WindowState="Maximized"
         Background="{DynamicResource WindowBackground}" 
         Foreground="{DynamicResource PrimaryText}" 
-        FontFamily="Segoe UI" 
+        FontFamily="{DynamicResource AppFontFamily}"
         Loaded="MainWindow_Loaded" 
         WindowStartupLocation="CenterScreen"
-        UseLayoutRounding="False"
-        SnapsToDevicePixels="False">
+        UseLayoutRounding="True"
+        SnapsToDevicePixels="True">
 
     <Window.Resources>
         <local:ParameterMaxConverter x:Key="ParamMaxConverter" />
@@ -106,48 +106,16 @@
             </DrawingBrush.Drawing>
         </DrawingBrush>
 
-        <!-- 基础文本样式 -->
-        <Style TargetType="TextBlock">
-            <Setter Property="Foreground" Value="{DynamicResource PrimaryText}" />
-            <Setter Property="FontSize" Value="{DynamicResource AppFontSize}" />
-        </Style>
-
-        <Style TargetType="CheckBox">
-            <Setter Property="Foreground" Value="{DynamicResource PrimaryText}" />
+        <!-- 主窗口仅保留行为和布局差异，视觉由 AppResources 统一管理。 -->
+        <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}" />
+        <Style TargetType="CheckBox" BasedOn="{StaticResource {x:Type CheckBox}}">
             <Setter Property="Margin" Value="0,2,0,6" />
-            <Setter Property="VerticalAlignment" Value="Center" />
         </Style>
 
         <!-- 次级切换按钮 -->
-        <Style x:Key="SecondaryToggleButton" TargetType="ToggleButton">
-            <Setter Property="Background" Value="{DynamicResource ControlBackground}" />
-            <Setter Property="Foreground" Value="{DynamicResource PrimaryText}" />
-            <Setter Property="BorderBrush" Value="{DynamicResource ControlBorder}" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="ToggleButton">
-                        <Border Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="{StaticResource ControlCornerRadius}">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Background" Value="{DynamicResource ControlBackground}" />
-                            </Trigger>
-                            <Trigger Property="IsChecked" Value="True">
-                                <Setter Property="Background" Value="{DynamicResource Accent}" />
-                                <Setter Property="BorderBrush" Value="{DynamicResource Accent}" />
-                                <Setter Property="Foreground" Value="{DynamicResource AccentForeground}" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
+        <Style x:Key="SecondaryToggleButton"
+               TargetType="ToggleButton"
+               BasedOn="{StaticResource WorkspaceToggleButton}" />
 
         <!-- 数字输入框 -->
         <Style x:Key="RangeInputTextBox" TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
@@ -159,11 +127,10 @@
         </Style>
 
         <!-- 区域标题 -->
-        <Style x:Key="SectionTitle" TargetType="TextBlock">
+        <Style x:Key="SectionTitle" TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
             <Setter Property="FontSize" Value="12" />
             <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="Margin" Value="0,0,0,6" />
-            <Setter Property="Foreground" Value="{DynamicResource PrimaryText}" />
         </Style>
 
         <!-- 展开器 -->
@@ -222,194 +189,24 @@
         </Style>
 
         <!-- 字段标签 -->
-        <Style x:Key="FieldLabel" TargetType="TextBlock">
+        <Style x:Key="FieldLabel" TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
             <Setter Property="Foreground" Value="{DynamicResource MutedText}" />
             <Setter Property="Margin" Value="0,0,0,3" />
         </Style>
 
         <!-- 文本框 -->
-        <Style TargetType="TextBox">
-            <Setter Property="Background" Value="{DynamicResource ControlBackground}" />
-            <Setter Property="Foreground" Value="{DynamicResource PrimaryText}" />
-            <Setter Property="BorderBrush" Value="{DynamicResource ControlBorder}" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="Padding" Value="4,2" />
-            <!-- 按回车键提交编辑：通过样式统一处理，按 Enter 时会触发代码后端将绑定值推送到源 -->
+        <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+            <!-- 按回车键提交编辑：统一将绑定值推送到源。 -->
             <EventSetter Event="PreviewKeyDown" Handler="TextBox_PreviewKeyDown_Commit" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="TextBox">
-                        <Border Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="{StaticResource ControlCornerRadius}">
-                            <ScrollViewer x:Name="PART_ContentHost"
-                                          Margin="{TemplateBinding Padding}"
-                                          VerticalAlignment="Center" />
-                        </Border>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
         </Style>
 
         <!-- 组合框 -->
-        <Style TargetType="ComboBox">
-            <Setter Property="Background" Value="{DynamicResource ControlBackground}" />
-            <Setter Property="Foreground" Value="{DynamicResource PrimaryText}" />
-            <Setter Property="BorderBrush" Value="{DynamicResource ControlBorder}" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="Padding" Value="6,2" />
-            <Setter Property="TextElement.Foreground" Value="{DynamicResource PrimaryText}" />
-            <Setter Property="TextElement.Background" Value="{DynamicResource ControlBackground}" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="ComboBox">
-                        <Grid>
-                            <Border Background="{TemplateBinding Background}"
-                                    BorderBrush="{TemplateBinding BorderBrush}"
-                                    BorderThickness="{TemplateBinding BorderThickness}"
-                                    CornerRadius="{StaticResource ControlCornerRadius}">
-                                <ToggleButton x:Name="ToggleButton"
-                                              Background="Transparent"
-                                              BorderThickness="0"
-                                              Foreground="{TemplateBinding Foreground}"
-                                              Focusable="False"
-                                              IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
-                                              ClickMode="Press">
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition />
-                                            <ColumnDefinition Width="20" />
-                                        </Grid.ColumnDefinitions>
-                                        <ContentPresenter Margin="{TemplateBinding Padding}"
-                                                          VerticalAlignment="Center"
-                                                          HorizontalAlignment="Left"
-                                                          TextElement.Foreground="{TemplateBinding Foreground}"
-                                                          Content="{TemplateBinding SelectionBoxItem}"
-                                                          ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
-                                                          ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}" />
-                                        <Path Grid.Column="1"
-                                              Fill="{TemplateBinding Foreground}"
-                                              Data="M 0 0 L 4 4 L 8 0 Z"
-                                              HorizontalAlignment="Center"
-                                              VerticalAlignment="Center" />
-                                    </Grid>
-                                </ToggleButton>
-                            </Border>
-                            <Popup x:Name="Popup"
-                                   Placement="Bottom"
-                                   IsOpen="{TemplateBinding IsDropDownOpen}"
-                                   AllowsTransparency="True"
-                                   Focusable="False"
-                                   PopupAnimation="Slide">
-                                <Border Background="{TemplateBinding Background}"
-                                        BorderBrush="{TemplateBinding BorderBrush}"
-                                        BorderThickness="{TemplateBinding BorderThickness}"
-                                        Width="{TemplateBinding ActualWidth}"
-                                        CornerRadius="{StaticResource ControlCornerRadius}"
-                                        SnapsToDevicePixels="True">
-                                    <ScrollViewer Margin="2"
-                                                  MaxHeight="{TemplateBinding MaxDropDownHeight}"
-                                                  SnapsToDevicePixels="True">
-                                        <StackPanel IsItemsHost="True" />
-                                    </ScrollViewer>
-                                </Border>
-                            </Popup>
-                        </Grid>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
+        <Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}" />
+        <Style TargetType="ComboBoxItem" BasedOn="{StaticResource {x:Type ComboBoxItem}}" />
 
-        <Style TargetType="ComboBoxItem">
-            <Setter Property="Background" Value="{DynamicResource ControlBackground}" />
-            <Setter Property="Foreground" Value="{DynamicResource PrimaryText}" />
-            <Setter Property="Padding" Value="8,4" />
-            <Setter Property="BorderThickness" Value="0" />
-            <Style.Triggers>
-                <Trigger Property="IsHighlighted" Value="True">
-                    <Setter Property="Background" Value="{DynamicResource Accent}" />
-                </Trigger>
-                <Trigger Property="IsSelected" Value="True">
-                    <Setter Property="Background" Value="{DynamicResource AccentPressed}" />
-                </Trigger>
-            </Style.Triggers>
-        </Style>
-
-        <!-- 滑块 -->
-        <Style TargetType="Slider">
-            <Setter Property="Foreground" Value="{DynamicResource Accent}" />
-            <Setter Property="IsMoveToPointEnabled" Value="True" />
-            <Setter Property="SmallChange" Value="0.01" />
-            <Setter Property="LargeChange" Value="0.05" />
-            <Setter Property="BorderBrush" Value="{DynamicResource ControlBorder}" />
-            <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Height" Value="22" />
-            <Setter Property="IsHitTestVisible" Value="True" />
+        <!-- 共享 Slider 模板确保滑块中心与轨道严格对齐；主窗口只保留滚轮行为。 -->
+        <Style TargetType="Slider" BasedOn="{StaticResource {x:Type Slider}}">
             <EventSetter Event="PreviewMouseWheel" Handler="Slider_PreviewMouseWheel" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Slider">
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" MinHeight="18" />
-                                <RowDefinition Height="Auto" />
-                            </Grid.RowDefinitions>
-                            <!-- TickBar -->
-                            <TickBar x:Name="TopTick" Grid.Row="0" Visibility="Collapsed" />
-                            <!-- Track background -->
-                            <Border x:Name="TrackBackground"
-                                    Grid.Row="1"
-                                    Height="4"
-                                    Margin="6,0"
-                                    CornerRadius="2"
-                                    Background="{DynamicResource ControlBackground}" />
-                            <!-- Track fill (滑杆高亮部分，随值变化) -->
-                            <Border Grid.Row="1"
-                                    Height="4"
-                                    Margin="6,0"
-                                    CornerRadius="2"
-                                    Background="{TemplateBinding Foreground}"
-                                    Opacity="0.5"
-                                    HorizontalAlignment="Left">
-                                <Border.Width>
-                                    <MultiBinding Converter="{StaticResource SliderFillWidthConverter}">
-                                        <Binding Path="Value" RelativeSource="{RelativeSource TemplatedParent}" />
-                                        <Binding Path="Maximum" RelativeSource="{RelativeSource TemplatedParent}" />
-                                        <Binding ElementName="TrackBackground" Path="ActualWidth" />
-                                    </MultiBinding>
-                                </Border.Width>
-                            </Border>
-                            <Track x:Name="PART_Track" Grid.Row="1">
-                                <Track.Thumb>
-                                    <Thumb x:Name="Thumb"
-                                           Width="14" Height="14"
-                                           Background="{DynamicResource ControlBackground}"
-                                           BorderBrush="{TemplateBinding Foreground}"
-                                           BorderThickness="2">
-                                        <Thumb.Style>
-                                            <Style TargetType="Thumb">
-                                                <Setter Property="Template">
-                                                    <Setter.Value>
-                                                        <ControlTemplate TargetType="Thumb">
-                                                            <Ellipse Fill="{TemplateBinding Background}"
-                                                                     Stroke="{TemplateBinding BorderBrush}"
-                                                                     StrokeThickness="2"
-                                                                     Width="14" Height="14" />
-                                                        </ControlTemplate>
-                                                    </Setter.Value>
-                                                </Setter>
-                                            </Style>
-                                        </Thumb.Style>
-                                    </Thumb>
-                                </Track.Thumb>
-                            </Track>
-                            <TickBar x:Name="BottomTick" Grid.Row="2" Visibility="Collapsed" />
-                        </Grid>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
         </Style>
 
         <!-- 主题化 ScrollBar，使列表/滚动条与整体配色和谐 -->
@@ -492,106 +289,143 @@
             </Setter>
         </Style>
 
-        <!-- 主按钮 -->
-        <Style TargetType="Button">
-            <Setter Property="Background" Value="{DynamicResource Accent}" />
-            <Setter Property="Foreground" Value="{DynamicResource AccentForeground}" />
-            <Setter Property="BorderBrush" Value="{DynamicResource Accent}" />
+        <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}" />
+
+        <!-- 次级按钮 -->
+        <Style x:Key="SecondaryButton" TargetType="Button" BasedOn="{StaticResource QuietButton}" />
+
+        <!-- 菜单 -->
+        <Style x:Key="CompactContextMenuStyle" TargetType="ContextMenu">
+            <Setter Property="Background" Value="{DynamicResource PanelBackground}" />
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryText}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource PanelBorder}" />
             <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="Padding" Value="6,3" />
-            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="MinWidth" Value="190" />
+            <Setter Property="MaxHeight" Value="620" />
             <Setter Property="Template">
                 <Setter.Value>
-                    <ControlTemplate TargetType="Button">
+                    <ControlTemplate TargetType="ContextMenu">
                         <Border Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="{StaticResource ControlCornerRadius}">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                CornerRadius="8"
+                                Padding="5">
+                            <Border.Effect>
+                                <DropShadowEffect BlurRadius="18" ShadowDepth="5" Opacity="0.32" Color="#000000" />
+                            </Border.Effect>
+                            <ScrollViewer VerticalScrollBarVisibility="Auto"
+                                          HorizontalScrollBarVisibility="Disabled">
+                                <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Cycle" />
+                            </ScrollViewer>
                         </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Background" Value="{DynamicResource AccentHover}" />
-                                <Setter Property="BorderBrush" Value="{DynamicResource AccentHover}" />
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter Property="Background" Value="{DynamicResource AccentPressed}" />
-                                <Setter Property="BorderBrush" Value="{DynamicResource AccentPressed}" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
         </Style>
 
-        <!-- 次级按钮 -->
-        <Style x:Key="SecondaryButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
-            <Setter Property="Background" Value="{DynamicResource ControlBackground}" />
-            <Setter Property="Foreground" Value="{DynamicResource PrimaryText}" />
-            <Setter Property="BorderBrush" Value="{DynamicResource ControlBorder}" />
-        </Style>
-
-        <!-- 菜单 -->
         <Style TargetType="Menu">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="Foreground" Value="{DynamicResource PrimaryText}" />
             <Setter Property="BorderBrush" Value="Transparent" />
             <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="FontSize" Value="11" />
+            <Setter Property="FontSize" Value="13" />
             <Setter Property="Padding" Value="0" />
         </Style>
 
         <Style TargetType="MenuItem">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="Foreground" Value="{DynamicResource PrimaryText}" />
-            <Setter Property="FontSize" Value="11" />
-            <Setter Property="Padding" Value="8,4" />
-            <Setter Property="MinHeight" Value="24" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="Padding" Value="11,7" />
+            <Setter Property="MinHeight" Value="34" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="MenuItem">
-                        <Border x:Name="Border"
-                                Background="{TemplateBinding Background}"
-                                BorderBrush="{DynamicResource ControlBorder}"
-                                BorderThickness="0">
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <ContentPresenter Margin="4,0"
-                                                  VerticalAlignment="Center"
-                                                  ContentSource="Header" />
-                                <Popup x:Name="Popup"
-                                       Grid.Column="1"
-                                       Placement="Bottom"
-                                       IsOpen="{TemplateBinding IsSubmenuOpen}"
-                                       AllowsTransparency="True"
-                                       Focusable="False">
-                                    <Border Background="{DynamicResource PanelBackground}"
-                                            BorderBrush="{DynamicResource PanelBorder}"
-                                            BorderThickness="1"
-                                            CornerRadius="{StaticResource ControlCornerRadius}"
-                                            Padding="4">
-                                        <StackPanel IsItemsHost="True" />
-                                    </Border>
-                                </Popup>
-                            </Grid>
-                        </Border>
+                        <Grid SnapsToDevicePixels="True">
+                            <Border x:Name="ItemBorder"
+                                    Background="{TemplateBinding Background}"
+                                    CornerRadius="5"
+                                    Padding="{TemplateBinding Padding}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="14" />
+                                    </Grid.ColumnDefinitions>
+                                    <ContentPresenter Grid.Column="0"
+                                                      ContentSource="Header"
+                                                      RecognizesAccessKey="True"
+                                                      VerticalAlignment="Center" />
+                                    <TextBlock x:Name="GestureText"
+                                               Grid.Column="1"
+                                               Text="{TemplateBinding InputGestureText}"
+                                               Foreground="{DynamicResource MutedText}"
+                                               FontSize="10"
+                                               Margin="18,0,7,0"
+                                               VerticalAlignment="Center" />
+                                    <TextBlock x:Name="SubmenuArrow"
+                                               Grid.Column="2"
+                                               Text="›"
+                                               FontSize="16"
+                                               Foreground="{DynamicResource MutedText}"
+                                               HorizontalAlignment="Right"
+                                               VerticalAlignment="Center"
+                                               Visibility="Collapsed" />
+                                </Grid>
+                            </Border>
+                            <Popup x:Name="PART_Popup"
+                                   Placement="Right"
+                                   HorizontalOffset="-2"
+                                   VerticalOffset="-5"
+                                   IsOpen="{TemplateBinding IsSubmenuOpen}"
+                                   AllowsTransparency="True"
+                                   Focusable="False"
+                                   PopupAnimation="Fade">
+                                <Border Background="{DynamicResource PanelBackground}"
+                                        BorderBrush="{DynamicResource PanelBorder}"
+                                        BorderThickness="1"
+                                        CornerRadius="8"
+                                        Padding="5">
+                                    <Border.Effect>
+                                        <DropShadowEffect BlurRadius="18" ShadowDepth="5" Opacity="0.32" Color="#000000" />
+                                    </Border.Effect>
+                                    <ScrollViewer MaxHeight="620"
+                                                  VerticalScrollBarVisibility="Auto"
+                                                  HorizontalScrollBarVisibility="Disabled">
+                                        <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Cycle" />
+                                    </ScrollViewer>
+                                </Border>
+                            </Popup>
+                        </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsHighlighted" Value="True">
-                                <Setter TargetName="Border" Property="Background" Value="{DynamicResource Accent}" />
+                                <Setter TargetName="ItemBorder" Property="Background" Value="{DynamicResource NodeHeaderBackground}" />
+                                <Setter Property="Foreground" Value="{DynamicResource PrimaryText}" />
                             </Trigger>
                             <Trigger Property="IsSubmenuOpen" Value="True">
-                                <Setter TargetName="Border" Property="Background" Value="{DynamicResource Accent}" />
+                                <Setter TargetName="ItemBorder" Property="Background" Value="{DynamicResource NodeHeaderBackground}" />
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
                                 <Setter Property="Foreground" Value="{DynamicResource MutedText}" />
+                                <Setter TargetName="ItemBorder" Property="Opacity" Value="0.45" />
+                            </Trigger>
+                            <Trigger Property="Role" Value="SubmenuHeader">
+                                <Setter TargetName="SubmenuArrow" Property="Visibility" Value="Visible" />
+                                <Setter Property="MinWidth" Value="184" />
                             </Trigger>
                             <Trigger Property="Role" Value="SubmenuItem">
-                                <Setter Property="Padding" Value="8,4" />
-                                <Setter Property="FontSize" Value="10" />
-                                <Setter Property="MinHeight" Value="22" />
+                                <Setter Property="MinWidth" Value="184" />
+                            </Trigger>
+                            <Trigger Property="Role" Value="TopLevelHeader">
+                                <Setter TargetName="PART_Popup" Property="Placement" Value="Bottom" />
+                                <Setter TargetName="GestureText" Property="Visibility" Value="Collapsed" />
+                                <Setter Property="MinWidth" Value="0" />
+                                <Setter Property="Padding" Value="11,7" />
+                            </Trigger>
+                            <Trigger Property="Role" Value="TopLevelItem">
+                                <Setter TargetName="GestureText" Property="Visibility" Value="Collapsed" />
+                                <Setter Property="MinWidth" Value="0" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -717,6 +551,7 @@
             <local:NodeLibraryEntryTemplateSelector.ItemTemplate>
                 <DataTemplate>
                     <StackPanel Width="{Binding Path=NodeThumbnailSize, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource ThumbnailSizeConverter}}"
+                                MinWidth="90"
                                 Margin="2"
                                 HorizontalAlignment="Center">
                         <Border Width="{Binding Path=NodeThumbnailSize, RelativeSource={RelativeSource AncestorType=Window}}"
@@ -748,11 +583,12 @@
                         </Border>
                         <TextBlock Text="{Binding Item.Name}"
                                    Foreground="{DynamicResource PrimaryText}"
-                                   FontSize="10"
+                                   FontSize="11"
                                    TextAlignment="Center"
                                    TextWrapping="Wrap"
+                                   LineHeight="16"
                                    Margin="0,2,0,0"
-                                   MaxHeight="28" />
+                                   MaxHeight="36" />
                     </StackPanel>
                 </DataTemplate>
             </local:NodeLibraryEntryTemplateSelector.ItemTemplate>
@@ -1101,6 +937,40 @@
             ErrorTemplate="{StaticResource AiErrorMessageTemplate}"
             ToolCallGroupTemplate="{StaticResource AiToolCallGroupTemplate}" />
 
+        <Style x:Key="WorkspacePanelTitle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryText}" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+
+        <Style x:Key="VerticalDockSplitterStyle" TargetType="GridSplitter">
+            <Setter Property="Width" Value="8" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="VerticalAlignment" Value="Stretch" />
+            <Setter Property="ShowsPreview" Value="True" />
+            <Setter Property="ResizeDirection" Value="Columns" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="GridSplitter">
+                        <Border x:Name="HitArea" Background="Transparent">
+                            <Border x:Name="Divider"
+                                    Width="1"
+                                    HorizontalAlignment="Center"
+                                    Background="{DynamicResource PanelBorder}" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Divider" Property="Width" Value="2" />
+                                <Setter TargetName="Divider" Property="Background" Value="{DynamicResource Accent}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
     </Window.Resources>
 
     <!-- ============= 全新布局：现代简约 + 全面板可调 ============= -->
@@ -1114,57 +984,111 @@
             <!-- 状态栏 -->
         </Grid.RowDefinitions>
 
-        <!-- ========== 顶部菜单栏 ========== -->
-        <Border Grid.Row="0" 
-                Margin="12,12,12,0" 
-                Background="{DynamicResource PanelBackground}" 
-                BorderBrush="{DynamicResource PanelBorder}" 
-                BorderThickness="1" 
-                CornerRadius="{StaticResource ControlCornerRadius}" 
-                Padding="12,6">
-            <DockPanel LastChildFill="True">
-                <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" VerticalAlignment="Center">
-                    <Menu>
-                        <MenuItem Header="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[MW_File]}">
-                            <MenuItem Header="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[MW_OpenProjectFile]}" Click="OpenProjectMenuItem_Click" />
-                            <MenuItem Header="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[MW_SaveProjectFile]}" Click="SaveProjectMenuItem_Click" />
-                            <MenuItem Header="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[MW_ExportTiles]}" Click="SaveButton_Click" />
-                            <MenuItem Header="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[MW_BatchExportSeeds]}" Click="BatchSeedExport_Click" />
-                        </MenuItem>
-                        <MenuItem Header="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[MW_AI_Settings]}" Click="AiSettingsMenuItem_Click" />
-                    </Menu>
-                    <Button Style="{StaticResource MenuButton}"
-                                Content="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[MW_Settings]}"
-                                Margin="2,0,0,0"
-                                Padding="8,4"
-                                Click="SettingsButton_Click"
-                                ToolTip="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[MW_OpenSettings]}" />
+        <!-- ========== 顶部命令栏 ========== -->
+        <Border Grid.Row="0"
+                Margin="8,8,8,0"
+                Padding="12,9"
+                Style="{StaticResource WorkspaceCardStyle}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,18,0">
+                    <Border Width="42" Height="42" CornerRadius="11" Background="{DynamicResource Accent}">
+                        <TextBlock Text="PX" Foreground="{DynamicResource AccentForeground}"
+                                   FontSize="12" FontWeight="Bold"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <StackPanel Margin="9,0,0,0" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[AppTitle]}"
+                                   FontSize="15" FontWeight="SemiBold" />
+                        <TextBlock Text="PIXEL NODE STUDIO" FontSize="10" Foreground="{DynamicResource MutedText}" />
+                    </StackPanel>
                 </StackPanel>
-            </DockPanel>
+
+                <Menu Grid.Column="1" VerticalAlignment="Center" Margin="0,0,8,0">
+                    <MenuItem Header="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[MW_File]}">
+                        <MenuItem Header="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[MW_OpenProjectFile]}" Click="OpenProjectMenuItem_Click" />
+                        <MenuItem Header="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[MW_SaveProjectFile]}" Click="SaveProjectMenuItem_Click" />
+                        <Separator />
+                        <MenuItem Header="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[MW_ExportTiles]}" Click="SaveButton_Click" />
+                        <MenuItem Header="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[MW_BatchExportSeeds]}" Click="BatchSeedExport_Click" />
+                    </MenuItem>
+                    <MenuItem Header="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[MW_AI_Settings]}" Click="AiSettingsMenuItem_Click" />
+                </Menu>
+
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Content="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[MW_OpenProjectFile]}"
+                            Style="{StaticResource CommandBarButton}"
+                            Click="OpenProjectMenuItem_Click" />
+                    <Button Content="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[MW_SaveProjectFile]}"
+                            Style="{StaticResource CommandBarButton}"
+                            Margin="2,0,0,0"
+                            Click="SaveProjectMenuItem_Click" />
+                    <Button Content="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[MW_ExportTiles]}"
+                            Style="{StaticResource AccentButton}"
+                            Padding="14,6" Margin="6,0,0,0"
+                            Click="SaveButton_Click" />
+                </StackPanel>
+
+                <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center" Margin="12,0,8,0">
+                    <ToggleButton x:Name="LibraryPanelToggle"
+                                  IsChecked="True"
+                                  Style="{StaticResource WorkspaceToggleButton}"
+                                  Checked="WorkspacePanelToggle_Changed"
+                                  Unchecked="WorkspacePanelToggle_Changed"
+                                  Content="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[MW_NodeLibrary]}" />
+                    <ToggleButton x:Name="InspectorPanelToggle"
+                                  IsChecked="True"
+                                  Margin="2,0,0,0"
+                                  Style="{StaticResource WorkspaceToggleButton}"
+                                  Checked="WorkspacePanelToggle_Changed"
+                                  Unchecked="WorkspacePanelToggle_Changed"
+                                  Content="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[MW_NodeProperties]}" />
+                    <ToggleButton x:Name="AssistantPanelToggle"
+                                  IsChecked="True"
+                                  Margin="2,0,0,0"
+                                  Style="{StaticResource WorkspaceToggleButton}"
+                                  Checked="WorkspacePanelToggle_Changed"
+                                  Unchecked="WorkspacePanelToggle_Changed"
+                                  Content="AI" />
+                </StackPanel>
+
+                <Button Grid.Column="4"
+                        Width="34" Height="34" Padding="0"
+                        Style="{StaticResource CommandBarButton}"
+                        Content="⚙"
+                        FontSize="14"
+                        Click="SettingsButton_Click"
+                        ToolTip="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[MW_OpenSettings]}" />
+            </Grid>
         </Border>
 
         <!-- ========== 主工作区 Grid：四列可调（左库 | 画布 | 属性 | AI面板） ========== -->
-        <Grid Grid.Row="1" Margin="12,6,12,0">
+        <Grid Grid.Row="1" Margin="8,8,8,6">
             <Grid.ColumnDefinitions>
                 <!-- 左侧节点库面板 -->
-                <ColumnDefinition x:Name="LeftPanelColumn" Width="380" MinWidth="280" />
-                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition x:Name="LeftPanelColumn" Width="320" MinWidth="260" />
+                <ColumnDefinition x:Name="LeftPanelSplitterColumn" Width="8" />
                 <!-- 中间画布+预览区 -->
-                <ColumnDefinition Width="*" MinWidth="300" />
-                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" MinWidth="420" />
+                <ColumnDefinition x:Name="CenterInspectorSplitterColumn" Width="8" />
                 <!-- 右侧属性面板 -->
-                <ColumnDefinition Width="220" MinWidth="160" />
-                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition x:Name="InspectorPanelColumn" Width="320" MinWidth="260" />
+                <ColumnDefinition x:Name="InspectorPanelSplitterColumn" Width="8" />
                 <!-- AI 助手面板（仿 Claude 桌面版独立面板） -->
-                <ColumnDefinition x:Name="AiPanelColumn" Width="400" MinWidth="280" />
+                <ColumnDefinition x:Name="AiPanelColumn" Width="360" MinWidth="300" />
             </Grid.ColumnDefinitions>
 
             <!-- ===== 左侧面板：节点库 + 模板 ===== -->
-            <Border Grid.Column="0"
-                    Background="{DynamicResource PanelBackground}"
-                    BorderBrush="{DynamicResource PanelBorder}"
-                    BorderThickness="1"
-                    CornerRadius="{StaticResource ControlCornerRadius}"
+            <Border x:Name="LeftDockPanel"
+                    Grid.Column="0"
+                    Style="{StaticResource WorkspaceCardStyle}"
                     Padding="0">
                 <TabControl x:Name="LeftPanelTabs"
                             Background="Transparent"
@@ -1176,7 +1100,7 @@
                         <Style TargetType="TabItem">
                             <Setter Property="Background" Value="{DynamicResource PanelBackground}" />
                             <Setter Property="Foreground" Value="{DynamicResource MutedText}" />
-                            <Setter Property="Padding" Value="12,4" />
+                            <Setter Property="Padding" Value="14,8" />
                             <Setter Property="Template">
                                 <Setter.Value>
                                     <ControlTemplate TargetType="TabItem">
@@ -1446,9 +1370,9 @@
                             <Button Grid.Row="2"
                                     Content="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[MW_SaveAsTemplate]}"
                                     Margin="0,8,0,0"
-                                    Padding="4,4"
-                                    Height="28"
-                                    FontSize="11"
+                                    Padding="10,6"
+                                    MinHeight="34"
+                                    FontSize="12"
                                     Click="SaveAsTemplateMenuItem_Click"
                                     Style="{StaticResource MenuButton}" />
                         </Grid>
@@ -1464,13 +1388,9 @@
             </Border>
 
             <!-- 左侧分割条 -->
-            <GridSplitter Grid.Column="1"
-                          Width="2"
-                          ResizeDirection="Columns"
-                          Background="{DynamicResource PanelBorder}"
-                          HorizontalAlignment="Stretch"
-                          VerticalAlignment="Stretch"
-                          ShowsPreview="True" />
+            <GridSplitter x:Name="LeftDockSplitter"
+                          Grid.Column="1"
+                          Style="{StaticResource VerticalDockSplitterStyle}" />
 
             <!-- ===== 中间区域：节点画布 + 预览（上下可调） ===== -->
             <Grid Grid.Column="2">
@@ -1485,14 +1405,18 @@
                         Background="{DynamicResource PanelBackground}"
                         BorderBrush="{DynamicResource PanelBorder}"
                         BorderThickness="1"
-                        CornerRadius="{StaticResource ControlCornerRadius}"
-                        Padding="10">
+                        CornerRadius="{StaticResource PanelCornerRadius}"
+                        Padding="12">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="*" />
                         </Grid.RowDefinitions>
-                        <Grid Grid.Row="0" Margin="0,0,0,8">
+                        <Grid Grid.Row="0" Margin="0,0,0,10">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="*" />
@@ -1501,32 +1425,66 @@
                             <TextBlock Grid.Column="0" Text="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[MW_NodeCanvas]}" Style="{StaticResource SectionTitle}" Margin="0" />
                             <TextBlock Grid.Column="1" Text="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[MW_DragAndConnect]}" Foreground="{DynamicResource MutedText}" HorizontalAlignment="Right" VerticalAlignment="Center" />
                             <!-- Animation playback controls -->
-                            <Border Grid.Column="2" x:Name="AnimControlPanel"
+                            <Border Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3" x:Name="AnimControlPanel"
                                     Background="{DynamicResource ControlBackground}"
                                     BorderBrush="{DynamicResource ControlBorder}"
-                                    BorderThickness="1" CornerRadius="4"
-                                    Padding="6,2" Margin="8,0,0,0"
+                                    BorderThickness="1" CornerRadius="8"
+                                    Padding="8,5" Margin="0,8,0,0"
+                                    HorizontalAlignment="Left"
                                     Visibility="Collapsed">
                                 <StackPanel Orientation="Horizontal">
-                                    <Button x:Name="AnimPlayBtn" Content="▶" Width="22" Height="20" FontSize="10"
-                                            Padding="0" ToolTip="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[MW_AnimPlay]}"
-                                            Click="AnimPlay_Click"
-                                            Background="Transparent" Foreground="{DynamicResource PrimaryText}" BorderThickness="0" Cursor="Hand" />
-                                    <Button x:Name="AnimStopBtn" Content="■" Width="20" Height="20" FontSize="9"
-                                            Padding="0" Margin="2,0,0,0" ToolTip="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[MW_AnimStop]}"
-                                            Click="AnimStop_Click"
-                                            Background="Transparent" Foreground="{DynamicResource MutedText}" BorderThickness="0" Cursor="Hand" />
-                                    <Button x:Name="AnimStepBtn" Content="⏭" Width="20" Height="20" FontSize="9"
-                                            Padding="0" Margin="2,0,0,0" ToolTip="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[MW_AnimNextFrame]}"
-                                            Click="AnimStep_Click"
-                                            Background="Transparent" Foreground="{DynamicResource MutedText}" BorderThickness="0" Cursor="Hand" />
+                                    <Button x:Name="AnimPrevBtn" Content="‹" Width="30" Height="30" FontSize="18"
+                                             Padding="0" ToolTip="上一帧" Click="AnimPrev_Click"
+                                             Background="Transparent" Foreground="{DynamicResource MutedText}" BorderThickness="0" Cursor="Hand" />
+                                    <Button x:Name="AnimPlayBtn" Content="▶  播放" MinWidth="76" Height="30" FontSize="12"
+                                             Padding="10,0" ToolTip="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[MW_AnimPlay]}"
+                                             Click="AnimPlay_Click"
+                                             Background="{DynamicResource Accent}" Foreground="{DynamicResource AccentForeground}" BorderThickness="0" Cursor="Hand" />
+                                    <Button x:Name="AnimStopBtn" Content="■  停止" MinWidth="70" Height="30" FontSize="12"
+                                             Padding="10,0" Margin="4,0,0,0" ToolTip="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[MW_AnimStop]}"
+                                             Click="AnimStop_Click"
+                                             Background="Transparent" Foreground="{DynamicResource MutedText}" BorderThickness="0" Cursor="Hand" />
+                                    <Button x:Name="AnimStepBtn" Content="›" Width="30" Height="30" FontSize="18"
+                                             Padding="0" Margin="2,0,0,0" ToolTip="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[MW_AnimNextFrame]}"
+                                             Click="AnimStep_Click"
+                                             Background="Transparent" Foreground="{DynamicResource MutedText}" BorderThickness="0" Cursor="Hand" />
+                                    <TextBlock x:Name="AnimPlaybackStatusText"
+                                               Text="已暂停" FontSize="11"
+                                               Foreground="{DynamicResource MutedText}"
+                                               VerticalAlignment="Center" Margin="5,0,0,0" />
                                     <Separator Width="1" Background="{DynamicResource ControlBorder}" Margin="4,2" />
                                     <TextBlock x:Name="AnimFrameLabel" Text="1/8"
                                                FontSize="10" VerticalAlignment="Center"
                                                Foreground="{DynamicResource MutedText}" Margin="0,0,4,0" />
+                                    <Slider x:Name="AnimTimelineSlider"
+                                            Width="156" Height="24" Minimum="0" Maximum="7" Value="0"
+                                            TickFrequency="1" IsSnapToTickEnabled="True"
+                                            AutoToolTipPlacement="TopLeft" AutoToolTipPrecision="0"
+                                            ToolTip="拖动时间轴定位动画帧"
+                                            ValueChanged="AnimTimelineSlider_ValueChanged"
+                                            Margin="0,0,5,0" VerticalAlignment="Center" />
+                                    <TextBlock x:Name="AnimTimeLabel" Text="0.00s" Width="42"
+                                               FontSize="11" VerticalAlignment="Center"
+                                               Foreground="{DynamicResource AccentBrush}" Margin="0,0,4,0" />
+                                    <TextBlock Text="帧" FontSize="10"
+                                               Foreground="{DynamicResource MutedText}" VerticalAlignment="Center" Margin="0,0,2,0" />
+                                    <ComboBox x:Name="AnimFrameCountCombo" Width="58" Height="30" FontSize="11"
+                                              SelectedIndex="0" BorderThickness="1"
+                                              ToolTip="动画总帧数"
+                                              SelectionChanged="AnimFrameCountCombo_SelectionChanged"
+                                              Foreground="{DynamicResource PrimaryText}"
+                                              Background="{DynamicResource ControlBackground}">
+                                        <ComboBoxItem Content="8" Tag="8" />
+                                        <ComboBoxItem Content="12" Tag="12" />
+                                        <ComboBoxItem Content="16" Tag="16" />
+                                        <ComboBoxItem Content="24" Tag="24" />
+                                        <ComboBoxItem Content="32" Tag="32" />
+                                        <ComboBoxItem Content="64" Tag="64" />
+                                    </ComboBox>
+                                    <Separator Width="1" Background="{DynamicResource ControlBorder}" Margin="4,2" />
                                     <TextBlock Text="FPS" FontSize="10"
                                                Foreground="{DynamicResource MutedText}" VerticalAlignment="Center" Margin="0,0,2,0" />
-                                    <ComboBox x:Name="AnimFpsCombo" Width="52" Height="18" FontSize="9"
+                                    <ComboBox x:Name="AnimFpsCombo" Width="60" Height="30" FontSize="11"
                                               SelectedIndex="2" BorderThickness="1"
                                               SelectionChanged="AnimFpsCombo_SelectionChanged"
                                               Foreground="{DynamicResource PrimaryText}"
@@ -1538,6 +1496,16 @@
                                         <ComboBoxItem Content="24" Tag="24" />
                                         <ComboBoxItem Content="30" Tag="30" />
                                     </ComboBox>
+                                    <ComboBox x:Name="AnimPlayModeCombo" Width="78" Height="30" FontSize="11"
+                                              SelectedIndex="0" BorderThickness="1" Margin="4,0,0,0"
+                                              ToolTip="播放模式"
+                                              SelectionChanged="AnimPlayModeCombo_SelectionChanged"
+                                              Foreground="{DynamicResource PrimaryText}"
+                                              Background="{DynamicResource ControlBackground}">
+                                        <ComboBoxItem Content="循环" Tag="Loop" />
+                                        <ComboBoxItem Content="往返" Tag="PingPong" />
+                                        <ComboBoxItem Content="单次" Tag="SingleShot" />
+                                    </ComboBox>
                                 </StackPanel>
                             </Border>
                         </Grid>
@@ -1545,7 +1513,7 @@
                         <Border x:Name="NodeCanvasHost"
                                 Grid.Row="1"
                                 Background="{DynamicResource WindowBackground}"
-                                CornerRadius="{StaticResource ControlCornerRadius}"
+                                CornerRadius="10"
                                 Padding="4"
                                 ClipToBounds="True"
                                 AllowDrop="True"
@@ -1555,15 +1523,19 @@
                                 PreviewMouseDown="NodeCanvasHost_PreviewMouseDown" 
                                 PreviewMouseMove="NodeCanvasHost_PreviewMouseMove" 
                                 PreviewMouseUp="NodeCanvasHost_PreviewMouseUp" 
+                                ContextMenuOpening="NodeCanvasHost_ContextMenuOpening"
                                 PreviewMouseRightButtonUp="NodeCanvasHost_PreviewMouseRightButtonUp">
                             <Border.ContextMenu>
-                                <ContextMenu>
-                                    <MenuItem Header="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[MW_SelectAll]}" Click="Context_SelectAll_Click" />
-                                    <MenuItem Header="{Binding DeleteSelectedMenuHeader, Source={x:Static local:SettingsService.Hints}}" Click="Context_DeleteSelected_Click" />
+                                <ContextMenu Style="{StaticResource CompactContextMenuStyle}" Opened="CanvasContextMenu_Opened">
+                                    <MenuItem Header="添加节点" Tag="CanvasAddRoot" />
+                                    <MenuItem Header="预设" Tag="CanvasPresetRoot" />
+                                    <MenuItem Header="使用帮助" Click="Context_ShowAnimationParticleHelp_Click" />
+                                    <Separator />
+                                    <MenuItem Header="粘贴" InputGestureText="Ctrl+V" Tag="CanvasPaste" Click="Context_Paste_Click" />
+                                    <MenuItem Header="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[MW_SelectAll]}" InputGestureText="Ctrl+A" Click="Context_SelectAll_Click" />
+                                    <MenuItem Header="删除所选" InputGestureText="Delete" Tag="CanvasDelete" Click="Context_DeleteSelected_Click" />
                                     <Separator />
                                     <MenuItem Header="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[MW_AutoArrangeNodes]}" Click="Context_AutoLayout_Click" />
-                                    <Separator />
-                                    <MenuItem Header="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[MW_AddNodeNoise]}" Click="Context_AddNoiseNode_Click" />
                                 </ContextMenu>
                             </Border.ContextMenu>
                             <!-- 画布视口（包含网格、连线、节点等）完全保留 -->
@@ -1683,6 +1655,14 @@
                                                               StrokeThickness="10"
                                                               Fill="Transparent"
                                                               Cursor="Hand" />
+                                                        <!-- 深色描边让不同背景上的连线都保持清楚 -->
+                                                        <Path Data="{Binding WireGeometry}"
+                                                              Stroke="#9A10141D"
+                                                              StrokeThickness="5"
+                                                              StrokeStartLineCap="Round"
+                                                              StrokeEndLineCap="Round"
+                                                              Fill="Transparent"
+                                                              IsHitTestVisible="False" />
                                                         <!-- 可见贝塞尔连线 -->
                                                         <Path Data="{Binding WireGeometry}"
                                                               StrokeStartLineCap="Round"
@@ -1691,12 +1671,12 @@
                                                               IsHitTestVisible="False">
                                                             <Path.Style>
                                                                 <Style TargetType="Path">
-                                                                    <Setter Property="Stroke" Value="#5CC8FF" />
-                                                                    <Setter Property="StrokeThickness" Value="2" />
+                                                                    <Setter Property="Stroke" Value="{Binding WireBrush}" />
+                                                                    <Setter Property="StrokeThickness" Value="2.4" />
                                                                     <Style.Triggers>
                                                                         <DataTrigger Binding="{Binding IsSelected}" Value="True">
                                                                             <Setter Property="Stroke" Value="#FFD966" />
-                                                                            <Setter Property="StrokeThickness" Value="3" />
+                                                                            <Setter Property="StrokeThickness" Value="3.2" />
                                                                         </DataTrigger>
                                                                     </Style.Triggers>
                                                                 </Style>
@@ -1737,20 +1717,36 @@
                                                         MouseLeftButtonUp="NodeItem_MouseLeftButtonUp"
                                                         MouseMove="NodeItem_MouseMove">
                                                     <Border.ContextMenu>
-                                                        <ContextMenu DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
-                                                            <MenuItem Header="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[MW_Rename]}" Click="Node_Context_Rename_Click" />
-                                                            <MenuItem Header="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[MW_Copy]}" Click="Node_Context_Duplicate_Click" />
-                                                            <MenuItem Header="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[MW_Delete]}" Click="Node_Context_Delete_Click" />
+                                                        <ContextMenu Style="{StaticResource CompactContextMenuStyle}"
+                                                                     DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}"
+                                                                     Opened="NodeContextMenu_Opened">
+                                                            <MenuItem Header="重命名" InputGestureText="F2" Click="Node_Context_Rename_Click" />
+                                                            <Separator />
+                                                            <MenuItem Header="复制" InputGestureText="Ctrl+C" Click="Node_Context_Copy_Click" />
+                                                            <MenuItem Header="副本" InputGestureText="Ctrl+D" Click="Node_Context_Duplicate_Click" />
+                                                            <Separator />
+                                                            <MenuItem Header="移动">
+                                                                <MenuItem Header="视图居中" Click="Node_Context_MoveToViewCenter_Click" />
+                                                                <Separator />
+                                                                <MenuItem Header="左移 16 px" Tag="left" Click="Node_Context_Nudge_Click" />
+                                                                <MenuItem Header="右移 16 px" Tag="right" Click="Node_Context_Nudge_Click" />
+                                                                <MenuItem Header="上移 16 px" Tag="up" Click="Node_Context_Nudge_Click" />
+                                                                <MenuItem Header="下移 16 px" Tag="down" Click="Node_Context_Nudge_Click" />
+                                                            </MenuItem>
+                                                            <MenuItem Header="断开连接" Click="Node_Context_Disconnect_Click" />
+                                                            <MenuItem Header="保存为预设" Click="Node_Context_SaveAsTemplate_Click" />
+                                                            <Separator />
+                                                            <MenuItem Header="删除" InputGestureText="Delete" Click="Node_Context_Delete_Click" />
                                                         </ContextMenu>
                                                     </Border.ContextMenu>
                                                     <Border.Style>
                                                         <Style TargetType="Border">
                                                             <Setter Property="BorderBrush" Value="{DynamicResource NodeBorder}" />
-                                                            <Setter Property="BorderThickness" Value="1" />
+                                                            <!-- Keep thickness stable so selection never shifts port centers. -->
+                                                            <Setter Property="BorderThickness" Value="2" />
                                                             <Style.Triggers>
                                                                 <DataTrigger Binding="{Binding IsSelected}" Value="True">
                                                                     <Setter Property="BorderBrush" Value="{DynamicResource Accent}" />
-                                                                    <Setter Property="BorderThickness" Value="2" />
                                                                 </DataTrigger>
                                                             </Style.Triggers>
                                                         </Style>
@@ -2079,16 +2075,12 @@
             </Grid>
 
             <!-- 中间分割条（中/右） -->
-            <GridSplitter Grid.Column="3"
-                          Width="2"
-                          ResizeDirection="Columns"
-                          Background="{DynamicResource PanelBorder}"
-                          HorizontalAlignment="Stretch"
-                          VerticalAlignment="Stretch"
-                          ShowsPreview="True" />
+            <GridSplitter x:Name="CenterInspectorSplitter"
+                          Grid.Column="3"
+                          Style="{StaticResource VerticalDockSplitterStyle}" />
 
             <!-- ===== 右侧面板：三个可调整大小的垂直面板 ===== -->
-            <Grid Grid.Column="4">
+            <Grid x:Name="InspectorDockPanel" Grid.Column="4">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" MinHeight="100" />
                     <!-- 全局设置 -->
@@ -2171,13 +2163,184 @@
                                                            Foreground="{DynamicResource MutedText}"
                                                            FontSize="11"
                                                            Margin="0,0,0,8" />
-                                                <Expander Header="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[MW_NodeParameters]}" IsExpanded="True">
+                                                <StackPanel Margin="0,0,0,10">
+                                                    <StackPanel.Style>
+                                                        <Style TargetType="StackPanel">
+                                                            <Setter Property="Visibility" Value="Collapsed" />
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding SelectedNode.RegistryKey, RelativeSource={RelativeSource AncestorType=Window}}" Value="AiImageGen">
+                                                                    <Setter Property="Visibility" Value="Visible" />
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </StackPanel.Style>
+
+                                                    <!-- Bundled model status is deliberately separate from generation. -->
+                                                    <Border Padding="10" Margin="0,0,0,8" CornerRadius="6"
+                                                            Background="{DynamicResource ControlBackground}"
+                                                            BorderBrush="{DynamicResource PanelBorder}" BorderThickness="1">
+                                                        <StackPanel>
+                                                            <DockPanel Margin="0,0,0,7">
+                                                                <TextBlock Text="1  内置模型" FontWeight="SemiBold"
+                                                                           Foreground="{DynamicResource PrimaryText}" />
+                                                                <Border DockPanel.Dock="Right" Padding="6,2" CornerRadius="8"
+                                                                        Background="{DynamicResource SurfaceHighlight}">
+                                                                    <TextBlock Text="免下载 · A卡 Vulkan" FontSize="10" Foreground="{DynamicResource Accent}" />
+                                                                </Border>
+                                                            </DockPanel>
+                                                            <TextBlock Text="{Binding AiImageModelStatus, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                       FontSize="11" Foreground="{DynamicResource PrimaryText}" TextWrapping="Wrap" />
+                                                            <TextBlock Text="{Binding AiImageTranslatorStatus, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                       FontSize="10" Foreground="{DynamicResource MutedText}"
+                                                                       TextWrapping="Wrap" Margin="0,2,0,0" />
+                                                            <TextBlock Text="{Binding AiImageBackendStatus, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                       FontSize="10" Foreground="{DynamicResource MutedText}" Margin="0,2,0,7" />
+
+                                                            <TextBlock Text="内置模型目录（只读）" FontSize="10" Foreground="{DynamicResource MutedText}" />
+                                                            <StackPanel Margin="0,3,0,7">
+                                                                <TextBox Text="{Binding AiImageModelDirectories, RelativeSource={RelativeSource AncestorType=Window}, Mode=OneWay}"
+                                                                         IsReadOnly="True" Padding="6,4"
+                                                                         ToolTip="{Binding AiImageModelDirectories, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                         TextWrapping="Wrap" MinHeight="68"
+                                                                         VerticalContentAlignment="Top"
+                                                                         HorizontalScrollBarVisibility="Disabled"
+                                                                         VerticalScrollBarVisibility="Auto" />
+                                                            </StackPanel>
+
+                                                            <ProgressBar Minimum="0" Maximum="1" Height="5" Margin="0,0,0,6"
+                                                                         Value="{Binding AiImageProgress, RelativeSource={RelativeSource AncestorType=Window}, Mode=OneWay}" />
+                                                            <TextBlock Text="{Binding AiImageNodeStatus, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                       FontSize="11" Foreground="{DynamicResource PrimaryText}"
+                                                                       TextWrapping="Wrap" MinHeight="28" />
+                                                        </StackPanel>
+                                                    </Border>
+
+                                                    <!-- Large, multiline prompt editor. Prompt fields are hidden from the generic list below. -->
+                                                    <Border Padding="10" CornerRadius="6"
+                                                            Background="{DynamicResource ControlBackground}"
+                                                            BorderBrush="{DynamicResource Accent}" BorderThickness="1">
+                                                        <StackPanel>
+                                                            <TextBlock Text="2  风格、视角与提示词" FontWeight="SemiBold"
+                                                                       Foreground="{DynamicResource PrimaryText}" Margin="0,0,0,3" />
+                                                            <TextBlock Text="支持中文和英文；风格、视角与对象结构词会在生成时自动加入。"
+                                                                       FontSize="10" Foreground="{DynamicResource MutedText}"
+                                                                       TextWrapping="Wrap" Margin="0,0,0,7" />
+                                                            <ItemsControl ItemsSource="{Binding SelectedNode.Parameters, RelativeSource={RelativeSource AncestorType=Window}}">
+                                                                <ItemsControl.ItemTemplate>
+                                                                    <DataTemplate>
+                                                                        <StackPanel Margin="0,0,0,7">
+                                                                            <StackPanel.Style>
+                                                                                <Style TargetType="StackPanel">
+                                                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                                                    <Style.Triggers>
+                                                                                        <DataTrigger Binding="{Binding Name}" Value="style">
+                                                                                            <Setter Property="Visibility" Value="Visible" />
+                                                                                        </DataTrigger>
+                                                                                        <DataTrigger Binding="{Binding Name}" Value="visualStyle">
+                                                                                            <Setter Property="Visibility" Value="Visible" />
+                                                                                        </DataTrigger>
+                                                                                        <DataTrigger Binding="{Binding Name}" Value="viewAngle">
+                                                                                            <Setter Property="Visibility" Value="Visible" />
+                                                                                        </DataTrigger>
+                                                                                        <DataTrigger Binding="{Binding Name}" Value="referenceMode">
+                                                                                            <Setter Property="Visibility" Value="Visible" />
+                                                                                        </DataTrigger>
+                                                                                    </Style.Triggers>
+                                                                                </Style>
+                                                                            </StackPanel.Style>
+                                                                            <DockPanel Margin="0,0,0,3">
+                                                                                <TextBlock Text="{Binding DisplayName}" Style="{StaticResource FieldLabel}" />
+                                                                                <Button DockPanel.Dock="Right" Content="↩" Width="20" Height="20" Padding="0"
+                                                                                        ToolTip="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[MW_ResetParam]}"
+                                                                                        Tag="{Binding}" Click="NodeParamReset_Click" Style="{StaticResource MenuButton}" />
+                                                                            </DockPanel>
+                                                                            <ComboBox ItemsSource="{Binding DisplayChoices}"
+                                                                                      SelectedItem="{Binding SelectedDisplayChoice, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                                        </StackPanel>
+                                                                    </DataTemplate>
+                                                                </ItemsControl.ItemTemplate>
+                                                            </ItemsControl>
+                                                            <Border Background="{DynamicResource SurfaceHighlight}" CornerRadius="4"
+                                                                    Padding="7,5" Margin="0,0,0,8">
+                                                                <TextBlock Text="{Binding AiImagePresetSummary, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                           FontSize="10" Foreground="{DynamicResource Accent}" TextWrapping="Wrap" />
+                                                            </Border>
+                                                            <DockPanel Margin="0,0,0,8">
+                                                                <TextBlock Text="输出尺寸" FontSize="10" Foreground="{DynamicResource MutedText}" />
+                                                                <TextBlock DockPanel.Dock="Right"
+                                                                           Text="{Binding AiImageOutputSizeText, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                           FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource Accent}" />
+                                                            </DockPanel>
+
+                                                            <ItemsControl ItemsSource="{Binding SelectedNode.Parameters, RelativeSource={RelativeSource AncestorType=Window}}">
+                                                                <ItemsControl.ItemTemplate>
+                                                                    <DataTemplate>
+                                                                        <StackPanel Margin="0,0,0,8">
+                                                                            <StackPanel.Style>
+                                                                                <Style TargetType="StackPanel">
+                                                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                                                    <Style.Triggers>
+                                                                                        <DataTrigger Binding="{Binding Name}" Value="prompt">
+                                                                                            <Setter Property="Visibility" Value="Visible" />
+                                                                                        </DataTrigger>
+                                                                                        <DataTrigger Binding="{Binding Name}" Value="negativePrompt">
+                                                                                            <Setter Property="Visibility" Value="Visible" />
+                                                                                        </DataTrigger>
+                                                                                    </Style.Triggers>
+                                                                                </Style>
+                                                                            </StackPanel.Style>
+                                                                            <DockPanel Margin="0,0,0,3">
+                                                                                <TextBlock Text="{Binding DisplayName}" Style="{StaticResource FieldLabel}" />
+                                                                                <Button DockPanel.Dock="Right" Content="↩" Width="20" Height="20" Padding="0"
+                                                                                        ToolTip="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[MW_ResetParam]}"
+                                                                                        Tag="{Binding}" Click="NodeParamReset_Click" Style="{StaticResource MenuButton}" />
+                                                                            </DockPanel>
+                                                                            <TextBox Text="{Binding TextValue, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                                                     AcceptsReturn="True" TextWrapping="Wrap"
+                                                                                     Padding="7,6" VerticalContentAlignment="Top"
+                                                                                     VerticalScrollBarVisibility="Auto"
+                                                                                     SpellCheck.IsEnabled="False">
+                                                                                <TextBox.Style>
+                                                                                    <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+                                                                                        <Setter Property="MinHeight" Value="68" />
+                                                                                        <Style.Triggers>
+                                                                                            <DataTrigger Binding="{Binding Name}" Value="prompt">
+                                                                                                <Setter Property="MinHeight" Value="112" />
+                                                                                            </DataTrigger>
+                                                                                        </Style.Triggers>
+                                                                                    </Style>
+                                                                                </TextBox.Style>
+                                                                            </TextBox>
+                                                                        </StackPanel>
+                                                                    </DataTemplate>
+                                                                </ItemsControl.ItemTemplate>
+                                                            </ItemsControl>
+
+                                                            <TextBlock Text="{Binding AiImageReferenceStatus, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                       FontSize="10" Foreground="{DynamicResource MutedText}"
+                                                                       TextWrapping="Wrap" Margin="0,0,0,8" />
+                                                            <WrapPanel>
+                                                                <Button Content="开始生成 / 重新生成" Margin="0,0,6,4" Padding="12,6"
+                                                                        IsEnabled="{Binding AiImageCanGenerate, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                        Click="AiImageGenerate_Click" />
+                                                                <Button Content="取消生成" Margin="0,0,0,4" Padding="9,6"
+                                                                        IsEnabled="{Binding AiImageCanCancelGeneration, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                        Click="AiImageCancel_Click" Style="{StaticResource MenuButton}" />
+                                                            </WrapPanel>
+                                                        </StackPanel>
+                                                    </Border>
+                                                </StackPanel>
+                                                <Expander IsExpanded="True">
                                                     <Expander.Style>
                                                         <Style TargetType="Expander" BasedOn="{StaticResource {x:Type Expander}}">
+                                                            <Setter Property="Header" Value="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[MW_NodeParameters]}" />
                                                             <Setter Property="Visibility" Value="Visible" />
                                                             <Style.Triggers>
                                                                 <DataTrigger Binding="{Binding SelectedNode.Parameters.Count, RelativeSource={RelativeSource AncestorType=Window}}" Value="0">
                                                                     <Setter Property="Visibility" Value="Collapsed" />
+                                                                </DataTrigger>
+                                                                <DataTrigger Binding="{Binding SelectedNode.RegistryKey, RelativeSource={RelativeSource AncestorType=Window}}" Value="AiImageGen">
+                                                                    <Setter Property="Header" Value="3  像素与生成设置" />
                                                                 </DataTrigger>
                                                             </Style.Triggers>
                                                         </Style>
@@ -2186,6 +2349,34 @@
                                                         <ItemsControl.ItemTemplate>
                                                             <DataTemplate>
                                                                 <StackPanel Margin="0,0,0,8">
+                                                                    <StackPanel.Style>
+                                                                        <Style TargetType="StackPanel">
+                                                                            <Setter Property="Visibility" Value="Visible" />
+                                                                            <Style.Triggers>
+                                                                                <DataTrigger Binding="{Binding Name}" Value="requestVersion">
+                                                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                                                </DataTrigger>
+                                                                                <DataTrigger Binding="{Binding Name}" Value="outputSize">
+                                                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                                                </DataTrigger>
+                                                                                <DataTrigger Binding="{Binding Name}" Value="prompt">
+                                                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                                                </DataTrigger>
+                                                                                <DataTrigger Binding="{Binding Name}" Value="negativePrompt">
+                                                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                                                </DataTrigger>
+                                                                                <DataTrigger Binding="{Binding Name}" Value="style">
+                                                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                                                </DataTrigger>
+                                                                                <DataTrigger Binding="{Binding Name}" Value="visualStyle">
+                                                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                                                </DataTrigger>
+                                                                                <DataTrigger Binding="{Binding Name}" Value="viewAngle">
+                                                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                                                </DataTrigger>
+                                                                            </Style.Triggers>
+                                                                        </Style>
+                                                                    </StackPanel.Style>
                                                                     <Grid>
                                                                         <Grid.ColumnDefinitions>
                                                                             <ColumnDefinition Width="*" />
@@ -3123,16 +3314,16 @@
             </Grid>
 
             <!-- ===== AI 面板分割条 ===== -->
-            <GridSplitter Grid.Column="5"
-                          Width="2"
-                          ResizeDirection="Columns"
-                          Background="{DynamicResource PanelBorder}"
-                          HorizontalAlignment="Stretch"
-                          VerticalAlignment="Stretch"
-                          ShowsPreview="True" />
+            <GridSplitter x:Name="InspectorDockSplitter"
+                          Grid.Column="5"
+                          Style="{StaticResource VerticalDockSplitterStyle}" />
 
             <!-- ===== AI 助手面板（仿 Claude 桌面版） ===== -->
-            <Grid Grid.Column="6" x:Name="AiMainPanel">
+            <Border Grid.Column="6"
+                    x:Name="AiMainPanel"
+                    Style="{StaticResource WorkspaceCardStyle}"
+                    ClipToBounds="True">
+            <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
                     <!-- 顶部标题栏 -->
@@ -3648,22 +3839,41 @@
                     </Grid>
                 </Border>
             </Grid>
+            </Border>
         </Grid>
 
         <!-- ========== 底部状态栏 ========== -->
-        <StatusBar Grid.Row="2"
-                   Padding="10,5"
-                   Margin="12,0,12,12"
-                   BorderThickness="1"
-                   BorderBrush="{DynamicResource PanelBorder}"
-                   Background="{DynamicResource PanelBackground}">
-            <StatusBarItem>
-                <StackPanel Orientation="Horizontal">
+        <Border Grid.Row="2"
+                Margin="8,0,8,8"
+                Padding="12,7"
+                Style="{StaticResource WorkspaceCardStyle}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0" Orientation="Horizontal">
+                    <Ellipse Width="6" Height="6"
+                             Fill="{DynamicResource SuccessBrush}"
+                             Margin="0,0,7,0"
+                             VerticalAlignment="Center" />
                     <TextBlock x:Name="StatusText" Text="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[MW_Ready]}" VerticalAlignment="Center" />
                     <ProgressBar x:Name="EvalProgressBar" Width="80" Height="8" Margin="8,0,0,0"
                                  IsIndeterminate="True" Visibility="Collapsed" VerticalAlignment="Center" />
                 </StackPanel>
-            </StatusBarItem>
-        </StatusBar>
+                <TextBlock Grid.Column="1"
+                           Text="拖动画布 · 滚轮缩放 · Delete 删除"
+                           Foreground="{DynamicResource MutedText}"
+                           FontSize="10"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center" />
+                <TextBlock Grid.Column="2"
+                           Text="PIXEL GRAPH  ·  LIVE PREVIEW"
+                           Foreground="{DynamicResource MutedText}"
+                           FontSize="9"
+                           VerticalAlignment="Center" />
+            </Grid>
+        </Border>
     </Grid>
 </Window>

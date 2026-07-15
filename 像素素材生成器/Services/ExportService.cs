@@ -181,6 +181,11 @@ public static class ExportService
                         Name = p.Name, Kind = p.Kind,
                         NumberValue = p.NumberValue, IntValue = p.IntValue,
                         BoolValue = p.BoolValue, SelectedChoice = p.SelectedChoice,
+                        TextValue = p.TextValue,
+                        ColorArgb = ((uint)p.ColorValue.A << 24)
+                            | ((uint)p.ColorValue.R << 16)
+                            | ((uint)p.ColorValue.G << 8)
+                            | p.ColorValue.B,
                         PointListData = new List<System.Windows.Point>(p.PointListValue)
                     });
                 }

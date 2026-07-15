@@ -144,12 +144,14 @@ public sealed class ParticleLightNode : IGraphNode
                             data[idx] = Math.Min(1f, data[idx] + srcR);
                             data[idx + 1] = Math.Min(1f, data[idx + 1] + srcG);
                             data[idx + 2] = Math.Min(1f, data[idx + 2] + srcB);
+                            data[idx + 3] = Math.Min(1f, data[idx + 3] + Math.Min(1f, glow));
                             break;
 
                         case "screen":
                             data[idx] = 1f - (1f - data[idx]) * (1f - srcR);
                             data[idx + 1] = 1f - (1f - data[idx + 1]) * (1f - srcG);
                             data[idx + 2] = 1f - (1f - data[idx + 2]) * (1f - srcB);
+                            data[idx + 3] = Math.Min(1f, data[idx + 3] + Math.Min(1f, glow));
                             break;
 
                         case "alpha":

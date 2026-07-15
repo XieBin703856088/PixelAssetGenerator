@@ -48,17 +48,11 @@ public sealed class ParticleTrailNode : IPersistentStateNode
         List<(int Index, float X, float Y, float Life)> TrailPoints,
         bool Initialized);
 
-    private static PixelBuffer? _sharedPlaceholder;
-
     public PixelBuffer Process(PixelBuffer?[] inputs, IReadOnlyDictionary<string, object> parameters, PixelGraphContext context)
     {
         // ParticleTrailNode doesn't produce a PixelBuffer directly.
         // Trail particles are injected into the emitter's buffer via SimulateFrame.
-        if (_sharedPlaceholder == null)
-        {
-            _sharedPlaceholder = PixelBuffer.CreateSolid(1, 1, 0f, 0f, 0f, 0f);
-        }
-        return _sharedPlaceholder;
+        return PixelBuffer.CreateSolid(1, 1, 0f, 0f, 0f, 0f);
     }
 
     /// <summary>
@@ -117,7 +111,7 @@ public sealed class ParticleTrailNode : IPersistentStateNode
         for (var i = 0; i < activeCount; i++)
         {
             ref readonly var p = ref span[i];
-            if (!p.Active) continue;
+            if (!p.Active || p.IsTrailGhost) continue;
 
             // Add current position as a trail point (full life)
             trailPoints.Add((i, p.X, p.Y, 1f));
@@ -176,6 +170,7 @@ public sealed class ParticleTrailNode : IPersistentStateNode
                     srcR, srcG, srcB, 0f, // fade to transparent
                     srcSize * sizeScale, srcSize * sizeScale * 0.1f
                 );
+                slot.IsTrailGhost = true;
                 inserted++;
 
                 // Extend active count if this slot is beyond current range

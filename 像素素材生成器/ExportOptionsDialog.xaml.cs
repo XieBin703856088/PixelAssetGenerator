@@ -25,35 +25,24 @@ namespace PixelAssetGenerator
         {
             Title = Loc.GetString("Export_Title");
             // Increase default size and allow resizing to avoid control clipping on small displays
-            Height = 420;
-            Width = 520;
-            MinHeight = 360;
-            MinWidth = 460;
+            Height = 440;
+            Width = 560;
+            MinHeight = 390;
+            MinWidth = 500;
             WindowStartupLocation = WindowStartupLocation.CenterOwner;
             ResizeMode = ResizeMode.CanResize;
-            Background = new SolidColorBrush(Color.FromRgb(0x0D, 0x0F, 0x13));
-            Foreground = new SolidColorBrush(Color.FromRgb(0xE6, 0xE6, 0xE6));
-            FontFamily = new FontFamily("Segoe UI");
-
-            var panelBackground = new SolidColorBrush(Color.FromRgb(0x14, 0x18, 0x21));
-            var panelBorder = new SolidColorBrush(Color.FromRgb(0x23, 0x28, 0x34));
-            var controlBackground = new SolidColorBrush(Color.FromRgb(0x1A, 0x1F, 0x2A));
-            var controlBorder = new SolidColorBrush(Color.FromRgb(0x2A, 0x2F, 0x3C));
-            var accent = new SolidColorBrush(Color.FromRgb(0x5C, 0xC8, 0xFF));
-            var accentHover = new SolidColorBrush(Color.FromRgb(0x7A, 0xD5, 0xFF));
-            var accentPressed = new SolidColorBrush(Color.FromRgb(0x3E, 0xA6, 0xDC));
-            var mutedText = new SolidColorBrush(Color.FromRgb(0x8F, 0x98, 0xA8));
-            var cornerRadius = new CornerRadius(8);
+            SetResourceReference(BackgroundProperty, "WindowBackground");
+            SetResourceReference(ForegroundProperty, "PrimaryText");
 
             var rootBorder = new Border
             {
-                Background = panelBackground,
-                BorderBrush = panelBorder,
                 BorderThickness = new Thickness(1),
-                CornerRadius = cornerRadius,
-                Padding = new Thickness(18),
+                CornerRadius = new CornerRadius(12),
+                Padding = new Thickness(20),
                 Margin = new Thickness(12)
             };
+            rootBorder.SetResourceReference(Border.BackgroundProperty, "PanelBackground");
+            rootBorder.SetResourceReference(Border.BorderBrushProperty, "PanelBorder");
 
             var grid = new Grid();
             grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
@@ -72,12 +61,14 @@ namespace PixelAssetGenerator
             Grid.SetRow(header, 0);
             grid.Children.Add(header);
 
+            header.SetResourceReference(StyleProperty, "WindowTitleText");
+
             var subtitle = new TextBlock
             {
                 Text = Loc.GetString("Export_Subtitle"),
-                Foreground = mutedText,
                 Margin = new Thickness(0, 0, 0, 16)
             };
+            subtitle.SetResourceReference(StyleProperty, "WindowSubtitleText");
             Grid.SetRow(subtitle, 1);
             grid.Children.Add(subtitle);
 
@@ -92,54 +83,11 @@ namespace PixelAssetGenerator
 
             _formatComboBox = new ComboBox
             {
-                Height = 36,
                 MinWidth = 260,
                 SelectedIndex = 0,
-                Background = controlBackground,
-                Foreground = Brushes.White,
-                BorderBrush = controlBorder,
-                BorderThickness = new Thickness(1),
                 Padding = new Thickness(10, 6, 10, 6),
                 Margin = new Thickness(0, 0, 0, 8),
                 HorizontalAlignment = HorizontalAlignment.Stretch
-            };
-            _formatComboBox.Template = CreateComboBoxTemplate(cornerRadius, controlBackground, controlBorder);
-            _formatComboBox.Resources[SystemColors.WindowBrushKey] = controlBackground;
-            _formatComboBox.Resources[SystemColors.WindowTextBrushKey] = Brushes.White;
-            _formatComboBox.Resources[SystemColors.ControlBrushKey] = controlBackground;
-            _formatComboBox.Resources[SystemColors.ControlTextBrushKey] = Brushes.White;
-            _formatComboBox.Resources[SystemColors.HighlightBrushKey] = new SolidColorBrush(Color.FromRgb(0x32, 0x41, 0x4B));
-            _formatComboBox.Resources[SystemColors.HighlightTextBrushKey] = Brushes.White;
-            _formatComboBox.ItemContainerStyle = new Style(typeof(ComboBoxItem))
-            {
-                Setters =
-                {
-                    new Setter(BackgroundProperty, controlBackground),
-                    new Setter(ForegroundProperty, Brushes.White)
-                },
-                Triggers =
-                {
-                    new Trigger
-                    {
-                        Property = ComboBoxItem.IsHighlightedProperty,
-                        Value = true,
-                        Setters =
-                        {
-                            new Setter(BackgroundProperty, new SolidColorBrush(Color.FromRgb(0x32, 0x41, 0x4B))),
-                            new Setter(ForegroundProperty, Brushes.White)
-                        }
-                    },
-                    new Trigger
-                    {
-                        Property = Selector.IsSelectedProperty,
-                        Value = true,
-                        Setters =
-                        {
-                            new Setter(BackgroundProperty, new SolidColorBrush(Color.FromRgb(0x3A, 0x48, 0x54))),
-                            new Setter(ForegroundProperty, Brushes.White)
-                        }
-                    }
-                }
             };
             _formatComboBox.Items.Add(new ComboBoxItem { Content = "PNG", Tag = "Png" });
             _formatComboBox.Items.Add(new ComboBoxItem { Content = "JPEG", Tag = "Jpeg" });
@@ -153,7 +101,6 @@ namespace PixelAssetGenerator
             {
                 Content = Loc.GetString("Export_AlphaChannel"),
                 Margin = new Thickness(0, 12, 0, 0),
-                Foreground = Brushes.White,
                 IsChecked = true
             };
             Grid.SetRow(_alphaCheckBox, 4);
@@ -182,12 +129,7 @@ namespace PixelAssetGenerator
 
             _fileTextBox = new TextBox
             {
-                Height = 30,
                 MinWidth = 260,
-                Background = controlBackground,
-                Foreground = Brushes.White,
-                BorderBrush = controlBorder,
-                BorderThickness = new Thickness(1),
                 Padding = new Thickness(8, 4, 8, 4),
                 HorizontalAlignment = HorizontalAlignment.Stretch
             };
@@ -197,14 +139,8 @@ namespace PixelAssetGenerator
                 Content = Loc.GetString("Export_Browse"),
                 Width = 88,
                 Margin = new Thickness(8, 0, 0, 0),
-                Background = controlBackground,
-                Foreground = Brushes.White,
-                BorderBrush = controlBorder,
-                BorderThickness = new Thickness(1),
-                Padding = new Thickness(12, 6, 12, 6),
-                FontWeight = FontWeights.SemiBold
+                Padding = new Thickness(12, 6, 12, 6)
             };
-            browseButton.Template = CreateButtonTemplate(cornerRadius, null, null);
             browseButton.Click += BrowseButton_Click;
 
             Grid.SetColumn(_fileTextBox, 0);
@@ -226,28 +162,19 @@ namespace PixelAssetGenerator
                 Content = Loc.GetString("Export_Cancel"),
                 Width = 88,
                 Margin = new Thickness(0, 0, 8, 0),
-                Background = controlBackground,
-                Foreground = Brushes.White,
-                BorderBrush = controlBorder,
-                BorderThickness = new Thickness(1),
                 Padding = new Thickness(12, 6, 12, 6),
-                FontWeight = FontWeights.SemiBold
+                IsCancel = true
             };
-            cancelButton.Template = CreateButtonTemplate(cornerRadius, null, null);
             cancelButton.Click += CancelButton_Click;
 
             var okButton = new Button
             {
                 Content = Loc.GetString("Export_OK"),
                 Width = 88,
-                Background = accent,
-                Foreground = new SolidColorBrush(Color.FromRgb(0x0B, 0x0E, 0x14)),
-                BorderBrush = accent,
-                BorderThickness = new Thickness(1),
                 Padding = new Thickness(12, 6, 12, 6),
-                FontWeight = FontWeights.SemiBold
+                IsDefault = true
             };
-            okButton.Template = CreateButtonTemplate(cornerRadius, accentHover, accentPressed);
+            okButton.SetResourceReference(StyleProperty, "AccentButton");
             okButton.Click += OkButton_Click;
 
             buttonPanel.Children.Add(cancelButton);
@@ -264,11 +191,11 @@ namespace PixelAssetGenerator
         private void BrowseButton_Click(object? sender, RoutedEventArgs e)
         {
             var key = GetSelectedFormatKey();
-            var filter = "PNG ͼ�� (*.png)|*.png";
+            var filter = "PNG 图像 (*.png)|*.png";
             var defaultExt = ".png";
-            if (key == "Jpeg") { filter = "JPEG ͼ�� (*.jpg;*.jpeg)|*.jpg;*.jpeg"; defaultExt = ".jpg"; }
-            else if (key == "Bmp") { filter = "BMP ͼ�� (*.bmp)|*.bmp"; defaultExt = ".bmp"; }
-            else if (key == "Tiff") { filter = "TIFF ͼ�� (*.tif;*.tiff)|*.tif;*.tiff"; defaultExt = ".tif"; }
+            if (key == "Jpeg") { filter = "JPEG 图像 (*.jpg;*.jpeg)|*.jpg;*.jpeg"; defaultExt = ".jpg"; }
+            else if (key == "Bmp") { filter = "BMP 图像 (*.bmp)|*.bmp"; defaultExt = ".bmp"; }
+            else if (key == "Tiff") { filter = "TIFF 图像 (*.tif;*.tiff)|*.tif;*.tiff"; defaultExt = ".tif"; }
 
             var dialog = new SaveFileDialog
             {

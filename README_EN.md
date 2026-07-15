@@ -2,14 +2,19 @@
 
 A node-based pixel art material generator. Create tileable pixel-style textures by composing node graphs, with AI-assisted creation and editing.
 
-**Version**: 0.6.0.0 | **Target**: .NET 9 / WPF | **C#**: 13
+**Version**: 0.7.0 | **Target**: .NET 9 / WPF | **C#**: 13
+
+![Pixel Asset Generator v0.7.0](docs/images/pixel-asset-generator-v0.7.0.png)
 
 ## Features
 
-- **Node Graph Editor**: 151 nodes across 10 categories for visual programming
+- **Node Graph Editor**: 178 nodes across 12 categories for visual programming
 - **GPU Acceleration**: Direct3D 11 compute shaders (Vortice, optional) + SharpDX D3DImage interop
+- **Local AI Generation**: Bundled pixel-art Stable Diffusion/LoRA with Chinese prompts, reference images, AMD Vulkan and CPU backends
 - **AI Assistant**: OpenAI / Claude API integration for AI-driven node graph creation and editing
-- **Animation System**: Frame sequence playback, parameter animation, particle system, physics simulation
+- **Animation System**: Isolated multi-workflow playback, timelines, motion presets, sprite effects and frame sequences
+- **Particles and Physics**: Emitters, forces, collisions, trails, lighting, rigid bodies, constraints and soft bodies
+- **Smart Textures**: Moss, corrosion, damage, cracks, palette transfer and pixel-art cleanup
 - **Skill System**: 33 built-in skills for saving/reusing node subgraphs or command templates
 - **Localization**: Simplified Chinese / English UI, runtime switching (resx + external JSON)
 - **Startup Optimization**: Splash progress bar + background parallel thumbnail generation
@@ -32,7 +37,7 @@ A node-based pixel art material generator. Create tileable pixel-style textures 
 │   └── ...
 ├── Generators/              # Tile Generators (compiled C#)
 ├── Resources/               # App resources, localization, node definitions
-├── Nodes/                   # 19 extension nodes (animation/particle/physics)
+├── Nodes/                   # 36 extension nodes (animation/particle/physics/smart/meta)
 ├── Services/                # Service Layer (DI container + AI services)
 ├── Models/                  # Data models
 ├── Controls/                # Custom WPF controls
@@ -73,15 +78,17 @@ dotnet run --project 像素素材生成器
 | Category | Count | Description |
 |----------|-------|-------------|
 | Generate | 5 | Tile generation |
-| ImageProcess | 42 | Image processing filters |
-| Logic | 14 | Logic flow control |
-| Material | 32 | Material texture generation |
+| ImageProcess | 48 | Image processing filters |
+| Logic | 13 | Logic flow control |
+| Material | 37 | Material texture generation |
 | Noise | 16 | Noise and organic textures |
 | Pattern | 20 | Pattern and shape generation |
 | Tool | 3 | Tools (annotation/output/preview) |
-| Animation | 8 | Parameter animation/audio reactive |
-| Particle | 7 | Particle system |
-| Physics | 4 | Physics simulation |
+| Animation | 13 | Parameter/timeline/sprite animation |
+| Particle | 8 | Particle system |
+| Physics | 5 | Physics simulation |
+| Meta | 5 | Complete workflow meta nodes |
+| SmartTexture | 5 | Smart texture and pixel-art optimization |
 
 ## How to Contribute
 

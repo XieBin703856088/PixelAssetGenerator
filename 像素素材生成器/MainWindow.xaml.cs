@@ -23,6 +23,7 @@ using System.Windows.Threading;
 using Microsoft.Win32;
 using System.Diagnostics;
 using PixelAssetGenerator.Core;
+using PixelAssetGenerator.Core.AiImage;
 using PixelAssetGenerator.Core.Gpu;
 using PixelAssetGenerator.Core.Nodes.Sources;
 using PixelAssetGenerator.Services;
@@ -42,7 +43,6 @@ namespace PixelAssetGenerator
 
         private const string GrassCustomFlowerPortName = "Custom Flower";
         private readonly TileGenerator _generator = new();
-        private readonly NodeGraphEvaluator _graphEvaluator = new();
         private GraphEvaluationService _graphEvalService = null!;
         private NodeGraphController _nodeGraphController = null!;
         private readonly UndoRedoService _undoRedoService = new();
@@ -61,9 +61,11 @@ namespace PixelAssetGenerator
 
         /// <summary>Animation playback engine. Created on first use.</summary>
         private Services.AnimationPlaybackService? _animationService;
+        private bool _isUpdatingAnimationTimeline;
 
         /// <summary>Particle system coordinator. Created on first use.</summary>
         private Services.ParticleEvaluationService? _particleEvalService;
+        private int _lastParticleSimulationFrame = -1;
 
         /// <summary>Current node library thumbnail size (both width and height in the same proportion).</summary>
         public double NodeThumbnailSize
@@ -426,6 +428,36 @@ namespace PixelAssetGenerator
         {
             var dlg = new SettingsWindow { Owner = this };
             dlg.ShowDialog();
+        }
+
+        private void WorkspacePanelToggle_Changed(object sender, RoutedEventArgs e)
+        {
+            // Checked/Unchecked may fire while InitializeComponent is still constructing
+            // the visual tree, so only update once every named layout element is available.
+            if (LeftPanelColumn == null || InspectorPanelColumn == null || AiPanelColumn == null)
+                return;
+
+            var showLibrary = LibraryPanelToggle?.IsChecked == true;
+            LeftDockPanel.Visibility = showLibrary ? Visibility.Visible : Visibility.Collapsed;
+            LeftDockSplitter.Visibility = showLibrary ? Visibility.Visible : Visibility.Collapsed;
+            LeftPanelColumn.MinWidth = showLibrary ? 260 : 0;
+            LeftPanelColumn.Width = showLibrary ? new GridLength(340) : new GridLength(0);
+            LeftPanelSplitterColumn.Width = showLibrary ? new GridLength(8) : new GridLength(0);
+
+            var showInspector = InspectorPanelToggle?.IsChecked == true;
+            InspectorDockPanel.Visibility = showInspector ? Visibility.Visible : Visibility.Collapsed;
+            CenterInspectorSplitter.Visibility = showInspector ? Visibility.Visible : Visibility.Collapsed;
+            InspectorPanelColumn.MinWidth = showInspector ? 240 : 0;
+            InspectorPanelColumn.Width = showInspector ? new GridLength(300) : new GridLength(0);
+            CenterInspectorSplitterColumn.Width = showInspector ? new GridLength(8) : new GridLength(0);
+
+            var showAssistant = AssistantPanelToggle?.IsChecked == true;
+            AiMainPanel.Visibility = showAssistant ? Visibility.Visible : Visibility.Collapsed;
+            var showAssistantDivider = showAssistant && showInspector;
+            InspectorDockSplitter.Visibility = showAssistantDivider ? Visibility.Visible : Visibility.Collapsed;
+            AiPanelColumn.MinWidth = showAssistant ? 300 : 0;
+            AiPanelColumn.Width = showAssistant ? new GridLength(360) : new GridLength(0);
+            InspectorPanelSplitterColumn.Width = showAssistantDivider ? new GridLength(8) : new GridLength(0);
         }
 
         // ─── File Attachments for AI Chat ──────────────────────────────
@@ -1750,7 +1782,11 @@ namespace PixelAssetGenerator
 
                     UpdateBuildingTilePreview();
                     UpdateVariationPreviews();
+                    UpdateAnimationUI();
+                    ApplyActiveWorkflowPlaybackSettings();
                 }
+
+                UpdateAiImagePanelFromSelection();
 
                 // Update status bar with node description
                 if (_selectedNode != null)
@@ -2126,6 +2162,7 @@ namespace PixelAssetGenerator
             InitializeComponent();
             DataContext = this;
             Instance = this;
+            InitializeLocalAiImageGeneration();
 
             _previewDebounceTimer = new DispatcherTimer(DispatcherPriority.Background)
             {
@@ -2174,6 +2211,10 @@ namespace PixelAssetGenerator
             SettingsService.Save();
 
             CleanupTimers();
+            if (_localAiImageService != null)
+                _localAiImageService.StateChanged -= LocalAiImageService_StateChanged;
+            AiImageGenerationRuntime.Current = null;
+            _localAiImageService?.Dispose();
             base.OnClosed(e);
         }
 
@@ -2402,7 +2443,13 @@ namespace PixelAssetGenerator
             // Cache all port positions after layout is complete
             _ = Dispatcher.BeginInvoke(new Action(() =>
             {
-                try { CacheAllPortPositions(); } catch { }
+                try
+                {
+                    CacheAllPortPositions();
+                    UpdateConnectionPositions();
+                    NodeConnectionLayer?.InvalidateVisual();
+                }
+                catch { }
             }), DispatcherPriority.Background);
 
             RequestPreviewRefresh(true);
@@ -2766,9 +2813,9 @@ namespace PixelAssetGenerator
                         if (proto != null)
                         {
                             foreach (var port in proto.InputPorts)
-                                node.InputPorts.Add(new NodePortViewModel(port.Name, MapGraphPortType(port.Type), false));
+                                node.InputPorts.Add(new NodePortViewModel(port.Name, MapGraphPortType(port.Type), false, port.StableKey));
                             foreach (var port in proto.OutputPorts)
-                                node.OutputPorts.Add(new NodePortViewModel(port.Name, MapGraphPortType(port.Type), true));
+                                node.OutputPorts.Add(new NodePortViewModel(port.Name, MapGraphPortType(port.Type), true, port.StableKey));
                         }
                     }
 
@@ -2838,11 +2885,51 @@ namespace PixelAssetGenerator
                     || t == "Lightning" || t == "LavaFlow"
                     || t == "WaterFlow" || t == "Fire"
                     || t == "ParticleEmitter" || t == "ParticleForce"
-                    || t == "ParticleRender" || t == "PhysicsSimulate"
+                    || t == "ParticleBehavior" || t == "ParticleRender" || t == "PhysicsSimulate"
                     || t == "PhysicsField" || t == "Time"
-                    || t == "AnimatedParameter";
+                    || t == "AnimatedParameter" || t == "AnimatedTransform"
+                    || t == "Wave" || t == "NoiseAnimation"
+                    || t == "AnimationPath" || t == "AnimationSequencer"
+                    || t == "AudioReactive" || t == "FrameBlend"
+                    || t == "AnimationTimeline" || t == "MotionPreset"
+                    || t == "SpriteAnimator" || t == "SpriteEffectAnimator"
+                    || t == "AnimationWorkflowOutput" || t == "SpriteMotionMeta"
+                    || t == "ParticleEffectMeta";
             });
             AnimControlPanel.Visibility = hasAnimNode ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        /// <summary>Applies timing metadata from the active workflow output to the shared transport.</summary>
+        private void ApplyActiveWorkflowPlaybackSettings()
+        {
+            if (!_isInitialized || SelectedNode == null) return;
+            var output = WorkflowPreviewResolver.Resolve(Nodes, NodeConnections, SelectedNode, IsGraphNode);
+            if (output?.TypeName != "AnimationWorkflowOutput") return;
+
+            EnsureNodeParametersInitialized(output);
+            var frameRate = Math.Clamp(output.Parameters
+                .FirstOrDefault(parameter => parameter.Name == "frameRate")?.IntValue ?? 12, 1, 60);
+            var duration = Math.Clamp(output.Parameters
+                .FirstOrDefault(parameter => parameter.Name == "duration")?.NumberValue ?? 1d, 0.05, 60d);
+            var frameCount = Math.Clamp((int)Math.Round(duration * frameRate), 1, 256);
+            var loopMode = output.Parameters
+                .FirstOrDefault(parameter => parameter.Name == "loopMode")?.SelectedChoice ?? "loop";
+            var playMode = loopMode switch
+            {
+                "pingPong" => Services.AnimationPlayMode.PingPong,
+                "once" => Services.AnimationPlayMode.SingleShot,
+                _ => Services.AnimationPlayMode.Loop
+            };
+
+            var service = EnsureAnimationService();
+            service.FrameRate = frameRate;
+            service.FrameCount = frameCount;
+            service.PlayMode = playMode;
+            SelectComboBoxTag(AnimFpsCombo, frameRate.ToString());
+            SelectComboBoxTag(AnimFrameCountCombo, frameCount.ToString());
+            SelectComboBoxTag(AnimPlayModeCombo, playMode.ToString());
+            UpdateAnimationTimelineUi(service.CurrentFrame);
+            UpdateAnimationPlaybackUi();
         }
 
         private Services.AnimationPlaybackService EnsureAnimationService()
@@ -2850,9 +2937,18 @@ namespace PixelAssetGenerator
             if (_animationService == null)
             {
                 _animationService = new Services.AnimationPlaybackService();
+                if (AnimFpsCombo?.SelectedItem is ComboBoxItem fpsItem &&
+                    double.TryParse(fpsItem.Tag?.ToString(), out var fps))
+                    _animationService.FrameRate = fps;
+                if (AnimFrameCountCombo?.SelectedItem is ComboBoxItem countItem &&
+                    int.TryParse(countItem.Tag?.ToString(), out var frameCount))
+                    _animationService.FrameCount = frameCount;
+                if (AnimPlayModeCombo?.SelectedItem is ComboBoxItem modeItem &&
+                    Enum.TryParse<Services.AnimationPlayMode>(modeItem.Tag?.ToString(), out var mode))
+                    _animationService.PlayMode = mode;
                 _animationService.FrameChanged += (frame, t) =>
                 {
-                    AnimFrameLabel.Text = $"{frame + 1}/{_animationService.FrameCount}";
+                    UpdateAnimationTimelineUi(frame);
                     // Trigger particle simulation and preview refresh with the current animation frame
                     _ = Dispatcher.InvokeAsync(() =>
                     {
@@ -2860,8 +2956,49 @@ namespace PixelAssetGenerator
                         RequestPreviewRefresh(false);
                     });
                 };
+                _animationService.PropertyChanged += (_, args) =>
+                {
+                    if (args.PropertyName == nameof(Services.AnimationPlaybackService.IsPlaying))
+                        _ = Dispatcher.InvokeAsync(UpdateAnimationPlaybackUi);
+                };
+                UpdateAnimationPlaybackUi();
             }
             return _animationService;
+        }
+
+        private void UpdateAnimationPlaybackUi()
+        {
+            var isPlaying = _animationService?.IsPlaying == true;
+            if (AnimPlayBtn != null)
+                AnimPlayBtn.Content = isPlaying ? "⏸ 暂停" : "▶ 播放";
+            if (AnimPlaybackStatusText != null)
+            {
+                AnimPlaybackStatusText.Text = isPlaying ? "播放中" : "已暂停";
+                AnimPlaybackStatusText.Foreground = isPlaying
+                    ? TryFindResource("Accent") as Brush ?? Brushes.MediumPurple
+                    : TryFindResource("MutedText") as Brush ?? Brushes.Gray;
+            }
+        }
+
+        private void UpdateAnimationTimelineUi(int frame)
+        {
+            if (_animationService == null) return;
+            AnimFrameLabel.Text = $"{frame + 1}/{_animationService.FrameCount}";
+            if (AnimTimeLabel != null)
+                AnimTimeLabel.Text = $"{_animationService.CurrentTimeSeconds:0.00}s";
+            if (AnimTimelineSlider == null) return;
+
+            _isUpdatingAnimationTimeline = true;
+            try
+            {
+                AnimTimelineSlider.Maximum = Math.Max(0, _animationService.FrameCount - 1);
+                AnimTimelineSlider.Value = frame;
+                AnimTimelineSlider.TickFrequency = 1;
+            }
+            finally
+            {
+                _isUpdatingAnimationTimeline = false;
+            }
         }
 
         /// <summary>
@@ -2870,56 +3007,49 @@ namespace PixelAssetGenerator
         /// </summary>
         private void UpdateParticleSimulation(int frame, float normalizedTime)
         {
-            if (_particleEvalService == null)
-                _particleEvalService = new Services.ParticleEvaluationService();
+            _particleEvalService ??= new Services.ParticleEvaluationService();
+            var requiresRebuild = frame > 0 &&
+                (_lastParticleSimulationFrame < 0 || frame != _lastParticleSimulationFrame + 1);
+            if (frame == 0 && _lastParticleSimulationFrame > 0 || requiresRebuild)
+                _particleEvalService.ClearState();
 
-            // Build temporary instance list from current nodes
-            var instances = new List<GraphNodeInstance>(Nodes.Count);
-            var instanceMap = new Dictionary<int, GraphNodeInstance>();
-            foreach (var node in Nodes)
+            using var runtimeSnapshot = _graphEvalService.BuildSnapshot(
+                Nodes.ToList(), NodeConnections.ToList(), GetSelectedTileSize());
+            var instances = runtimeSnapshot.Instances;
+            var graphConnections = runtimeSnapshot.Connections;
+            if (instances.Count == 0) return;
+
+            var frameRate = (float)(_animationService?.FrameRate ?? 60d);
+            var frameCount = _animationService?.FrameCount ?? 1;
+            var startFrame = requiresRebuild ? 0 : frame;
+            for (var simulationFrame = startFrame; simulationFrame <= frame; simulationFrame++)
             {
-                var graphNode = GraphNodeRegistry.Create(node.RegistryKey);
-                if (graphNode == null) continue;
-                var inst = new GraphNodeInstance(node.Id, graphNode);
-                // Copy parameter values
-                foreach (var param in node.Parameters)
+                var frameTime = simulationFrame == frame
+                    ? normalizedTime
+                    : frameCount <= 1
+                        ? 0f
+                        : simulationFrame / (float)(_animationService?.PlayMode == Services.AnimationPlayMode.Loop
+                            ? frameCount
+                            : frameCount - 1);
+                var context = new PixelGraphContext
                 {
-                    if (inst.ParameterValues.ContainsKey(param.Name))
-                    {
-                        inst.ParameterValues[param.Name] = param.Kind switch
-                        {
-                            NodeParameterKind.Number => (object)param.NumberValue,
-                            NodeParameterKind.Integer => param.IntValue,
-                            NodeParameterKind.Boolean => param.BoolValue,
-                            NodeParameterKind.Choice => param.SelectedChoice ?? string.Empty,
-                            NodeParameterKind.Color => (object)param.ColorValue,
-                            NodeParameterKind.Seed => param.IntValue,
-                            _ => (object)param.NumberValue
-                        };
-                    }
-                }
-                instances.Add(inst);
-                instanceMap[node.Id] = inst;
+                    TileSize = GetSelectedTileSize(),
+                    Seed = 42,
+                    AnimationTime = frameTime,
+                    AnimationFrame = simulationFrame,
+                    AnimationFrameCount = frameCount,
+                    DeltaTime = 1f / frameRate,
+                    GlobalTime = simulationFrame / frameRate,
+                };
+
+                _particleEvalService.RestoreState(instances);
+                var evaluated = _graphEvalService.Evaluator.EvaluateAll(instances, graphConnections, context);
+                _particleEvalService.SimulateParticleFrame(instances, graphConnections, context);
+                _particleEvalService.SaveState(instances);
+                foreach (var buffer in evaluated.Values.Distinct<PixelBuffer>(ReferenceEqualityComparer.Instance))
+                    buffer.Dispose();
             }
-
-            // Restore previous frame's state
-            _particleEvalService.RestoreState(instances);
-
-            // Simulate one frame
-            var context = new PixelGraphContext
-            {
-                TileSize = GetSelectedTileSize(),
-                Seed = 42,
-                AnimationTime = normalizedTime,
-                AnimationFrame = frame,
-                AnimationFrameCount = _animationService?.FrameCount ?? 1,
-                DeltaTime = _animationService != null ? 1f / (float)(_animationService.FrameRate) : 1f / 60f,
-            };
-
-            _particleEvalService.SimulateParticleFrame(instances, new Dictionary<string, object>(), context);
-
-            // Save state back
-            _particleEvalService.SaveState(instances);
+            _lastParticleSimulationFrame = frame;
         }
 
         private void AnimPlay_Click(object sender, RoutedEventArgs e)
@@ -2933,24 +3063,28 @@ namespace PixelAssetGenerator
                 // UpdateAnimationUI and state clear handled by AnimPreviewRadio_Checked
             }
 
+            ApplyActiveWorkflowPlaybackSettings();
             var svc = EnsureAnimationService();
             if (svc.IsPlaying)
             {
                 svc.Pause();
-                AnimPlayBtn.Content = "▶";
             }
             else
             {
+                if (_particleEvalService?.HasParticleState != true)
+                    UpdateParticleSimulation(svc.CurrentFrame, svc.NormalizedTime);
                 svc.Play();
-                AnimPlayBtn.Content = "⏸";
             }
+            UpdateAnimationPlaybackUi();
         }
 
         private void AnimStop_Click(object sender, RoutedEventArgs e)
         {
             if (_animationService == null) return;
+            _particleEvalService?.ClearState();
+            _lastParticleSimulationFrame = -1;
             _animationService.Stop();
-            AnimPlayBtn.Content = "▶";
+            UpdateAnimationPlaybackUi();
             _ = Dispatcher.InvokeAsync(() => RequestPreviewRefresh(false));
         }
 
@@ -2960,11 +3094,49 @@ namespace PixelAssetGenerator
             svc.StepForward();
         }
 
+        private void AnimPrev_Click(object sender, RoutedEventArgs e)
+        {
+            var svc = EnsureAnimationService();
+            _particleEvalService?.ClearState();
+            _lastParticleSimulationFrame = -1;
+            svc.StepBackward();
+        }
+
         private void AnimFpsCombo_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
         {
-            if (_animationService == null || AnimFpsCombo.SelectedItem is not System.Windows.Controls.ComboBoxItem item) return;
+            if (!_isInitialized || AnimFpsCombo.SelectedItem is not ComboBoxItem item) return;
             if (double.TryParse(item.Tag?.ToString(), out var fps))
-                _animationService.FrameRate = fps;
+                EnsureAnimationService().FrameRate = fps;
+        }
+
+        private void AnimFrameCountCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (!_isInitialized || AnimFrameCountCombo.SelectedItem is not ComboBoxItem item) return;
+            if (!int.TryParse(item.Tag?.ToString(), out var frameCount)) return;
+            _particleEvalService?.ClearState();
+            _lastParticleSimulationFrame = -1;
+            EnsureAnimationService().FrameCount = frameCount;
+        }
+
+        private void AnimPlayModeCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (!_isInitialized || AnimPlayModeCombo.SelectedItem is not ComboBoxItem item) return;
+            if (Enum.TryParse<Services.AnimationPlayMode>(item.Tag?.ToString(), out var mode))
+                EnsureAnimationService().PlayMode = mode;
+        }
+
+        private void AnimTimelineSlider_ValueChanged(object sender,
+            RoutedPropertyChangedEventArgs<double> e)
+        {
+            if (!_isInitialized || _isUpdatingAnimationTimeline) return;
+            var service = EnsureAnimationService();
+            var frame = Math.Clamp((int)Math.Round(e.NewValue), 0, service.FrameCount - 1);
+            if (frame == service.CurrentFrame) return;
+
+            _particleEvalService?.ClearState();
+            _lastParticleSimulationFrame = -1;
+            service.SeekFrame(frame);
+            UpdateAnimationPlaybackUi();
         }
 
         // ─── Preview mode switching ─────────────────────────────────────
@@ -2982,12 +3154,12 @@ namespace PixelAssetGenerator
             if (_animationService != null && _animationService.IsPlaying)
             {
                 _animationService.Stop();
-                if (AnimPlayBtn != null)
-                    AnimPlayBtn.Content = "▶";
+                UpdateAnimationPlaybackUi();
             }
 
             // Clear particle accumulation so static frame shows initial state
             _particleEvalService?.ClearState();
+            _lastParticleSimulationFrame = -1;
 
             // Disable comparison mode when switching to Still (reset state)
             DisableComparisonMode();
@@ -3017,6 +3189,7 @@ namespace PixelAssetGenerator
 
             // Clear particle state and refresh
             _particleEvalService?.ClearState();
+            _lastParticleSimulationFrame = -1;
             RequestPreviewRefresh(false);
         }
 
@@ -3035,7 +3208,16 @@ namespace PixelAssetGenerator
                 return t == "FrameSequence" || t == "ParameterAnimation"
                     || t == "AnimatedParameter" || t == "Time"
                     || t == "ParticleEmitter" || t == "ParticleRender"
-                    || t == "PhysicsSimulate" || t == "FrameInterpolation";
+                    || t == "ParticleForce" || t == "ParticleBehavior" || t == "PhysicsSimulate"
+                    || t == "PhysicsField" || t == "FrameInterpolation"
+                    || t == "AnimatedTransform" || t == "Wave"
+                    || t == "NoiseAnimation" || t == "AnimationPath"
+                    || t == "AnimationSequencer" || t == "AudioReactive"
+                    || t == "FrameBlend" || t == "AnimationTimeline"
+                    || t == "MotionPreset" || t == "SpriteAnimator"
+                    || t == "Smoke" || t == "Fog"
+                    || t == "Rain" || t == "Snow" || t == "Lightning"
+                    || t == "LavaFlow" || t == "WaterFlow" || t == "Fire";
             });
 
             if (hasAnimNode)
@@ -3209,28 +3391,7 @@ namespace PixelAssetGenerator
         /// </summary>
         private NodeViewModel? FindTerminalNode()
         {
-            // Priority 1: ParticleRenderNode
-            foreach (var n in Nodes)
-            {
-                if (n.TypeName == "ParticleRender" && IsGraphNode(n))
-                    return n;
-            }
-
-            // Priority 2: Output node
-            var outputNode = GetOutputNode();
-            if (outputNode != null)
-                return outputNode;
-
-            // Priority 3: Terminal node (no outgoing connections)
-            foreach (var n in Nodes)
-            {
-                var hasOutgoing = NodeConnections.Any(c =>
-                    !c.IsPreview && c.StartNode != null && c.StartNode.Id == n.Id);
-                if (!hasOutgoing && IsGraphNode(n))
-                    return n;
-            }
-
-            return null;
+            return WorkflowPreviewResolver.Resolve(Nodes, NodeConnections, SelectedNode, IsGraphNode);
         }
 
         /// <summary>

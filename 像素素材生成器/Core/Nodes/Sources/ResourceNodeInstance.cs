@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Text.Json;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using PixelAssetGenerator.Core.PixelArt;
 using PixelAssetGenerator.Models;
 
 namespace PixelAssetGenerator.Core.Nodes.Sources;
@@ -36,9 +37,9 @@ public sealed class ResourceNodeInstance : IGraphNode, IMultiOutputNode
         }
     }
 
-    public IReadOnlyList<GraphNodePort> InputPorts { get; private set; }
-    public IReadOnlyList<GraphNodePort> OutputPorts { get; private set; }
-    public IReadOnlyList<NodeParameterDefinition> Parameters { get; private set; }
+    public IReadOnlyList<GraphNodePort> InputPorts { get; private set; } = Array.Empty<GraphNodePort>();
+    public IReadOnlyList<GraphNodePort> OutputPorts { get; private set; } = Array.Empty<GraphNodePort>();
+    public IReadOnlyList<NodeParameterDefinition> Parameters { get; private set; } = Array.Empty<NodeParameterDefinition>();
 
     /// <summary>
     /// Cached flag: does this node have a Mask output port in its definition?
@@ -70,11 +71,11 @@ public sealed class ResourceNodeInstance : IGraphNode, IMultiOutputNode
     private void ApplyLocale(string locale)
     {
         InputPorts = (_resource.Ports?.Inputs ?? new List<NodeResourcePortDef>())
-            .Select(p => new GraphNodePort(p.GetName(locale), ParsePortType(p.Type)))
+            .Select(p => new GraphNodePort(p.GetName(locale), ParsePortType(p.Type), p.Key, p.IsRequired, p.AllowsMultipleConnections))
             .ToList();
 
         OutputPorts = (_resource.Ports?.Outputs ?? new List<NodeResourcePortDef>())
-            .Select(p => new GraphNodePort(p.GetName(locale), ParsePortType(p.Type)))
+            .Select(p => new GraphNodePort(p.GetName(locale), ParsePortType(p.Type), p.Key, p.IsRequired, p.AllowsMultipleConnections))
             .ToList();
 
         Parameters = (_resource.Parameters ?? new List<NodeResourceParameter>())
@@ -115,11 +116,20 @@ public sealed class ResourceNodeInstance : IGraphNode, IMultiOutputNode
         EnsureCompiled();
 
         if (_compiledFunc != null)
-            return _compiledFunc(inputs, parameters, context);
+        {
+            var continuousResult = _compiledFunc(inputs, parameters, context);
+            var style = PixelArtStyleProfile.ForLegacyNode(Category, TypeName, context.TileSize);
+            if (!style.Enabled)
+                return continuousResult;
+
+            var pixelArtResult = PixelArtKernel.Stylize(continuousResult, style);
+            continuousResult.Dispose();
+            return pixelArtResult;
+        }
 
         // Fallback: pass-through first input or return solid color
-        return inputs.Length > 0 && inputs[0] != null
-            ? inputs[0].Clone()
+        return inputs.Length > 0 && inputs[0] is { } firstInput
+            ? firstInput.Clone()
             : PixelBuffer.CreateSolid(context.TileSize, context.TileSize, 0, 0, 0, 255);
     }
 

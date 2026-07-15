@@ -1,0 +1,26 @@
+{
+  "formatVersion": 3,
+  "processorType": "SpriteExtrude",
+  "identity": {
+    "typeName": "SpriteExtrude",
+    "displayName": { "zh-Hans": "精灵边缘挤出", "en": "Sprite Extrude" },
+    "category": "ImageProcess", "subcategory": "Sprite",
+    "description": { "zh-Hans": "把不透明边缘的 RGB 挤入透明像素，减少图集缩放和纹理过滤产生的色边。", "en": "Extrude opaque edge RGB into transparent pixels to prevent atlas filtering seams." },
+    "tags": ["sprite", "atlas", "bleed", "padding"], "author": "BuiltIn", "version": "1.0"
+  },
+  "ports": {
+    "inputs": [{ "key": "image", "name": { "zh-Hans": "图像", "en": "Image" }, "type": "Image", "required": true }],
+    "outputs": [{ "key": "image", "name": { "zh-Hans": "图像", "en": "Image" }, "type": "Image" }]
+  },
+  "parameters": [
+    { "name": { "zh-Hans": "挤出半径", "en": "Radius" }, "kind": "Integer", "default": 2, "min": 1, "max": 16, "step": 1 },
+    { "name": { "zh-Hans": "Alpha 阈值", "en": "Alpha Threshold" }, "kind": "Number", "default": 0.01, "min": 0, "max": 1, "step": 0.01 },
+    { "name": { "zh-Hans": "扩展 Alpha", "en": "Extend Alpha" }, "kind": "Boolean", "default": false }
+  ],
+  "ai": {
+    "capabilities": ["sprite-extrude", "atlas-padding", "texture-bleed-fix"],
+    "triggers": { "zh-Hans": "精灵挤边 图集边距 纹理渗色 色边 padding", "en": "sprite extrude atlas padding texture bleed color seam" },
+    "suggestedInputs": ["SpriteSlice", "PixelPerfectOutline"],
+    "exampleUsage": { "zh-Hans": "导出图集前挤出 2 像素 RGB，并保持 Alpha 不变。", "en": "Extrude RGB by two pixels before atlas export while keeping alpha unchanged." }
+  }
+}

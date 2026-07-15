@@ -1,0 +1,10 @@
+Model: Xenova/opus-mt-zh-en (INT8 ONNX)
+Upstream model: Helsinki-NLP/opus-mt-zh-en
+Source: https://huggingface.co/Xenova/opus-mt-zh-en
+Purpose: Local Chinese-to-English prompt translation
+Runtime: Microsoft ONNX Runtime CPU
+License: CC-BY-4.0
+
+Bundled files are a quantized ONNX conversion of the OPUS-MT Chinese-to-English
+model. The tokenizer normalizer entry is set to null for compatibility with the
+native Tokenizers.DotNet runtime; SentencePiece vocabulary assets are unchanged.

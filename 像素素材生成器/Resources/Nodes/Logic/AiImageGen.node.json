@@ -1,169 +1,199 @@
 {
   "formatVersion": 2,
-  "processorType": null,
+  "processorType": "AiImageGen",
   "identity": {
     "typeName": "AiImageGen",
     "displayName": {
-      "zh-Hans": "AI图像生成[占位]",
-      "en": "AI Image Gen [Placeholder]"
+      "zh-Hans": "AI 像素素材生成",
+      "en": "AI Pixel Asset Generator"
     },
     "category": "Logic",
     "description": {
-      "zh-Hans": "【占位功能】使用AI图像生成API生成像素艺术图像。当前仅返回随机占位图，真正的AI图像生成功能待开发。请使用AI侧边栏聊天功能协助你搭建节点管线，或等待后续版本完善此节点。",
-      "en": "[PLACEHOLDER] Generates pixel art images using AI image API. Currently returns a random placeholder image; real AI image generation is under development. Use the AI sidebar chat to help build your node pipeline, or wait for a future version to complete this node."
+      "zh-Hans": "使用随软件分发的本地扩散模型生成与全局图块大小一致的游戏像素素材。支持中文提示词、参考图和蒙版；NVIDIA 使用 CUDA，AMD/Intel 使用 Vulkan，并提供 CPU 回退。最终用户无需下载模型。",
+      "en": "Generates pixel-game assets at the global tile size with bundled offline diffusion and translation models. Supports prompts, reference images and masks; no end-user model download is required."
     },
-    "tags": [
-      "ai",
-      "generation"
-    ],
+    "tags": ["ai", "pixel-art", "sprite", "local-inference", "img2img"],
     "author": "BuiltIn",
-    "version": "1.0"
+    "version": "2.1"
   },
   "ports": {
     "inputs": [
       {
-        "name": {
-          "zh-Hans": "参考图像",
-          "en": "Reference Image"
-        },
+        "key": "referenceImage",
+        "name": { "zh-Hans": "参考图像", "en": "Reference Image" },
         "type": "Image"
       },
       {
-        "name": {
-          "zh-Hans": "可选遮罩",
-          "en": "Optional Mask"
-        },
+        "key": "mask",
+        "name": { "zh-Hans": "可选蒙版", "en": "Optional Mask" },
         "type": "Mask"
       }
     ],
     "outputs": [
       {
-        "name": {
-          "zh-Hans": "输出",
-          "en": "Output"
-        },
+        "key": "output",
+        "name": { "zh-Hans": "输出", "en": "Output" },
         "type": "Image"
       }
     ]
   },
   "parameters": [
     {
-      "name": {
-        "zh-Hans": "提示词",
-        "en": "Prompt"
-      },
+      "name": { "zh-Hans": "提示词", "en": "Prompt" },
+      "key": "prompt",
       "kind": "Text",
-      "default": "a pixel art tree"
+      "default": "一棵长满苔藓的古老橡树，单个独立物件，居中，清晰轮廓"
     },
     {
-      "name": {
-        "zh-Hans": "反向提示词",
-        "en": "Negative Prompt"
-      },
+      "name": { "zh-Hans": "反向提示词", "en": "Negative Prompt" },
+      "key": "negativePrompt",
       "kind": "Text",
-      "default": ""
+      "default": "photo, realistic, 3d render, blurry, smooth gradients, text, watermark, multiple objects"
     },
     {
-      "name": {
-        "zh-Hans": "风格",
-        "en": "Style"
-      },
+      "name": { "zh-Hans": "素材类型", "en": "Asset Type" },
+      "key": "style",
       "kind": "Choice",
-      "default": "pixelArt",
+      "default": "sprite",
       "choices": [
-        {
-          "value": "pixelArt",
-          "label": {
-            "zh-Hans": "像素艺术",
-            "en": "pixelArt"
-          }
-        },
-        {
-          "value": "pixelCharacter",
-          "label": {
-            "zh-Hans": "像素角色",
-            "en": "pixelCharacter"
-          }
-        },
-        {
-          "value": "pixelScene",
-          "label": {
-            "zh-Hans": "像素场景",
-            "en": "pixelScene"
-          }
-        },
-        {
-          "value": "pixelIcon",
-          "label": {
-            "zh-Hans": "像素图标",
-            "en": "pixelIcon"
-          }
-        },
-        {
-          "value": "pixelUI",
-          "label": {
-            "zh-Hans": "像素UI",
-            "en": "pixelUI"
-          }
-        }
+        { "value": "sprite", "label": { "zh-Hans": "物件精灵", "en": "Object Sprite" } },
+        { "value": "character", "label": { "zh-Hans": "角色", "en": "Character" } },
+        { "value": "icon", "label": { "zh-Hans": "图标", "en": "Icon" } },
+        { "value": "tile", "label": { "zh-Hans": "无缝地块", "en": "Seamless Tile" } },
+        { "value": "scene", "label": { "zh-Hans": "小场景", "en": "Small Scene" } }
       ]
     },
     {
-      "name": {
-        "zh-Hans": "宽度",
-        "en": "Width"
-      },
-      "kind": "Integer",
-      "default": 64,
-      "min": 16,
-      "max": 512
+      "name": { "zh-Hans": "RPG 风格限制", "en": "RPG Style Constraint" },
+      "key": "visualStyle",
+      "kind": "Choice",
+      "default": "classic32",
+      "choices": [
+        { "value": "classic32", "label": { "zh-Hans": "经典 32×32 RPG", "en": "Classic 32×32 RPG" } },
+        { "value": "detailed64", "label": { "zh-Hans": "精细 64×64 RPG", "en": "Detailed 64×64 RPG" } },
+        { "value": "retro16", "label": { "zh-Hans": "复古 16 位 JRPG", "en": "Retro 16-bit JRPG" } },
+        { "value": "darkFantasy", "label": { "zh-Hans": "暗黑奇幻 RPG", "en": "Dark Fantasy RPG" } },
+        { "value": "cozyRpg", "label": { "zh-Hans": "清新生活 RPG", "en": "Cozy Life RPG" } },
+        { "value": "tacticalSciFi", "label": { "zh-Hans": "科幻战术 RPG", "en": "Tactical Sci-Fi RPG" } }
+      ]
     },
     {
-      "name": {
-        "zh-Hans": "高度",
-        "en": "Height"
-      },
-      "kind": "Integer",
-      "default": 64,
-      "min": 16,
-      "max": 512
+      "name": { "zh-Hans": "构图视角", "en": "Camera View" },
+      "key": "viewAngle",
+      "kind": "Choice",
+      "default": "auto",
+      "choices": [
+        { "value": "auto", "label": { "zh-Hans": "自动匹配", "en": "Automatic" } },
+        { "value": "isometric45", "label": { "zh-Hans": "45° 等距斜视", "en": "45° Isometric" } },
+        { "value": "frontHigh", "label": { "zh-Hans": "正面俯视", "en": "Elevated Front" } },
+        { "value": "topDown", "label": { "zh-Hans": "正俯视", "en": "Strict Top-down" } },
+        { "value": "front", "label": { "zh-Hans": "正面平视", "en": "Straight Front" } },
+        { "value": "side", "label": { "zh-Hans": "侧面", "en": "Side" } }
+      ]
     },
     {
-      "name": {
-        "zh-Hans": "创意度",
-        "en": "Creativity"
-      },
+      "name": { "zh-Hans": "调色板色数", "en": "Palette Colors" },
+      "key": "paletteSize",
+      "kind": "Integer",
+      "default": 16,
+      "min": 4,
+      "max": 32,
+      "step": 1
+    },
+    {
+      "name": { "zh-Hans": "生成步数", "en": "Steps" },
+      "key": "steps",
+      "kind": "Integer",
+      "default": 22,
+      "min": 8,
+      "max": 40,
+      "step": 1
+    },
+    {
+      "name": { "zh-Hans": "提示词引导", "en": "Guidance" },
+      "key": "guidance",
       "kind": "Number",
-      "default": 0.8,
-      "min": 0,
-      "max": 1,
+      "default": 7.5,
+      "min": 1,
+      "max": 12,
+      "step": 0.5
+    },
+    {
+      "name": { "zh-Hans": "参考图模式", "en": "Reference Mode" },
+      "key": "referenceMode",
+      "kind": "Choice",
+      "default": "structure",
+      "choices": [
+        { "value": "structure", "label": { "zh-Hans": "保留构图", "en": "Preserve Composition" } },
+        { "value": "strict", "label": { "zh-Hans": "高保真复刻", "en": "High Fidelity" } },
+        { "value": "repaint", "label": { "zh-Hans": "自由重绘", "en": "Loose Repaint" } },
+        { "value": "palette", "label": { "zh-Hans": "仅参考配色", "en": "Palette Only" } }
+      ]
+    },
+    {
+      "name": { "zh-Hans": "参考图保真度", "en": "Reference Fidelity" },
+      "key": "referenceStrength",
+      "kind": "Number",
+      "default": 0.72,
+      "min": 0.1,
+      "max": 0.95,
       "step": 0.05
     },
     {
-      "name": {
-        "zh-Hans": "种子",
-        "en": "Seed"
-      },
+      "name": { "zh-Hans": "背景处理", "en": "Background" },
+      "key": "backgroundMode",
+      "kind": "Choice",
+      "default": "auto",
+      "choices": [
+        { "value": "auto", "label": { "zh-Hans": "自动", "en": "Auto" } },
+        { "value": "transparent", "label": { "zh-Hans": "透明", "en": "Transparent" } },
+        { "value": "opaque", "label": { "zh-Hans": "保留背景", "en": "Keep Background" } }
+      ]
+    },
+    {
+      "name": { "zh-Hans": "抖动", "en": "Dithering" },
+      "key": "dithering",
+      "kind": "Choice",
+      "default": "none",
+      "choices": [
+        { "value": "none", "label": { "zh-Hans": "无", "en": "None" } },
+        { "value": "ordered4x4", "label": { "zh-Hans": "有序 4×4", "en": "Ordered 4×4" } }
+      ]
+    },
+    {
+      "name": { "zh-Hans": "精灵轮廓", "en": "Sprite Outline" },
+      "key": "addOutline",
+      "kind": "Boolean",
+      "default": true
+    },
+    {
+      "name": { "zh-Hans": "种子", "en": "Seed" },
+      "key": "seed",
       "kind": "Seed",
       "default": 42,
       "min": 0,
-      "max": 9999
+      "max": 999999999
+    },
+    {
+      "name": { "zh-Hans": "生成请求", "en": "Generation Request" },
+      "key": "requestVersion",
+      "kind": "Integer",
+      "default": 0,
+      "min": 0,
+      "max": 2147483647,
+      "step": 1
     }
   ],
-  "script": {
-    "language": "csharp",
-    "code": "{\nvar prompt = GetString(parameters, \"prompt\");\n        var width = GetInt(parameters, \"width\");\n        var height = GetInt(parameters, \"height\");\n        var seed = GetInt(parameters, \"seed\");\n\n        if (!string.IsNullOrWhiteSpace(prompt))\n        {\n            // Placeholder: when AI service is connected, dispatch a generation request here.\n            // For now, return a visually distinctive placeholder so the user can see the node is working.\n            return GeneratePlaceholder(width, height, seed, prompt);\n        }\n\n        // Default placeholder when no prompt is given\n        return PixelBuffer.CreateSolid(width, height, 0.3f, 0.2f, 0.5f);\n}\n\nprivate static PixelBuffer GeneratePlaceholder(int width, int height, int seed, string prompt)\n{\n    var buf = new PixelBuffer(width > 0 ? width : 64, height > 0 ? height : 64);\n    var rng = new Random(seed);\n    float r = (float)rng.NextDouble() * 0.4f + 0.3f;\n    float g = (float)rng.NextDouble() * 0.4f + 0.2f;\n    float b = (float)rng.NextDouble() * 0.4f + 0.3f;\n    for (var y = 0; y < buf.Height; y++)\n        for (var x = 0; x < buf.Width; x++)\n            buf.SetPixel(x, y, r + (float)rng.NextDouble() * 0.1f, g + (float)rng.NextDouble() * 0.1f, b + (float)rng.NextDouble() * 0.1f, 1f);\n    return buf;\n}"
-  },
   "ai": {
-    "capabilities": ["logic", "ai-image-gen", "image-analysis"],
+    "capabilities": ["ai-image-gen", "text-to-image", "image-to-image", "pixel-art"],
     "triggers": {
-      "zh-Hans": "AI图像, AI图像生成, 生成图片, AI像素, AI生成",
-      "en": "ai image, ai image generation, generate image, ai pixel art"
+      "zh-Hans": "AI图像, 像素素材生成, 参考图生成, 32像素, 64像素",
+      "en": "ai image, pixel asset generation, image to image, 32 pixel, 64 pixel"
     },
-    "suggestedInputs": [],
+    "suggestedInputs": ["Reference Image", "Optional Mask"],
     "exampleUsage": {
-      "zh-Hans": "使用AI根据文本提示词生成像素艺术树的图像。",
-      "en": "Use AI to generate a pixel art tree image from a text prompt."
+      "zh-Hans": "选择素材类型、RPG 风格和构图视角后输入中文或英文提示词；系统会自动补充对象结构约束，并通过分级像素化生成干净的 32/64 像素簇。",
+      "en": "Choose an asset type, RPG style, and camera view, then enter a Chinese or English prompt. Structural constraints and staged pixel-cluster reconstruction are applied automatically."
     }
   }
 }

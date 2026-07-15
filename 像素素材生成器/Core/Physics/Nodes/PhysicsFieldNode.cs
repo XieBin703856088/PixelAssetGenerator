@@ -43,15 +43,9 @@ public sealed class PhysicsFieldNode : IGraphNode
     public IReadOnlyList<GraphNodePort> OutputPorts => _outputs;
     public IReadOnlyList<NodeParameterDefinition> Parameters => _parameters;
 
-    private static PixelBuffer? _sharedPlaceholder;
-
     public PixelBuffer Process(PixelBuffer?[] inputs, IReadOnlyDictionary<string, object> parameters, PixelGraphContext context)
     {
-        if (_sharedPlaceholder == null)
-        {
-            _sharedPlaceholder = PixelBuffer.CreateSolid(1, 1, 0f, 0f, 0f, 0f);
-        }
-        return _sharedPlaceholder;
+        return PixelBuffer.CreateSolid(1, 1, 0f, 0f, 0f, 0f);
     }
 
     /// <summary>

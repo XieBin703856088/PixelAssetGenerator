@@ -8,38 +8,12 @@
              mc:Ignorable="d"
              d:DesignHeight="200" d:DesignWidth="800">
     <UserControl.Resources>
-        <!-- 筛选开关按钮样式 -->
-        <Style x:Key="FilterToggleStyle" TargetType="ToggleButton">
+        <!-- 筛选开关按钮沿用工作区的分段控件视觉。 -->
+        <Style x:Key="FilterToggleStyle" TargetType="ToggleButton" BasedOn="{StaticResource WorkspaceToggleButton}">
             <Setter Property="FontSize" Value="11" />
             <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="Padding" Value="8,2" />
+            <Setter Property="Padding" Value="9,3" />
             <Setter Property="Margin" Value="2,0" />
-            <Setter Property="Cursor" Value="Hand" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="BorderBrush" Value="{DynamicResource ControlBorder}" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="ToggleButton">
-                        <Border x:Name="Bg"
-                                Background="{DynamicResource ControlBackground}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="3"
-                                Padding="{TemplateBinding Padding}">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
-                                              RecognizesAccessKey="True" />
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bg" Property="Opacity" Value="0.8" />
-                            </Trigger>
-                            <Trigger Property="IsChecked" Value="False">
-                                <Setter TargetName="Bg" Property="Opacity" Value="0.35" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
         </Style>
     </UserControl.Resources>
 
@@ -79,34 +53,18 @@
                 <TextBlock x:Name="EntryCountText" Text="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[Console_Count]}"
                            Foreground="{DynamicResource MutedText}"
                            FontSize="11" VerticalAlignment="Center" Margin="4,0" />
-                <Border CornerRadius="3"
-                        Background="{DynamicResource ControlBackground}"
-                        BorderBrush="{DynamicResource ControlBorder}"
-                        BorderThickness="1"
-                        Margin="4,0">
-                    <Button x:Name="CopyBtn"
-                            Content="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[Console_Copy]}"
-                            FontSize="11"
-                            Padding="6,2"
-                            Cursor="Hand"
-                            Background="Transparent"
-                            BorderThickness="0"
-                            Click="CopyBtn_Click" />
-                </Border>
-                <Border CornerRadius="3"
-                        Background="{DynamicResource ControlBackground}"
-                        BorderBrush="{DynamicResource ControlBorder}"
-                        BorderThickness="1"
-                        Margin="4,0">
-                    <Button x:Name="ClearBtn"
-                            Content="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[Console_Clear]}"
-                            FontSize="11"
-                            Padding="6,2"
-                            Cursor="Hand"
-                            Background="Transparent"
-                            BorderThickness="0"
-                            Click="ClearBtn_Click" />
-                </Border>
+                <Button x:Name="CopyBtn"
+                        Content="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[Console_Copy]}"
+                        FontSize="11"
+                        Padding="8,3"
+                        Margin="4,0"
+                        Click="CopyBtn_Click" />
+                <Button x:Name="ClearBtn"
+                        Content="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[Console_Clear]}"
+                        FontSize="11"
+                        Padding="8,3"
+                        Margin="0"
+                        Click="ClearBtn_Click" />
             </StackPanel>
         </Border>
 

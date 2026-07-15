@@ -1,6 +1,6 @@
 {
   "formatVersion": 2,
-  "processorType": null,
+  "processorType": "WaterFlow",
   "identity": {
     "typeName": "WaterFlow",
     "displayName": {
@@ -9,8 +9,8 @@
     },
     "category": "Material",
     "description": {
-      "zh-Hans": "使用定向流动噪波生成流水/流体纹理。具有深/浅水色区域、波峰泡沫、涟漪细节和可配置流动方向。所有噪波均可平铺，实现无缝输出。",
-      "en": "Generates flowing water / fluid textures using directional flow noise. Features deep/shallow color zones, foam at wave crests, ripple detail, and configurable flow direction. All noise is tileable for seamless output."
+      "zh-Hans": "生成由宽阔流带、离散浅水边、断续泡沫和涟漪色块构成的可平铺RPG水流，不使用逐像素连续噪声。",
+      "en": "Generates seamless RPG water flow from broad directional bands, discrete shallow edges, broken foam, and ripple clusters rather than continuous per-pixel noise."
     },
     "tags": [],
     "author": "BuiltIn",

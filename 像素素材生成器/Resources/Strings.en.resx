@@ -281,7 +281,7 @@
     <data name="AI_ClickToViewThoughts" xml:space="preserve"><value>Click to view thinking</value></data>
     <data name="AI_Ready" xml:space="preserve"><value>Ready</value></data>
     <data name="AI_Standby" xml:space="preserve"><value>Standby</value></data>
-    <data name="NodeName_AiImageGen" xml:space="preserve"><value>AI Image Gen</value></data>
+    <data name="NodeName_AiImageGen" xml:space="preserve"><value>AI Pixel Asset Generator</value></data>
     <data name="NodeName_Alveolus" xml:space="preserve"><value>Alveolus</value></data>
     <data name="NodeName_AutoTile" xml:space="preserve"><value>Auto Tile</value></data>
     <data name="NodeName_Bark" xml:space="preserve"><value>Bark</value></data>

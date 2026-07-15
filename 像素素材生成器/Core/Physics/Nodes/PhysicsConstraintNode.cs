@@ -89,6 +89,8 @@ public sealed class PhysicsConstraintNode : IPersistentStateNode
 
         var bodyA = bodies[bodyIndexA];
         var bodyB = bodies[bodyIndexB];
+        if (!bodyA.IsEnabled || !bodyB.IsEnabled)
+            return;
 
         // If we have an existing constraint of the same type, update it in-place
         if (PersistentState is ConstraintState cs && cs.Initialized)

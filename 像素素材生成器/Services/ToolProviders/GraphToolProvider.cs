@@ -60,9 +60,9 @@ public sealed class GraphToolProvider : IToolProvider
 
         yield return new ToolDefinition(
             "modify_connections",
-            "Connect or disconnect ports between nodes. action=connect connects from source node output port to target node input port; action=disconnect disconnects the specified connection.",
+            "Connect or disconnect ports. Prefer stable startPortKey/endPortKey over localized names or numeric indexes. Every connection is type-checked and cycle-checked before mutation.",
             JsonSerializer.Deserialize<JsonElement>("""
-                {"type":"object","properties":{"action":{"type":"string","enum":["connect","disconnect"],"description":"Action type"},"startNodeId":{"type":"integer","description":"Source node ID"},"startPortIndex":{"type":"integer","description":"Source node output port index (usually 0)"},"endNodeId":{"type":"integer","description":"Target node ID"},"endPortIndex":{"type":"integer","description":"Target node input port index (usually 0)"}},"required":["action","startNodeId","endNodeId"]}
+                {"type":"object","properties":{"action":{"type":"string","enum":["connect","disconnect"],"description":"Action type"},"startNodeId":{"type":"integer","description":"Source node ID"},"startPortKey":{"type":"string","description":"Stable source output port key (preferred)"},"startPortName":{"type":"string","description":"Localized source output port name"},"startPortIndex":{"type":"integer","description":"Legacy source port index"},"endNodeId":{"type":"integer","description":"Target node ID"},"endPortKey":{"type":"string","description":"Stable target input port key (preferred)"},"endPortName":{"type":"string","description":"Localized target input port name"},"endPortIndex":{"type":"integer","description":"Legacy target port index"}},"required":["action","startNodeId","endNodeId"]}
             """)
         );
 
@@ -76,9 +76,9 @@ public sealed class GraphToolProvider : IToolProvider
 
         yield return new ToolDefinition(
             "query_info",
-            "Query graph state or node library. query_type=graph_summary gets full canvas state; query_type=node_library lists all node types; query_type=node_detail requires param parameter for node type details.",
+            "Query graph state, graph health, or search the node library. Use node_library with param keywords/capabilities instead of requesting the full catalog.",
             JsonSerializer.Deserialize<JsonElement>("""
-                {"type":"object","properties":{"query_type":{"type":"string","enum":["graph_summary","node_library","node_detail"],"description":"Query type"},"param":{"type":"string","description":"Additional parameter. For query_type=node_detail it's the node type name."}},"required":["query_type"]}
+                {"type":"object","properties":{"query_type":{"type":"string","enum":["graph_summary","graph_validation","node_library","node_detail"],"description":"Query type"},"param":{"type":"string","description":"Node type for node_detail, or search keywords/capabilities for node_library."}},"required":["query_type"]}
             """)
         );
     }
@@ -222,9 +222,7 @@ public sealed class GraphToolProvider : IToolProvider
     private ToolResult ConnectNodes(JsonElement args)
     {
         var startNodeId = args.TryGetProperty("startNodeId", out var sn) ? sn.GetInt32() : -1;
-        var startPortIndex = args.TryGetProperty("startPortIndex", out var sp) ? sp.GetInt32() : 0;
         var endNodeId = args.TryGetProperty("endNodeId", out var en) ? en.GetInt32() : -1;
-        var endPortIndex = args.TryGetProperty("endPortIndex", out var ep) ? ep.GetInt32() : 0;
 
         var startNode = _nodes.FirstOrDefault(n => n.Id == startNodeId);
         var endNode = _nodes.FirstOrDefault(n => n.Id == endNodeId);
@@ -234,14 +232,19 @@ public sealed class GraphToolProvider : IToolProvider
         if (endNode == null)
             return new ToolResult($"{{\"success\":false,\"error\":\"Target node not found: {endNodeId}\"}}", true);
 
-        if (startPortIndex >= startNode.OutputPorts.Count)
+        var startPortIndex = ResolvePortIndex(startNode, true, args, "startPortIndex", "startPortName", out var startPortError);
+        if (startPortIndex < 0)
+            return new ToolResult(JsonSerializer.Serialize(new { success = false, error = startPortError }), true);
+        var endPortIndex = ResolvePortIndex(endNode, false, args, "endPortIndex", "endPortName", out var endPortError);
+        if (endPortIndex < 0)
+            return new ToolResult(JsonSerializer.Serialize(new { success = false, error = endPortError }), true);
+
+        if (startPortIndex < 0 || startPortIndex >= startNode.OutputPorts.Count)
             return new ToolResult(
                 $"{{\"success\":false,\"error\":\"Source node output port index out of range: {startPortIndex}\"}}", true);
-        if (endPortIndex >= endNode.InputPorts.Count)
+        if (endPortIndex < 0 || endPortIndex >= endNode.InputPorts.Count)
             return new ToolResult(
                 $"{{\"success\":false,\"error\":\"Target node input port index out of range: {endPortIndex}\"}}", true);
-
-        NodeGraphController.RemoveConflictingConnections(_connections, endNode, endPortIndex);
 
         // ── 幂等性检查：是否已经存在完全相同的连接 ──
         foreach (var existing in _connections)
@@ -256,6 +259,15 @@ public sealed class GraphToolProvider : IToolProvider
                     "Tip: If you see this message, the connection is already established. Move on to the next step.");
             }
         }
+
+        if (!_controller.CanAcceptConnection(startNode, startPortIndex, endNode, endPortIndex, out var rejectionMessage))
+            return new ToolResult(JsonSerializer.Serialize(new
+            {
+                success = false,
+                error = rejectionMessage ?? "Connection rejected by graph validator."
+            }), true);
+
+        NodeGraphController.RemoveConflictingConnections(_connections, endNode, endPortIndex);
 
         var conn = new NodeConnectionViewModel
         {
@@ -273,9 +285,20 @@ public sealed class GraphToolProvider : IToolProvider
     private ToolResult DisconnectNodes(JsonElement args)
     {
         var startNodeId = args.TryGetProperty("startNodeId", out var sn) ? sn.GetInt32() : -1;
-        var startPortIndex = args.TryGetProperty("startPortIndex", out var sp) ? sp.GetInt32() : 0;
         var endNodeId = args.TryGetProperty("endNodeId", out var en) ? en.GetInt32() : -1;
-        var endPortIndex = args.TryGetProperty("endPortIndex", out var ep) ? ep.GetInt32() : 0;
+        var startNode = _nodes.FirstOrDefault(node => node.Id == startNodeId);
+        var endNode = _nodes.FirstOrDefault(node => node.Id == endNodeId);
+        if (startNode == null || endNode == null)
+            return new ToolResult("{\"success\":false,\"error\":\"Connection endpoint node not found.\"}", true);
+
+        var startPortIndex = ResolvePortIndex(startNode, true, args, "startPortIndex", "startPortName", out var startPortError);
+        var endPortIndex = ResolvePortIndex(endNode, false, args, "endPortIndex", "endPortName", out var endPortError);
+        if (startPortIndex < 0 || endPortIndex < 0)
+            return new ToolResult(JsonSerializer.Serialize(new
+            {
+                success = false,
+                error = startPortIndex < 0 ? startPortError : endPortError
+            }), true);
 
         var conn = _connections.FirstOrDefault(c =>
             c.StartNode?.Id == startNodeId && c.StartPortIndex == startPortIndex &&
@@ -288,6 +311,55 @@ public sealed class GraphToolProvider : IToolProvider
         }
         return new ToolResult("{\"success\":false,\"error\":\"No matching connection found.\"}", true);
     }
+
+    private static int ResolvePortIndex(
+        NodeViewModel node,
+        bool output,
+        JsonElement args,
+        string indexProperty,
+        string nameProperty,
+        out string error)
+    {
+        var ports = output ? node.OutputPorts : node.InputPorts;
+        var keyProperty = nameProperty.Replace("Name", "Key", StringComparison.Ordinal);
+        var hasNamedPort = args.TryGetProperty(keyProperty, out var nameElement)
+            || args.TryGetProperty(nameProperty, out nameElement);
+        if (hasNamedPort && nameElement.ValueKind == JsonValueKind.String)
+        {
+            var requestedName = nameElement.GetString() ?? string.Empty;
+            var normalized = NormalizePortName(requestedName);
+            var matches = ports.Select((port, index) => (port, index))
+                .Where(value => string.Equals(value.port.Key, requestedName, StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(value.port.Name, requestedName, StringComparison.OrdinalIgnoreCase)
+                    || NormalizePortName(value.port.Name) == normalized)
+                .ToArray();
+            if (matches.Length == 1)
+            {
+                error = string.Empty;
+                return matches[0].index;
+            }
+
+            error = $"Port '{requestedName}' was not found on {node.RegistryKey}. Available ports: " +
+                string.Join(", ", ports.Select(port => $"{port.Key} ({port.Name})"));
+            return -1;
+        }
+
+        var index = args.TryGetProperty(indexProperty, out var indexElement) && indexElement.ValueKind == JsonValueKind.Number
+            ? indexElement.GetInt32()
+            : 0;
+        if (index >= 0 && index < ports.Count)
+        {
+            error = string.Empty;
+            return index;
+        }
+
+        error = $"Port index {index} is invalid on {node.RegistryKey}. Available ports: " +
+            string.Join(", ", ports.Select((port, portIndex) => $"{portIndex}:{port.Name}"));
+        return -1;
+    }
+
+    private static string NormalizePortName(string value) =>
+        new(value.Where(char.IsLetterOrDigit).Select(char.ToLowerInvariant).ToArray());
 
     // ── set_parameter ──
 
@@ -404,7 +476,8 @@ public sealed class GraphToolProvider : IToolProvider
         return queryType switch
         {
             "graph_summary" => new ToolResult(GetGraphState()),
-            "node_library" => new ToolResult(GetNodeLibrary()),
+            "graph_validation" => new ToolResult(GetGraphValidation()),
+            "node_library" => new ToolResult(GetNodeLibrary(args)),
             "node_detail" => new ToolResult(GetNodeDetail(args)),
             _ => new ToolResult(
                 $"{{\"success\":false,\"error\":\"Unknown query_type: {queryType}\"}}", true)
@@ -424,6 +497,7 @@ public sealed class GraphToolProvider : IToolProvider
             first = false;
             sb.Append("{\"id\":").Append(node.Id);
             sb.Append(",\"title\":\"").Append(AiHelpers.Escape(node.Title)).Append('"');
+            sb.Append(",\"typeName\":\"").Append(AiHelpers.Escape(node.RegistryKey)).Append('"');
             sb.Append(",\"x\":").Append(node.X);
             sb.Append(",\"y\":").Append(node.Y);
             sb.Append(",\"inputPorts\":[");
@@ -433,6 +507,7 @@ public sealed class GraphToolProvider : IToolProvider
                 if (!firstPort) sb.Append(',');
                 firstPort = false;
                 sb.Append("{\"name\":\"").Append(AiHelpers.Escape(port.Name))
+                  .Append("\",\"key\":\"").Append(AiHelpers.Escape(port.Key))
                   .Append("\",\"type\":\"").Append(port.Type).Append("\"}");
             }
             sb.Append("],\"outputPorts\":[");
@@ -442,6 +517,7 @@ public sealed class GraphToolProvider : IToolProvider
                 if (!firstPort) sb.Append(',');
                 firstPort = false;
                 sb.Append("{\"name\":\"").Append(AiHelpers.Escape(port.Name))
+                  .Append("\",\"key\":\"").Append(AiHelpers.Escape(port.Key))
                   .Append("\",\"type\":\"").Append(port.Type).Append("\"}");
             }
             sb.Append("],\"parameters\":[");
@@ -473,12 +549,71 @@ public sealed class GraphToolProvider : IToolProvider
         return sb.ToString();
     }
 
-    private string GetNodeLibrary()
+    private string GetGraphValidation()
     {
+        var instances = _nodes
+            .Select(node => new GraphNodeInstance(node.Id, new ViewModelGraphNode(node)))
+            .ToArray();
+        var edges = _connections
+            .Where(connection => !connection.IsPreview && connection.StartNode != null && connection.EndNode != null)
+            .Select(connection => new GraphConnection(
+                connection.StartNode!.Id, connection.StartPortIndex,
+                connection.EndNode!.Id, connection.EndPortIndex))
+            .ToArray();
+        var validation = GraphValidator.Validate(instances, edges, requireCompleteGraph: true);
+        return JsonSerializer.Serialize(new
+        {
+            success = validation.IsValid,
+            errorCount = validation.Diagnostics.Count(diagnostic => diagnostic.Severity == GraphDiagnosticSeverity.Error),
+            warningCount = validation.Diagnostics.Count(diagnostic => diagnostic.Severity == GraphDiagnosticSeverity.Warning),
+            diagnostics = validation.Diagnostics.Select(diagnostic => new
+            {
+                diagnostic.Code,
+                severity = diagnostic.Severity.ToString().ToLowerInvariant(),
+                diagnostic.Message,
+                diagnostic.NodeId,
+                diagnostic.PortIndex,
+                diagnostic.Suggestion
+            })
+        });
+    }
+
+    private static int ScoreLibraryItem(NodeLibraryItem item, IReadOnlyList<string> terms)
+    {
+        var score = 0;
+        foreach (var term in terms)
+        {
+            if (item.TypeName.Equals(term, StringComparison.OrdinalIgnoreCase)) score += 20;
+            if (item.Name.Contains(term, StringComparison.OrdinalIgnoreCase)) score += 12;
+            if (item.Description.Contains(term, StringComparison.OrdinalIgnoreCase)) score += 6;
+            if (item.Category.Contains(term, StringComparison.OrdinalIgnoreCase)
+                || item.Subcategory.Contains(term, StringComparison.OrdinalIgnoreCase)) score += 4;
+            if (item.AiMetadata?.Capabilities?.Any(capability => capability.Contains(term, StringComparison.OrdinalIgnoreCase)) == true) score += 10;
+            if (item.AiMetadata?.Triggers?.Contains(term, StringComparison.OrdinalIgnoreCase) == true) score += 8;
+        }
+        return score;
+    }
+
+    private string GetNodeLibrary(JsonElement args)
+    {
+        var search = args.TryGetProperty("param", out var searchElement) ? searchElement.GetString()?.Trim() : null;
+        IEnumerable<NodeLibraryItem> candidates = _library;
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var terms = search.Split(new[] { ' ', ',', ';', '/', '|' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            candidates = candidates
+                .Select(item => (Item: item, Score: ScoreLibraryItem(item, terms)))
+                .Where(result => result.Score > 0)
+                .OrderByDescending(result => result.Score)
+                .ThenBy(result => result.Item.Name, StringComparer.OrdinalIgnoreCase)
+                .Take(24)
+                .Select(result => result.Item);
+        }
+
         var sb = new StringBuilder();
         sb.Append('[');
         bool first = true;
-        foreach (var item in _library)
+        foreach (var item in candidates)
         {
             if (!first) sb.Append(',');
             first = false;
@@ -525,7 +660,9 @@ public sealed class GraphToolProvider : IToolProvider
                 firstPort = false;
                 var pName = item.InputPorts[pi];
                 var pType = portTypes.InputPorts.TryGetValue(pi, out var pt) ? pt : "Image";
+                var pKey = portTypes.InputKeys.TryGetValue(pi, out var pk) ? pk : NormalizePortName(pName);
                 sb.Append("{\"name\":\"").Append(AiHelpers.Escape(pName))
+                  .Append("\",\"key\":\"").Append(AiHelpers.Escape(pKey))
                   .Append("\",\"type\":\"").Append(pType).Append("\"}");
             }
             sb.Append("],\"outputPorts\":[");
@@ -536,7 +673,9 @@ public sealed class GraphToolProvider : IToolProvider
                 firstPort = false;
                 var pName = item.OutputPorts[pi];
                 var pType = portTypes.OutputPorts.TryGetValue(pi, out var pt) ? pt : "Image";
+                var pKey = portTypes.OutputKeys.TryGetValue(pi, out var pk) ? pk : NormalizePortName(pName);
                 sb.Append("{\"name\":\"").Append(AiHelpers.Escape(pName))
+                  .Append("\",\"key\":\"").Append(AiHelpers.Escape(pKey))
                   .Append("\",\"type\":\"").Append(pType).Append("\"}");
             }
             sb.Append("],\"parameters\":[");
@@ -577,14 +716,17 @@ public sealed class GraphToolProvider : IToolProvider
         if (string.IsNullOrEmpty(typeName))
             return "{\"error\":\"Missing param parameter\"}";
 
-        var item = _library.FirstOrDefault(i => i.Name == typeName)
-            ?? _library.FirstOrDefault(i => i.Name.Contains(typeName));
+        var item = _library.FirstOrDefault(i => i.TypeName.Equals(typeName, StringComparison.OrdinalIgnoreCase))
+            ?? _library.FirstOrDefault(i => i.Name.Equals(typeName, StringComparison.OrdinalIgnoreCase))
+            ?? _library.FirstOrDefault(i => i.TypeName.Contains(typeName, StringComparison.OrdinalIgnoreCase)
+                || i.Name.Contains(typeName, StringComparison.OrdinalIgnoreCase));
 
         if (item == null)
             return $"{{\"error\":\"Node type not found: {AiHelpers.Escape(typeName)}\"}}";
 
         var sb = new StringBuilder();
-        sb.Append("{\"name\":\"").Append(AiHelpers.Escape(item.Name)).Append('"');
+        sb.Append("{\"typeName\":\"").Append(AiHelpers.Escape(item.TypeName)).Append('"');
+        sb.Append(",\"name\":\"").Append(AiHelpers.Escape(item.Name)).Append('"');
         sb.Append(",\"category\":\"").Append(AiHelpers.Escape(item.Category)).Append('"');
         sb.Append(",\"subcategory\":\"").Append(AiHelpers.Escape(item.Subcategory ?? "")).Append('"');
         if (!string.IsNullOrEmpty(item.Description))
@@ -617,7 +759,9 @@ public sealed class GraphToolProvider : IToolProvider
             if (pi > 0) sb.Append(',');
             var pName = item.InputPorts[pi];
             var pType = portTypes.InputPorts.TryGetValue(pi, out var pt) ? pt : "Image";
+            var pKey = portTypes.InputKeys.TryGetValue(pi, out var pk) ? pk : NormalizePortName(pName);
             sb.Append("{\"name\":\"").Append(AiHelpers.Escape(pName))
+              .Append("\",\"key\":\"").Append(AiHelpers.Escape(pKey))
               .Append("\",\"type\":\"").Append(pType).Append("\"}");
         }
         sb.Append("],\"outputPorts\":[");
@@ -626,7 +770,9 @@ public sealed class GraphToolProvider : IToolProvider
             if (pi > 0) sb.Append(',');
             var pName = item.OutputPorts[pi];
             var pType = portTypes.OutputPorts.TryGetValue(pi, out var pt) ? pt : "Image";
+            var pKey = portTypes.OutputKeys.TryGetValue(pi, out var pk) ? pk : NormalizePortName(pName);
             sb.Append("{\"name\":\"").Append(AiHelpers.Escape(pName))
+              .Append("\",\"key\":\"").Append(AiHelpers.Escape(pKey))
               .Append("\",\"type\":\"").Append(pType).Append("\"}");
         }
         sb.Append("],\"parameters\":[");
@@ -691,10 +837,13 @@ public sealed class GraphToolProvider : IToolProvider
     /// <summary>
     /// Looks up the actual port types for a node by checking GraphNodeRegistry.
     /// </summary>
-    private static (Dictionary<int, string> InputPorts, Dictionary<int, string> OutputPorts) GetPortTypes(string nodeName)
+    private static (Dictionary<int, string> InputPorts, Dictionary<int, string> OutputPorts,
+        Dictionary<int, string> InputKeys, Dictionary<int, string> OutputKeys) GetPortTypes(string nodeName)
     {
         var inputTypes = new Dictionary<int, string>();
         var outputTypes = new Dictionary<int, string>();
+        var inputKeys = new Dictionary<int, string>();
+        var outputKeys = new Dictionary<int, string>();
 
         try
         {
@@ -702,13 +851,43 @@ public sealed class GraphToolProvider : IToolProvider
             if (proto != null)
             {
                 for (int i = 0; i < proto.InputPorts.Count; i++)
+                {
                     inputTypes[i] = proto.InputPorts[i].Type.ToString();
+                    inputKeys[i] = proto.InputPorts[i].StableKey;
+                }
                 for (int i = 0; i < proto.OutputPorts.Count; i++)
+                {
                     outputTypes[i] = proto.OutputPorts[i].Type.ToString();
+                    outputKeys[i] = proto.OutputPorts[i].StableKey;
+                }
             }
         }
         catch { /* fallback: leave dictionaries empty, caller uses "Image" default */ }
 
-        return (inputTypes, outputTypes);
+        return (inputTypes, outputTypes, inputKeys, outputKeys);
+    }
+
+    private sealed class ViewModelGraphNode : IGraphNode
+    {
+        public ViewModelGraphNode(NodeViewModel node)
+        {
+            TypeName = node.RegistryKey;
+            Category = node.Category;
+            InputPorts = node.InputPorts
+                .Select(port => new GraphNodePort(port.Name, NodeGraphController.MapPortValueType(port.Type), port.Key))
+                .ToArray();
+            OutputPorts = node.OutputPorts
+                .Select(port => new GraphNodePort(port.Name, NodeGraphController.MapPortValueType(port.Type), port.Key))
+                .ToArray();
+        }
+
+        public string TypeName { get; }
+        public string Category { get; }
+        public IReadOnlyList<GraphNodePort> InputPorts { get; }
+        public IReadOnlyList<GraphNodePort> OutputPorts { get; }
+        public IReadOnlyList<NodeParameterDefinition> Parameters => Array.Empty<NodeParameterDefinition>();
+
+        public PixelBuffer Process(PixelBuffer?[] inputs, IReadOnlyDictionary<string, object> parameters,
+            PixelGraphContext context) => throw new NotSupportedException("Validation-only node.");
     }
 }

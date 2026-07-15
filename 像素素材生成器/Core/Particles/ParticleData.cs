@@ -49,6 +49,9 @@ public struct ParticleData
     /// <summary>Whether this particle is currently active/alive.</summary>
     public bool Active;
 
+    /// <summary>Marks generated trail afterimages so they are not recorded as new trail sources.</summary>
+    public bool IsTrailGhost;
+
     /// <summary>Spawns a particle with default values.</summary>
     public static ParticleData Create(
         float x, float y,

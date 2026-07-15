@@ -2,14 +2,19 @@
 
 基于节点的像素艺术材质生成器。通过组合节点图来生成可平铺的像素风格纹理，支持 AI 辅助创建和编辑。
 
-**版本**: 0.6.0.0 | **目标框架**: .NET 9 / WPF | **C#**: 13
+**版本**: 0.7.0 | **目标框架**: .NET 9 / WPF | **C#**: 13
+
+![像素素材生成器 v0.7.0](docs/images/pixel-asset-generator-v0.7.0.png)
 
 ## 功能
 
-- **节点图编辑**: 136 个节点，7 个类别的可视化编程
+- **节点图编辑**: 178 个节点，12 个类别的可视化编程
 - **GPU 加速**: Direct3D 11 计算着色器 (Vortice，可选) + SharpDX D3DImage 互操作
+- **本地 AI 生成**: 内置像素风 Stable Diffusion/LoRA，支持中文提示词、参考图、AMD Vulkan 和 CPU 后端
 - **AI 辅助**: OpenAI / Claude API 集成，AI 创建和编辑节点图
-- **动画系统**: 帧序列播放、参数动画、粒子系统、物理模拟
+- **动画系统**: 多工作流独立播放、时间轴、动作预设、精灵特效和帧序列
+- **粒子与物理**: 发射器、力场、碰撞、拖尾、光照、刚体、约束与软体模拟
+- **智能纹理**: 苔藓、腐蚀、破损、裂纹、调色和像素清理等高层节点
 - **技能系统**: 33 个内置技能，保存/复用节点子图或指令模板
 - **本地化**: 简体中文 / English 界面，运行时切换（resx + 外部 JSON）
 - **启动优化**: Splash 进度条 + 后台并行缩略图生成
@@ -34,17 +39,17 @@
 │   ├── Animation/           # 动画引擎
 │   │   ├── AnimationClip.cs          # 动画剪辑定义
 │   │   ├── AnimationEvaluator.cs     # 动画求值器
-│   │   └── Nodes/                    # 8 个动画节点
+│   │   └── Nodes/                    # 13 个动画节点
 │   ├── Particles/           # 粒子系统
 │   │   ├── ParticleEmitter.cs        # 粒子发射器
 │   │   ├── ParticleSimulator.cs      # 粒子模拟器
 │   │   ├── ParticleRenderer.cs       # 粒子渲染器
-│   │   └── Nodes/                    # 7 个粒子节点
+│   │   └── Nodes/                    # 8 个粒子节点
 │   ├── Physics/             # 物理引擎
 │   │   ├── PhysicsWorld.cs           # 物理世界
 │   │   ├── PhysicsBody.cs            # 物理体
 │   │   ├── CollisionDetection.cs     # 碰撞检测
-│   │   └── Nodes/                    # 4 个物理节点
+│   │   └── Nodes/                    # 5 个物理节点
 │   ├── GraphNodeBase.cs     # 节点基类
 │   ├── GraphNodeRegistry.cs # 节点注册表（从 .node.json 加载）
 │   ├── NodeGraphEvaluator.cs# 拓扑排序 O(N+E) + 并行求值
@@ -60,16 +65,18 @@
 │   │   └── zh-Hans.json
 │   ├── Strings.en.resx           # 英语资源（~440 条）
 │   ├── Strings.zh-Hans.resx      # 简体中文资源（~440 条，回退语言）
-│   └── Nodes/                    # 136 个 .node.json 节点定义
+│   └── Nodes/                    # 142 个 .node.json 节点定义
 │       ├── Generate/        # 5
 │       ├── ImageProcess/    # 42
 │       ├── Logic/           # 14
 │       ├── Material/        # 32
 │       └── ...
-├── Nodes/                   # 19 个扩展节点（动画/粒子/物理）
-│   ├── Animation/           # 8 个动画 .node.json
-│   ├── Particle/            # 7 个粒子 .node.json
-│   └── Physics/             # 4 个物理 .node.json
+├── Nodes/                   # 36 个扩展节点（动画/粒子/物理/智能纹理/元节点）
+│   ├── Animation/           # 动画工作流节点
+│   ├── Particle/            # 粒子系统节点
+│   ├── Physics/             # 物理系统节点
+│   ├── Smart/               # 智能纹理节点
+│   └── Meta/                # 完整工作流元节点
 ├── Services/                # 服务层（DI 容器）
 │   ├── ServiceLocator.cs    # DI 服务定位器（Microsoft.Extensions.DI）
 │   ├── Localization/        # 本地化（ILocalizationService + resx/JSON）
@@ -126,15 +133,17 @@
 | 类别 | 节点数 | 说明 |
 |------|--------|------|
 | Generate | 5 | 瓦片生成 |
-| ImageProcess | 42 | 图像处理滤镜 |
-| Logic | 14 | 逻辑流程控制 |
-| Material | 32 | 材质纹理生成 |
+| ImageProcess | 48 | 图像处理滤镜 |
+| Logic | 13 | 逻辑流程控制 |
+| Material | 37 | 材质纹理生成 |
 | Noise | 16 | 噪声与有机纹理 |
 | Pattern | 20 | 图案与形状生成 |
 | Tool | 3 | 工具（注释/输出/预览） |
-| Animation | 8 | 参数动画/音视频响应 |
-| Particle | 7 | 粒子系统 |
-| Physics | 4 | 物理模拟 |
+| Animation | 13 | 参数动画/时间轴/精灵动画 |
+| Particle | 8 | 粒子系统 |
+| Physics | 5 | 物理模拟 |
+| Meta | 5 | 完整工作流元节点 |
+| SmartTexture | 5 | 智能纹理与像素优化 |
 
 ## 快速开始
 

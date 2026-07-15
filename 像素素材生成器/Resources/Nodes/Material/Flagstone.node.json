@@ -1,6 +1,6 @@
 {
   "formatVersion": 2,
-  "processorType": null,
+  "processorType": "Flagstone",
   "identity": {
     "typeName": "Flagstone",
     "displayName": {
@@ -9,8 +9,8 @@
     },
     "category": "Material",
     "description": {
-      "zh-Hans": "生成石板铺装图案，使用半规则矩形石块。采用抖动网格并支持可选的相邻单元格合并以形成更大的石块。具有砂浆缝隙、3D边缘着色、逐石颜色变化和表面细节等特性。",
-      "en": "Generates flagstone / flagging stone paving patterns with semi-regular rectangular stones. Uses a jittered grid with optional merging of adjacent cells for larger stones. Features mortar gaps, 3D edge shading, per-stone color variation, and surface detail."
+      "zh-Hans": "生成具有错列石板、可选横向合并、硬边砂浆、左上亮边、右下暗边和稀疏裂纹的RPG石板地面。",
+      "en": "Generates RPG flagstone floors with staggered slabs, optional horizontal merges, crisp mortar, directional bevels, and sparse cracks."
     },
     "tags": [],
     "author": "BuiltIn",

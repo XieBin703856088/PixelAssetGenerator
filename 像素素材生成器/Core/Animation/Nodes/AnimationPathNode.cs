@@ -9,7 +9,7 @@ namespace PixelAssetGenerator.Core.Animation.Nodes;
 /// tangent angle. Useful for driving camera movement, object position, or
 /// particle emission location along a predefined curve.
 /// </summary>
-public sealed class AnimationPathNode : IGraphNode
+public sealed class AnimationPathNode : IGraphNode, IMultiOutputNode
 {
     public string TypeName => "AnimationPath";
     public string Category => "Animation";
@@ -40,6 +40,7 @@ public sealed class AnimationPathNode : IGraphNode
     public IReadOnlyList<GraphNodePort> InputPorts => _inputs;
     public IReadOnlyList<GraphNodePort> OutputPorts => _outputs;
     public IReadOnlyList<NodeParameterDefinition> Parameters => GetRuntimeParameters();
+    public GraphNodeTraits Traits => GraphNodeTraits.TimeDependent;
 
     private static IReadOnlyList<NodeParameterDefinition> GetRuntimeParameters()
     {
@@ -81,9 +82,9 @@ public sealed class AnimationPathNode : IGraphNode
         }
 
         // Evaluate time
-        var baseTime = context.AnimationTime ?? 0f;
+        var baseTime = context.GlobalTime > 0f ? context.GlobalTime : context.AnimationTime ?? 0f;
         var t = loop
-            ? (baseTime % duration) / duration
+            ? baseTime / duration - MathF.Floor(baseTime / duration)
             : Math.Min(baseTime / duration, 1f);
 
         var pathType = GraphNodeBase.GetChoice(parameters, "pathType", "catmullRom");
@@ -110,6 +111,21 @@ public sealed class AnimationPathNode : IGraphNode
 
         buf.SetPixel(0, 0, (float)Math.Clamp(pos.X, 0f, 1f), (float)Math.Clamp(pos.Y, 0f, 1f), angle, 1);
         return buf;
+    }
+
+    public PixelBuffer[] ProcessMulti(PixelBuffer?[] inputs,
+        IReadOnlyDictionary<string, object> parameters, PixelGraphContext context)
+    {
+        using var packed = Process(inputs, parameters, context);
+        var value = packed.GetPixel(0, 0);
+        return [Scalar(value.R), Scalar(value.G), Scalar(value.B)];
+    }
+
+    private static PixelBuffer Scalar(float value)
+    {
+        var buffer = PixelBufferPool.Borrow(1, 1);
+        buffer.SetPixel(0, 0, value, 0f, 0f, 1f);
+        return buffer;
     }
 
     private static (float X, float Y) EvaluatePolyline(List<(float X, float Y)> points, float t, out (float X, float Y) tangent)

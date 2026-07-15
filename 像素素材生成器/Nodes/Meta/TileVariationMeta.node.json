@@ -1,0 +1,27 @@
+{
+  "formatVersion": 2,
+  "processorType": "TileVariationMeta",
+  "identity": {
+    "typeName": "TileVariationMeta",
+    "displayName": { "zh-Hans": "图块变体元节点", "en": "Tile Variation Meta" },
+    "category": "Meta",
+    "description": { "zh-Hans": "从一个完成图块生成四个保持像素清晰和无缝偏移的自然变化版本，减少地图重复感。", "en": "Generates four crisp deterministic tile variants with seamless offsets to reduce visible repetition." },
+    "tags": ["meta", "tile", "variation", "seamless", "level-design"],
+    "author": "BuiltIn", "version": "1.0"
+  },
+  "ports": {
+    "inputs": [{ "name": { "zh-Hans": "图块", "en": "Tile" }, "type": "Image" }],
+    "outputs": [
+      { "name": { "zh-Hans": "变体 A", "en": "Variant A" }, "type": "Image" },
+      { "name": { "zh-Hans": "变体 B", "en": "Variant B" }, "type": "Image" },
+      { "name": { "zh-Hans": "变体 C", "en": "Variant C" }, "type": "Image" },
+      { "name": { "zh-Hans": "变体 D", "en": "Variant D" }, "type": "Image" }
+    ]
+  },
+  "parameters": [],
+  "ai": {
+    "capabilities": ["meta", "tile-variation", "seamless"],
+    "triggers": { "zh-Hans": "生成图块变体, 减少重复, 地图随机图块", "en": "generate tile variants, reduce repetition, random map tiles" },
+    "suggestedInputs": ["Grass", "Floor", "Flagstone", "Cobblestone"]
+  }
+}

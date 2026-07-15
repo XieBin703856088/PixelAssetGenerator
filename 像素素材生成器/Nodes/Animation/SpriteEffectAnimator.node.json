@@ -1,0 +1,36 @@
+{
+  "formatVersion": 2,
+  "processorType": "SpriteEffectAnimator",
+  "identity": {
+    "typeName": "SpriteEffectAnimator",
+    "displayName": { "zh-Hans": "精灵特效动画", "en": "Sprite Effect Animator" },
+    "category": "Animation",
+    "description": {
+      "zh-Hans": "为像素精灵添加呼吸发光、受击闪白、溶解、色相循环、流光和描边脉冲等可见动画。",
+      "en": "Adds visible pixel-perfect glow, hit flash, dissolve, hue, shimmer and outline animations."
+    },
+    "tags": ["animation", "sprite", "glow", "dissolve", "pixel-art"],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [
+      { "name": { "zh-Hans": "图像", "en": "Image" }, "type": "Image" },
+      { "name": { "zh-Hans": "强度", "en": "Strength" }, "type": "Float" }
+    ],
+    "outputs": [{ "name": { "zh-Hans": "图像", "en": "Image" }, "type": "Image" }]
+  },
+  "parameters": [],
+  "ai": {
+    "capabilities": ["animation", "sprite-effects", "dissolve", "glow"],
+    "triggers": {
+      "zh-Hans": "精灵发光, 受击闪白, 溶解动画, 流光, 描边动画",
+      "en": "sprite glow, hit flash, dissolve animation, shimmer, outline pulse"
+    },
+    "suggestedInputs": ["Icon", "Slime", "Tree"],
+    "exampleUsage": {
+      "zh-Hans": "接入任意精灵图像后直接播放，或用时间/波形节点控制强度端口。",
+      "en": "Connect any sprite and play, or drive the strength port with time or wave nodes."
+    }
+  }
+}

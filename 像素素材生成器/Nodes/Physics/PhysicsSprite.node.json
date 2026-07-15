@@ -1,0 +1,33 @@
+{
+  "formatVersion": 2,
+  "processorType": "PhysicsSprite",
+  "identity": {
+    "typeName": "PhysicsSprite",
+    "displayName": { "zh-Hans": "精灵物理动画", "en": "Sprite Physics" },
+    "category": "Physics",
+    "description": {
+      "zh-Hans": "让完成的精灵直接产生弹跳、摆动、软体、布料、翻滚、环绕和受击回弹动画，并输出接触遮罩。",
+      "en": "Applies deterministic bounce, swing, jelly, cloth, tumble, orbit or impact physics to a finished sprite."
+    },
+    "tags": ["physics", "sprite", "animation", "bounce", "cloth"],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [
+      { "key": "image", "name": { "zh-Hans": "精灵图像", "en": "Sprite Image" }, "type": "Image", "isRequired": true },
+      { "key": "collisionMask", "name": { "zh-Hans": "碰撞遮罩", "en": "Collision Mask" }, "type": "Mask" }
+    ],
+    "outputs": [
+      { "key": "image", "name": { "zh-Hans": "物理动画", "en": "Physics Animation" }, "type": "Image" },
+      { "key": "contactMask", "name": { "zh-Hans": "接触遮罩", "en": "Contact Mask" }, "type": "Mask" },
+      { "key": "progress", "name": { "zh-Hans": "运动进度", "en": "Motion Progress" }, "type": "Float" }
+    ]
+  },
+  "parameters": [],
+  "ai": {
+    "capabilities": ["physics", "sprite-animation", "collision-mask"],
+    "triggers": { "zh-Hans": "物理动画, 弹跳, 摆动, 软体, 布料, 翻滚, 受击", "en": "physics animation, bounce, swing, jelly, cloth, tumble, impact" },
+    "suggestedInputs": ["SpriteMotionMeta", "AiImageGen", "Slime", "Icon"]
+  }
+}

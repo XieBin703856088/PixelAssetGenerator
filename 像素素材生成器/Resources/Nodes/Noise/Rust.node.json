@@ -1,6 +1,6 @@
 {
   "formatVersion": 2,
-  "processorType": null,
+  "processorType": "Rust",
   "identity": {
     "typeName": "Rust",
     "displayName": {
@@ -9,8 +9,8 @@
     },
     "category": "Noise",
     "description": {
-      "zh-Hans": "使用多频噪波生成铁锈/腐蚀图案。结合小坑点与大面积腐蚀斑块，强调边缘以沿裂纹和边界聚集铁锈。支持铁锈（橙/棕）、铜绿（绿/青）和混合模式。可选图像输入作为基础表面着色。",
-      "en": "Generates rust / corrosion patterns using multi-frequency noise. Combines small pits with large corrosion patches, with edge emphasis to concentrate rust along cracks and boundaries. Supports iron rust (orange/brown), copper patina (green/teal), and mixed. Optional Image input for base surface coloration."
+      "zh-Hans": "生成成片扩散的RPG像素腐蚀材质，包含裸露金属、深浅锈层、剥落亮边与坑蚀簇，并支持铁锈、铜绿、混合和基础表面输入。",
+      "en": "Generates clustered RPG pixel corrosion with exposed metal, layered rust, flake edges, and pitting; supports iron rust, patina, mixed modes, and a base surface input."
     },
     "tags": [],
     "author": "BuiltIn",

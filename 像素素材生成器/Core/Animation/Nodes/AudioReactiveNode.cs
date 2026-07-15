@@ -36,6 +36,7 @@ public sealed class AudioReactiveNode : IGraphNode, IMultiOutputNode
     public IReadOnlyList<GraphNodePort> InputPorts => _inputs;
     public IReadOnlyList<GraphNodePort> OutputPorts => _outputs;
     public IReadOnlyList<NodeParameterDefinition> Parameters => _parameters;
+    public GraphNodeTraits Traits => GraphNodeTraits.TimeDependent;
 
     public PixelBuffer Process(PixelBuffer?[] inputs, IReadOnlyDictionary<string, object> parameters, PixelGraphContext context)
     {
@@ -49,32 +50,6 @@ public sealed class AudioReactiveNode : IGraphNode, IMultiOutputNode
     public PixelBuffer[] ProcessMulti(PixelBuffer?[] inputs, IReadOnlyDictionary<string, object> parameters, PixelGraphContext context)
     {
         var (amp, low, high) = ComputeValues(parameters, context);
-        var channel = GraphNodeBase.GetChoice(parameters, "channel", "combined");
-
-        var buf = PixelBufferPool.Borrow(1, 1);
-        float r, g, b;
-
-        switch (channel)
-        {
-            case "low":
-                r = low;
-                g = 0;
-                b = 0;
-                break;
-            case "high":
-                r = high;
-                g = 0;
-                b = 0;
-                break;
-            default:
-                r = amp;
-                g = low;
-                b = high;
-                break;
-        }
-
-        buf.SetPixel(0, 0, r, g, b, 1);
-
         // Build output buffers: each port gets its own 1x1 buffer
         // Port 0 = Amplitude, Port 1 = SpectrumLow, Port 2 = SpectrumHigh
         var amplitudeBuf = PixelBufferPool.Borrow(1, 1);
@@ -94,8 +69,9 @@ public sealed class AudioReactiveNode : IGraphNode, IMultiOutputNode
         var smoothing = (float)GraphNodeBase.GetFloat(parameters, "smoothing", 0.5f);
         var threshold = (float)GraphNodeBase.GetFloat(parameters, "threshold", 0.1f);
         var sensitivity = (float)GraphNodeBase.GetFloat(parameters, "sensitivity", 1.0f);
+        var channel = GraphNodeBase.GetChoice(parameters, "channel", "combined");
 
-        var t = context.GlobalTime;
+        var t = context.GlobalTime > 0f ? context.GlobalTime : context.AnimationTime ?? 0f;
         var seed = context.Seed;
 
         // Slow bass-like sine (0.15 Hz)
@@ -117,7 +93,7 @@ public sealed class AudioReactiveNode : IGraphNode, IMultiOutputNode
         // Smoothing: low-pass towards center
         amplitudeRaw = MathF.Max(0f, amplitudeRaw - threshold) / MathF.Max(1f - threshold, 0.01f);
         var ampSmoothed = amplitudeRaw * (1f - smoothing) + 0.3f * smoothing;
-        var amplitude = Math.Clamp(ampSmoothed, 0f, 1f);
+        var combinedAmplitude = Math.Clamp(ampSmoothed, 0f, 1f);
 
         // SpectrumLow: slow, bass-heavy signal
         var lowRaw = (bass * 0.6f + noiseVal * 0.2f + 0.2f) * sensitivity * 0.5f + 0.5f;
@@ -126,6 +102,15 @@ public sealed class AudioReactiveNode : IGraphNode, IMultiOutputNode
         // SpectrumHigh: fast, treble-heavy signal
         var highRaw = (highFreq * 0.4f + mid * 0.3f + beat * 0.3f) * sensitivity * 0.5f + 0.5f;
         var spectrumHigh = Math.Clamp(highRaw - threshold, 0f, 1f);
+
+        // The selected band drives the primary Amplitude output while the two
+        // dedicated spectrum outputs remain available for explicit wiring.
+        var amplitude = channel switch
+        {
+            "low" => spectrumLow,
+            "high" => spectrumHigh,
+            _ => combinedAmplitude
+        };
 
         return (amplitude, spectrumLow, spectrumHigh);
     }

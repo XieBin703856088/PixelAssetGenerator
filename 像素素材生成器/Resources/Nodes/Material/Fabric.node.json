@@ -1,6 +1,6 @@
 {
   "formatVersion": 2,
-  "processorType": null,
+  "processorType": "Fabric",
   "identity": {
     "typeName": "Fabric",
     "displayName": {
@@ -9,8 +9,8 @@
     },
     "category": "Material",
     "description": {
-      "zh-Hans": "生成编织布料纹理，支持平纹、斜纹和缎纹编织图案。具有经线/纬线颜色、厚度控制、毛绒感、逐线颜色变化和表面细节等特性。",
-      "en": "Generates woven fabric textures supporting plain, twill, and satin weave patterns. Features warp/weft thread colors, thickness control, fuzziness, per-thread color variation, and surface detail."
+      "zh-Hans": "生成面向32×32和64×64 RPG贴图的离散织物纹理，以明确的经纬线上下关系表现平纹、斜纹和缎纹，并使用有限色阶刻画织线高光与缝隙。",
+      "en": "Generates discrete 32×32 and 64×64 RPG fabric tiles with readable over-under threads, limited shading bands, and plain, twill, or satin weaves."
     },
     "tags": [],
     "author": "BuiltIn",

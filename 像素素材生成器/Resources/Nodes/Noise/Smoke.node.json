@@ -1,6 +1,6 @@
 {
   "formatVersion": 2,
-  "processorType": null,
+  "processorType": "Smoke",
   "identity": {
     "typeName": "Smoke",
     "displayName": {
@@ -9,8 +9,8 @@
     },
     "category": "Noise",
     "description": {
-      "zh-Hans": "使用粒子模拟生成烟雾/蒸汽。粒子上升、膨胀并随风力漂移和湍流消退。由时间参数（0-1）驱动动画。像素艺术量化输出。输出图像和遮罩。",
-      "en": "Generates smoke/steam using particle simulation. Particles rise, expand, and fade with wind drift and turbulence. Driven by a time parameter (0-1) for animation. Pixel-art quantized. Outputs image and mask."
+      "zh-Hans": "生成适用于32/64像素RPG特效的分层烟团，支持浓烟、薄雾、蒸汽和灰尘；烟团会上升、扩散、受风偏移并以离散透明度消散。",
+      "en": "Generates layered 32/64px RPG smoke puffs in thick, mist, steam, and dust modes with rise, expansion, wind drift, and quantized fading."
     },
     "tags": [],
     "author": "BuiltIn",

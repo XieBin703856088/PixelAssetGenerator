@@ -132,8 +132,7 @@ public sealed class ParticleSimulator
         }
 
         // Compact: move dead particles to end of active span
-        Compact(span, count);
-        buffer.ActiveCount = count;
+        buffer.ActiveCount = Compact(span, count);
 
         buffer.Time += deltaTime;
     }
@@ -142,7 +141,7 @@ public sealed class ParticleSimulator
     /// Compacts particles: moves dead entries to the end to keep active particles
     /// at the front of the array. This keeps iteration efficient.
     /// </summary>
-    private static void Compact(Span<ParticleData> span, int count)
+    private static int Compact(Span<ParticleData> span, int count)
     {
         var writeIdx = 0;
         for (var readIdx = 0; readIdx < count; readIdx++)
@@ -157,6 +156,7 @@ public sealed class ParticleSimulator
         // Fill remaining slots with dead particles
         for (var i = writeIdx; i < count; i++)
             span[i] = ParticleData.Dead();
+        return writeIdx;
     }
 
     private static float Lerp(float a, float b, float t) => a + (b - a) * Math.Clamp(t, 0f, 1f);
@@ -168,6 +168,19 @@ public sealed class ParticleSimulator
 public interface IParticleForce
 {
     void Apply(float deltaTime, ref ParticleData particle);
+}
+
+/// <summary>Uniform acceleration used for gravity and directional wind nodes.</summary>
+public sealed class UniformForce : IParticleForce
+{
+    public float AccelerationX { get; set; }
+    public float AccelerationY { get; set; }
+
+    public void Apply(float deltaTime, ref ParticleData particle)
+    {
+        particle.VX += AccelerationX * deltaTime;
+        particle.VY += AccelerationY * deltaTime;
+    }
 }
 
 /// <summary>

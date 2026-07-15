@@ -1,0 +1,33 @@
+{
+  "formatVersion": 2,
+  "processorType": "SmartPixelPolish",
+  "identity": {
+    "typeName": "SmartPixelPolish",
+    "displayName": { "zh-Hans": "智能像素整理", "en": "Smart Pixel Polish" },
+    "category": "Smart",
+    "description": {
+      "zh-Hans": "根据 32/64 像素目标自动限制颜色数量、清理孤立杂点并整理透明度层级。",
+      "en": "Automatically constrains the palette, removes isolated noise and cleans alpha levels for 32/64 px assets."
+    },
+    "tags": ["smart", "pixel-art", "cleanup", "palette", "32x32", "64x64"],
+    "author": "BuiltIn",
+    "version": "3.0"
+  },
+  "ports": {
+    "inputs": [{ "name": { "zh-Hans": "图像", "en": "Image" }, "type": "Image" }],
+    "outputs": [{ "name": { "zh-Hans": "图像", "en": "Image" }, "type": "Image" }]
+  },
+  "parameters": [],
+  "ai": {
+    "capabilities": ["smart", "pixel-cleanup", "palette"],
+    "triggers": {
+      "zh-Hans": "清理杂点, 像素太乱, 32像素整理, 64像素整理, 限制调色板",
+      "en": "clean noisy pixels, 32px polish, 64px polish, limit palette"
+    },
+    "suggestedInputs": ["AiImageGen", "SmartSpriteFramer"],
+    "exampleUsage": {
+      "zh-Hans": "作为 AI 图像生成后的最后整理步骤，通常关闭抖色以保持干净色块。",
+      "en": "Use as the final cleanup after AI generation; keep dithering off for clean clusters."
+    }
+  }
+}

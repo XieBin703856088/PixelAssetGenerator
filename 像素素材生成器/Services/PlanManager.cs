@@ -49,6 +49,7 @@ public sealed class PlanManager
 
     private void TriggerUpdated()
     {
+        if (_activePlan == null) return;
         OnPlanUpdated?.Invoke(_activePlan);
         TryAutoSave();
     }

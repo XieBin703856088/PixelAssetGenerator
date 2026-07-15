@@ -1,0 +1,39 @@
+{
+  "formatVersion": 2,
+  "processorType": "SmartMaterialWeathering",
+  "identity": {
+    "typeName": "SmartMaterialWeathering",
+    "displayName": { "zh-Hans": "智能材质风化", "en": "Smart Material Weathering" },
+    "category": "Smart",
+    "description": {
+      "zh-Hans": "在现有图块上生成苔藓、腐蚀、水渍、冰霜、烟熏或积尘，并输出可继续混合的效果遮罩。",
+      "en": "Adds moss, corrosion, damp stains, frost, soot or dust and exposes the generated effect mask."
+    },
+    "tags": ["smart", "texture", "moss", "corrosion", "weathering", "tileable"],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [
+      { "name": { "zh-Hans": "图像", "en": "Image" }, "type": "Image" },
+      { "name": { "zh-Hans": "限制遮罩", "en": "Limit Mask" }, "type": "Mask" }
+    ],
+    "outputs": [
+      { "name": { "zh-Hans": "图像", "en": "Image" }, "type": "Image" },
+      { "name": { "zh-Hans": "效果遮罩", "en": "Effect Mask" }, "type": "Mask" }
+    ]
+  },
+  "parameters": [],
+  "ai": {
+    "capabilities": ["smart-texture", "weathering", "moss", "corrosion"],
+    "triggers": {
+      "zh-Hans": "长苔藓, 砖块腐蚀, 水渍, 冰霜, 积灰, 材质风化",
+      "en": "add moss, corrode bricks, damp stain, frost, dust, weather material"
+    },
+    "suggestedInputs": ["Wall", "Flagstone", "Floor", "Cobblestone"],
+    "exampleUsage": {
+      "zh-Hans": "将墙壁或石板接入图像端口，选择材质效果并调节覆盖量与缝隙附着。",
+      "en": "Connect a wall or flagstone image, choose an effect and tune coverage and edge affinity."
+    }
+  }
+}

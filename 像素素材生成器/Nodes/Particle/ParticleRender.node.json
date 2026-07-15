@@ -3,64 +3,55 @@
   "processorType": "ParticleRender",
   "identity": {
     "typeName": "ParticleRender",
-    "displayName": {
-      "zh-Hans": "粒子渲染",
-      "en": "Particle Render"
-    },
+    "displayName": { "zh-Hans": "粒子渲染", "en": "Particle Render" },
     "category": "Particle",
     "description": {
-      "zh-Hans": "将粒子系统渲染到背景图像上",
-      "en": "Renders particles onto the background image"
+      "zh-Hans": "将粒子流以像素圆、烟团、火花或拖尾纹理渲染到背景图像。",
+      "en": "Renders a particle stream with pixel circles, smoke puffs, sparks or streaks."
     },
-    "tags": ["particle", "render"],
+    "tags": ["particle", "render", "pixel-art"],
     "author": "BuiltIn",
-    "version": "1.0"
+    "version": "2.0"
   },
   "ports": {
     "inputs": [
-      {
-        "name": { "zh-Hans": "背景", "en": "Background" },
-        "type": "Image"
-      },
-      {
-        "name": { "zh-Hans": "遮罩", "en": "Mask" },
-        "type": "Mask"
-      }
+      { "name": { "zh-Hans": "背景", "en": "Background" }, "type": "Image" },
+      { "name": { "zh-Hans": "遮罩", "en": "Mask" }, "type": "Mask" },
+      { "name": { "zh-Hans": "粒子", "en": "Particles" }, "type": "Particle" }
     ],
     "outputs": [
-      {
-        "name": { "zh-Hans": "图像", "en": "Image" },
-        "type": "Image"
-      }
+      { "name": { "zh-Hans": "图像", "en": "Image" }, "type": "Image" }
     ]
   },
   "parameters": [
     {
       "name": { "zh-Hans": "粒子纹理", "en": "Particle Texture" },
       "kind": "Choice",
-      "default": "softCircle",
-      "choices": ["circle", "softCircle", "square", "diamond", "star", "glow"]
+      "default": "auto",
+      "choices": ["auto", "pixelCircle", "smoke", "flame", "spark", "streak", "rainDrop", "snowflake", "leaf", "bubble", "rune", "circle", "softCircle", "square", "diamond", "star", "glow"]
     },
     {
       "name": { "zh-Hans": "混合模式", "en": "Blend Mode" },
       "kind": "Choice",
-      "default": "alpha",
-      "choices": ["alpha", "additive", "screen"]
+      "default": "auto",
+      "choices": ["auto", "alpha", "additive", "screen"]
     },
-    { "name": { "zh-Hans": "柔边", "en": "Soft Edges" }, "kind": "Boolean", "default": true },
+    { "name": { "zh-Hans": "柔边", "en": "Soft Edges" }, "kind": "Boolean", "default": false },
+    { "name": { "zh-Hans": "像素吸附", "en": "Pixel Snap" }, "kind": "Boolean", "default": true },
+    { "name": { "zh-Hans": "透明度级数", "en": "Alpha Steps" }, "kind": "Integer", "default": 4, "min": 1, "max": 16, "step": 1 },
     { "name": { "zh-Hans": "缩放", "en": "Scale" }, "kind": "Number", "default": 1.0, "min": 0.1, "max": 5.0, "step": 0.1 },
     { "name": { "zh-Hans": "全局透明度", "en": "Global Alpha" }, "kind": "Number", "default": 1.0, "min": 0, "max": 1.0, "step": 0.01 }
   ],
   "ai": {
-    "capabilities": ["particle", "render"],
+    "capabilities": ["particle", "render", "pixel-art"],
     "triggers": {
-      "zh-Hans": "粒子渲染, 粒子纹理, 粒子混合, 粒子绘制",
-      "en": "particle render, particle texture, particle blend, particle drawing"
+      "zh-Hans": "粒子渲染, 烟雾粒子, 火花粒子, 像素粒子",
+      "en": "particle render, smoke particles, spark particles, pixel particles"
     },
-    "suggestedInputs": ["ParticleEmitter"],
+    "suggestedInputs": ["ParticleEmitter", "ParticleForce", "ParticleTrail"],
     "exampleUsage": {
-      "zh-Hans": "将粒子系统渲染到背景上，使用柔边圆形纹理和透明混合模式",
-      "en": "Render the particle system onto the background using soft circle texture with alpha blend mode"
+      "zh-Hans": "连接粒子流并启用像素吸附；烟雾使用 smoke，闪电火花使用 spark 或 streak。",
+      "en": "Connect a particle stream and enable pixel snap; use smoke for puffs and spark or streak for lightning debris."
     }
   }
 }
