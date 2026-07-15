@@ -5,6 +5,7 @@ using System.Threading;
 // PointList uses (double X, double Y) tuple instead of System.Windows.Point
 using System.Security.Cryptography;
 using System.Text;
+using System.Diagnostics;
 
 namespace PixelAssetGenerator.Core;
 
@@ -58,6 +59,16 @@ public sealed class GraphNodeInstance
 /// </summary>
 public sealed class NodeGraphEvaluator
 {
+    private readonly GraphEvaluationCache _resultCache = new();
+    private readonly object _topologyGate = new();
+    private ulong _topologyFingerprint;
+    private TopologyResult? _cachedTopology;
+    private long _evaluationGeneration;
+
+    /// <summary>Statistics for the most recently completed CPU evaluation.</summary>
+    public GraphEvaluationMetrics LastMetrics { get; private set; } =
+        new(TimeSpan.Zero, 0, 0, 0, false, 0);
+
     /// <summary>
     /// Fired when a non-fatal evaluation error occurs (e.g. cycle detected).
     /// The UI can subscribe to show user-visible messages.
@@ -81,32 +92,93 @@ public sealed class NodeGraphEvaluator
         if (nodes.Count == 0)
             return null;
 
-        var all = EvaluateAll(nodes, connections, context, ct);
+        IReadOnlyList<GraphNodeInstance> evaluationNodes = nodes;
+        IReadOnlyList<GraphConnection> evaluationConnections = connections;
+        if (targetNodeId.HasValue)
+        {
+            if (!nodes.Any(node => node.Id == targetNodeId.Value)) return null;
 
-        if (targetNodeId.HasValue && all.TryGetValue(targetNodeId.Value, out var tb))
-            return tb;
+            // A targeted preview only needs the target's transitive ancestors. Large
+            // canvases commonly contain multiple experiments; avoiding unrelated branches
+            // is substantially cheaper than evaluating the entire document.
+            var incoming = connections.GroupBy(edge => edge.TargetNodeId)
+                .ToDictionary(group => group.Key, group => group.ToArray());
+            var required = new HashSet<int> { targetNodeId.Value };
+            var pending = new Stack<int>();
+            pending.Push(targetNodeId.Value);
+            while (pending.Count > 0)
+            {
+                var current = pending.Pop();
+                if (!incoming.TryGetValue(current, out var parentEdges)) continue;
+                foreach (var edge in parentEdges)
+                    if (required.Add(edge.SourceNodeId)) pending.Push(edge.SourceNodeId);
+            }
 
-        var terminalIds = nodes
+            evaluationNodes = nodes.Where(node => required.Contains(node.Id)).ToArray();
+            evaluationConnections = connections
+                .Where(edge => required.Contains(edge.SourceNodeId) && required.Contains(edge.TargetNodeId))
+                .ToArray();
+        }
+
+        var all = EvaluateAll(evaluationNodes, evaluationConnections, context, ct);
+
+        if (targetNodeId.HasValue)
+        {
+            if (all.TryGetValue(targetNodeId.Value, out var targetBuffer))
+                return TakeResult(all, targetBuffer);
+            DisposeResults(all, null);
+            return null;
+        }
+
+        var sourceIds = evaluationConnections.Select(connection => connection.SourceNodeId).ToHashSet();
+        var terminalIds = evaluationNodes
             .Where(n => string.Equals(n.Node.TypeName, "Output", StringComparison.OrdinalIgnoreCase)
-                        || !connections.Any(c => c.SourceNodeId == n.Id))
+                        || !sourceIds.Contains(n.Id))
             .Select(n => n.Id)
             .ToList();
 
         foreach (var tid in terminalIds)
         {
             if (all.TryGetValue(tid, out var terminalBuffer))
-                return terminalBuffer;
+                return TakeResult(all, terminalBuffer);
         }
 
-        return all.Values.LastOrDefault();
+        var fallback = all.Values.LastOrDefault();
+        return fallback == null ? null : TakeResult(all, fallback);
     }
 
-    // Cache for zero-input source nodes: key = (typeName, seed, tileSize) -> buffer hash
-    // Cleared when any parameter changes or seed changes.
-    private readonly Dictionary<(string, int, int), PixelBuffer> _sourceCache = new();
+    private static PixelBuffer TakeResult(IReadOnlyDictionary<int, PixelBuffer> results, PixelBuffer selected)
+    {
+        DisposeResults(results, selected);
+        return selected;
+    }
 
-    /// <summary>Clears the cached source node results. Call when parameters change.</summary>
-    public void ClearSourceCache() { lock (_sourceCache) _sourceCache.Clear(); }
+    private static void DisposeResults(IReadOnlyDictionary<int, PixelBuffer> results, PixelBuffer? except)
+    {
+        var disposed = new HashSet<PixelBuffer>(ReferenceEqualityComparer.Instance);
+        foreach (var buffer in results.Values)
+        {
+            if (ReferenceEquals(buffer, except) || !disposed.Add(buffer)) continue;
+            buffer.Dispose();
+        }
+    }
+
+    /// <summary>
+    /// Clears incremental results. Kept under the old name for source compatibility;
+    /// normal parameter edits no longer need to call it because fingerprints invalidate
+    /// only the affected node and its downstream dependants.
+    /// </summary>
+    public void ClearSourceCache() => _resultCache.Clear();
+
+    public void ClearCaches()
+    {
+        _resultCache.Clear();
+        lock (_topologyGate)
+        {
+            _cachedTopology = null;
+            _topologyFingerprint = 0;
+        }
+    }
 
     /// <summary>
     /// Evaluates and returns buffers for all nodes (useful for per-node preview).
@@ -117,10 +189,26 @@ public sealed class NodeGraphEvaluator
         PixelGraphContext context,
         CancellationToken ct = default)
     {
+        var stopwatch = Stopwatch.StartNew();
         if (nodes.Count == 0)
             return new Dictionary<int, PixelBuffer>();
 
+        var evaluationGeneration = unchecked((ulong)System.Threading.Interlocked.Increment(ref _evaluationGeneration));
+        _resultCache.RetainNodes(nodes.Select(node => node.Id).ToHashSet());
+
         ct.ThrowIfCancellationRequested();
+
+        var validation = GraphValidator.Validate(nodes, connections);
+        var validationErrors = validation.Diagnostics
+            .Where(diagnostic => diagnostic.Severity == GraphDiagnosticSeverity.Error)
+            .ToArray();
+        if (validationErrors.Length > 0)
+        {
+            var message = string.Join(" ", validationErrors.Take(3).Select(diagnostic => diagnostic.Message));
+            OnEvaluationError?.Invoke(message);
+            LastMetrics = new(stopwatch.Elapsed, nodes.Count, 0, 0, false, validation.Diagnostics.Count);
+            return new Dictionary<int, PixelBuffer>();
+        }
 
         // Prepopulated results from partial GPU evaluation (id -> PixelBuffer)
         Dictionary<int, PixelBuffer>? prepopForCpu = null;
@@ -191,6 +279,9 @@ public sealed class NodeGraphEvaluator
                     }
                     else
                     {
+                        stopwatch.Stop();
+                        LastMetrics = new(stopwatch.Elapsed, nodes.Count, nodes.Count, 0, false,
+                            validation.Diagnostics.Count);
                         return resultMap;
                     }
                 }
@@ -313,6 +404,9 @@ public sealed class NodeGraphEvaluator
                         // For simplicity, if prepop covers all nodes, return immediately.
                         if (prepop.Count == nodes.Count)
                         {
+                            stopwatch.Stop();
+                            LastMetrics = new(stopwatch.Elapsed, nodes.Count, nodes.Count, 0, false,
+                                validation.Diagnostics.Count);
                             return prepop.ToDictionary(kv => kv.Key, kv => kv.Value);
                         }
                         // Otherwise fall through to CPU evaluation but with prepop seed.
@@ -347,8 +441,24 @@ public sealed class NodeGraphEvaluator
             }
         }
 
-        // Topological sort + level computation (shared with GPU evaluator)
-        var topoResult = TopologicalSort(nodes, validConnections);
+        // Compile topology once and reuse it until nodes or edges change.
+        var structureFingerprint = GraphFingerprint.ForStructure(nodes, validConnections);
+        TopologyResult? topoResult;
+        var reusedExecutionPlan = false;
+        lock (_topologyGate)
+        {
+            if (_cachedTopology != null && _topologyFingerprint == structureFingerprint)
+            {
+                topoResult = _cachedTopology;
+                reusedExecutionPlan = true;
+            }
+            else
+            {
+                topoResult = TopologicalSort(nodes, validConnections);
+                _cachedTopology = topoResult;
+                _topologyFingerprint = structureFingerprint;
+            }
+        }
         if (topoResult == null)
         {
             var msg = $"Circular dependency detected! Check connections.";
@@ -365,6 +475,10 @@ public sealed class NodeGraphEvaluator
         // Store per-port outputs: result[nodeId][portIndex].  Single-output nodes wrap
         // their one buffer at index 0; IMultiOutputNode nodes fill all ports.
         var result = new System.Collections.Concurrent.ConcurrentDictionary<int, PixelBuffer[]>();
+        var nodeFingerprints = new System.Collections.Concurrent.ConcurrentDictionary<int, ulong>();
+        var evaluatedNodeCount = 0;
+        var cacheHitCount = 0;
+        var incrementalCacheEnabled = prepopForCpu == null;
         // If partial GPU evaluation produced prepopulated results, inject them here so
         // subsequent CPU evaluation can reuse them as upstream inputs.
         if (prepopForCpu != null)
@@ -382,7 +496,12 @@ public sealed class NodeGraphEvaluator
             {
                 // Skip nodes that were already evaluated by the GPU path (B1 fix)
                 if (result.ContainsKey(nodeId))
+                {
+                    nodeFingerprints[nodeId] = GraphFingerprint.ForNode(
+                        nodeById[nodeId], nodeById[nodeId].ParameterValues, context,
+                        Array.Empty<(int Port, ulong Fingerprint)>());
                     return;
+                }
 
                 if (!nodeById.TryGetValue(nodeId, out var instance))
                     return;
@@ -452,6 +571,43 @@ public sealed class NodeGraphEvaluator
                     effectiveParams = merged;
                 }
 
+                var upstreamFingerprints = incomingByTarget.TryGetValue(nodeId, out var fingerprintInputs)
+                    ? fingerprintInputs.Select(connection =>
+                        (connection.TargetPortIndex,
+                            nodeFingerprints.TryGetValue(connection.SourceNodeId, out var fingerprint)
+                                ? fingerprint
+                                : 0UL))
+                    : Enumerable.Empty<(int, ulong)>();
+                var nodeFingerprint = GraphFingerprint.ForNode(
+                    instance, effectiveParams, derivedContext, upstreamFingerprints);
+
+                var traits = instance.Node.Traits;
+                var cacheable = incrementalCacheEnabled
+                    && traits.HasFlag(GraphNodeTraits.Pure)
+                    && traits.HasFlag(GraphNodeTraits.Deterministic)
+                    && !traits.HasFlag(GraphNodeTraits.Stateful)
+                    && !traits.HasFlag(GraphNodeTraits.TimeDependent)
+                    && instance.Node is not IPersistentStateNode
+                    && context.AnimationTime is null
+                    && !instance.Node.Category.Equals("Animation", StringComparison.OrdinalIgnoreCase)
+                    && !instance.Node.Category.Equals("Particle", StringComparison.OrdinalIgnoreCase)
+                    && !instance.Node.Category.Equals("Physics", StringComparison.OrdinalIgnoreCase);
+
+                // A volatile node must invalidate every downstream cache entry, even when
+                // its parameters are unchanged (state, time or an external source may differ).
+                if (!cacheable)
+                    nodeFingerprint ^= evaluationGeneration * 1099511628211UL;
+                nodeFingerprints[nodeId] = nodeFingerprint;
+
+                if (cacheable && _resultCache.TryGet(nodeId, nodeFingerprint, out var cachedBuffers))
+                {
+                    result[nodeId] = cachedBuffers;
+                    System.Threading.Interlocked.Increment(ref cacheHitCount);
+                    return;
+                }
+
+                System.Threading.Interlocked.Increment(ref evaluatedNodeCount);
+
                 // Prefer GPU-accelerated path when available. Nodes may optionally implement
                 // IGpuAcceleratedNode and return a PixelBuffer from the GPU implementation.
                 PixelBuffer? outBuf = null;
@@ -482,6 +638,7 @@ public sealed class NodeGraphEvaluator
                                 if (gpuResult != null && gpuResult.Length >= 1)
                                 {
                                     result[nodeId] = gpuResult;
+                                    if (cacheable) _resultCache.Store(nodeId, nodeFingerprint, gpuResult);
                                     return;
                                 }
                             }
@@ -491,36 +648,17 @@ public sealed class NodeGraphEvaluator
                             }
                         }
 
-                        result[nodeId] = multiNode.ProcessMulti(inputs, effectiveParams, derivedContext);
+                        var multiResult = multiNode.ProcessMulti(inputs, effectiveParams, derivedContext);
+                        result[nodeId] = multiResult;
+                        if (cacheable) _resultCache.Store(nodeId, nodeFingerprint, multiResult);
                         return;
                     }
 
-                    // Source node cache: cache zero-input nodes to avoid redundant evaluation.
-                    // Cache stores a clone so callers can safely use/dispose without corrupting the cache entry.
-                    if (instance.Node.InputPorts.Count == 0 && effectiveParams.TryGetValue("seed", out var seedVal))
-                    {
-                        var seed = seedVal is int iseed ? iseed : (int)(double)seedVal;
-                        var cacheKey = (instance.Node.TypeName, seed, context.TileSize);
-                        lock (_sourceCache)
-                        {
-                            if (_sourceCache.TryGetValue(cacheKey, out var cached))
-                            {
-                                outBuf = cached.Clone();
-                            }
-                            else
-                            {
-                                outBuf = instance.Node.Process(inputs, effectiveParams, derivedContext);
-                                _sourceCache[cacheKey] = outBuf.Clone();
-                            }
-                        }
-                    }
-                    else
-                    {
-                        outBuf = instance.Node.Process(inputs, effectiveParams, derivedContext);
-                    }
+                    outBuf = instance.Node.Process(inputs, effectiveParams, derivedContext);
                 }
 
                 result[nodeId] = [outBuf];
+                if (cacheable) _resultCache.Store(nodeId, nodeFingerprint, [outBuf]);
             });
         }
 
@@ -535,6 +673,9 @@ public sealed class NodeGraphEvaluator
         }
 
         // Public API returns port-0 buffer per node for backward compatibility.
+        stopwatch.Stop();
+        LastMetrics = new(stopwatch.Elapsed, nodes.Count, evaluatedNodeCount, cacheHitCount,
+            reusedExecutionPlan, validation.Diagnostics.Count);
         return result.ToDictionary(kv => kv.Key, kv => kv.Value[0]);
     }
 

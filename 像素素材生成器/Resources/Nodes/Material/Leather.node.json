@@ -1,6 +1,6 @@
 {
   "formatVersion": 2,
-  "processorType": null,
+  "processorType": "Leather",
   "identity": {
     "typeName": "Leather",
     "displayName": {
@@ -9,8 +9,8 @@
     },
     "category": "Material",
     "description": {
-      "zh-Hans": "使用多尺度皱纹噪波和方向拉伸生成皮革/兽皮/羊皮纸纹理。具有细纹、深褶、颜色变化和高光光泽等特性。支持可选的基础表面输入。所有噪波均可平铺。",
-      "en": "Generates leather / hide / parchment textures using multi-scale wrinkle noise with directional stretching. Features fine grain, deep creases, color variation, and specular sheen. Optional base surface input. All noise is tileable."
+      "zh-Hans": "生成带不规则皮纹块面、稀疏褶皱、毛孔簇和离散高光的RPG像素皮革，避免均匀噪点与重复方块。",
+      "en": "Generates RPG pixel leather with irregular grain regions, sparse creases, pore clusters, and discrete highlights instead of uniform noise."
     },
     "tags": [],
     "author": "BuiltIn",

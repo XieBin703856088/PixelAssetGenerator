@@ -85,6 +85,20 @@ namespace PixelAssetGenerator
             var key = e.Key == Key.System ? e.SystemKey : e.Key;
             var mods = Keyboard.Modifiers;
 
+            if (key == Key.F2 && mods == ModifierKeys.None && SelectedNode != null)
+            {
+                RenameNode(SelectedNode);
+                e.Handled = true;
+                return;
+            }
+
+            if (key == Key.D && mods == ModifierKeys.Control && SelectedNode != null)
+            {
+                DuplicateContextSelection(SelectedNode);
+                e.Handled = true;
+                return;
+            }
+
             if (settings.IsMatch(ShortcutAction.SelectAll, key, mods))
             {
                 SelectAllNodes();
@@ -214,13 +228,21 @@ namespace PixelAssetGenerator
         private void DeleteSelectedNodes()
         {
             _selectedConnection = null;
-            _nodeGraphController.DeleteSelectedNodes(SelectedNode);
+            var removed = _nodeGraphController.DeleteSelectedNodes(SelectedNode);
+            if (SelectedNode != null && removed.Contains(SelectedNode))
+                SelectedNode = Nodes.LastOrDefault(node => node.IsSelected) ?? Nodes.LastOrDefault();
+            _particleEvalService?.ClearState();
+            _lastParticleSimulationFrame = -1;
         }
 
         private void DeleteNodes(IEnumerable<NodeViewModel> nodesToRemove)
         {
             _selectedConnection = null;
-            _nodeGraphController.DeleteNodes(nodesToRemove);
+            var removed = _nodeGraphController.DeleteNodes(nodesToRemove);
+            if (SelectedNode != null && removed.Contains(SelectedNode))
+                SelectedNode = Nodes.LastOrDefault(node => node.IsSelected) ?? Nodes.LastOrDefault();
+            _particleEvalService?.ClearState();
+            _lastParticleSimulationFrame = -1;
         }
 
         private void CopySelectedNodes()
@@ -282,7 +304,7 @@ namespace PixelAssetGenerator
         {
             if (sender is MenuItem m && m.DataContext is NodeViewModel node)
             {
-                SelectedNode = node;
+                RenameNode(node);
             }
         }
 
@@ -290,7 +312,7 @@ namespace PixelAssetGenerator
         {
             if (sender is MenuItem m && m.DataContext is NodeViewModel node)
             {
-                DuplicateNode(node);
+                DuplicateContextSelection(node);
             }
         }
 
@@ -298,7 +320,8 @@ namespace PixelAssetGenerator
         {
             if (sender is MenuItem m && m.DataContext is NodeViewModel node)
             {
-                DeleteNodes(new[] { node });
+                PrepareContextNode(node);
+                DeleteSelectedNodes();
             }
         }
 
@@ -416,7 +439,9 @@ namespace PixelAssetGenerator
 
         private void NodeCanvasHost_PreviewMouseDown(object sender, MouseButtonEventArgs e)
         {
-            if (e.ChangedButton is MouseButton.Middle or MouseButton.Right)
+            // Reserve right-click for the canvas/node context menus. Canvas panning
+            // uses the middle mouse button so a simple right-click is never captured.
+            if (e.ChangedButton == MouseButton.Middle)
             {
                 _isNodePanning = true;
                 _nodePanStart = e.GetPosition(NodeCanvasHost);
@@ -590,7 +615,7 @@ namespace PixelAssetGenerator
                                 continue;
                             }
 
-                            var p = GetPortPosition(n, false, i);
+                            var p = GetCachedPortPosition(n, false, i);
                             var dx = p.X - contentPos.X;
                             var dy = p.Y - contentPos.Y;
                             var d2 = dx * dx + dy * dy;
@@ -605,7 +630,7 @@ namespace PixelAssetGenerator
 
                     if (nearestNode != null && nearestDistSq <= snapThreshold * snapThreshold)
                     {
-                        var snapPoint = GetPortPosition(nearestNode, false, nearestPortIndex);
+                        var snapPoint = GetCachedPortPosition(nearestNode, false, nearestPortIndex);
                         _activeConnection.EndX = snapPoint.X;
                         _activeConnection.EndY = snapPoint.Y;
                         _snappedNode = nearestNode;
@@ -698,7 +723,7 @@ namespace PixelAssetGenerator
                 // finalize the connection to the snapped target here.
                 if (_activeConnection != null && _snappedNode != null && _snappedPortIndex >= 0)
                 {
-                    var snapPoint = GetPortPosition(_snappedNode, false, _snappedPortIndex);
+                    var snapPoint = GetCachedPortPosition(_snappedNode, false, _snappedPortIndex);
                     _activeConnection.EndX = snapPoint.X;
                     _activeConnection.EndY = snapPoint.Y;
                     TryFinalizeActiveConnection(_snappedNode, _snappedPortIndex);
@@ -1052,6 +1077,7 @@ namespace PixelAssetGenerator
 
             UpdateNodeCanvasExtent();
             UpdateConnectionPositions();
+            ScheduleConnectionGeometryRefresh();
             NodeConnectionLayer?.InvalidateVisual();
             MarkStatsActive();
         }
@@ -1370,6 +1396,7 @@ namespace PixelAssetGenerator
 
             UpdateNodeCanvasExtent();
             UpdateConnectionPositions();
+            ScheduleConnectionGeometryRefresh();
 
 
             _statsIdleTimer.Stop();
@@ -1495,7 +1522,7 @@ namespace PixelAssetGenerator
 
                 if (startNode != null)
                 {
-                    var startPoint = GetPortPosition(startNode, true, startPortIndex);
+                    var startPoint = GetCachedPortPosition(startNode, true, startPortIndex);
                     _activeConnection = new NodeConnectionViewModel
                     {
                         StartNode = startNode,
@@ -1561,8 +1588,8 @@ namespace PixelAssetGenerator
             // If we had snapped while dragging, prefer the snapped target
             if (_snappedNode != null && ReferenceEquals(_snappedNode, node) && _snappedPortIndex == portIndex)
             {
-                _activeConnection.EndX = GetPortPosition(node, false, portIndex).X;
-                _activeConnection.EndY = GetPortPosition(node, false, portIndex).Y;
+                _activeConnection.EndX = GetCachedPortPosition(node, false, portIndex).X;
+                _activeConnection.EndY = GetCachedPortPosition(node, false, portIndex).Y;
             }
             else
             {

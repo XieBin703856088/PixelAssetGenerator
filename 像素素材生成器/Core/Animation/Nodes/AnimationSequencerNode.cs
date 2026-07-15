@@ -45,6 +45,7 @@ public sealed class AnimationSequencerNode : IGraphNode
     public IReadOnlyList<GraphNodePort> InputPorts => _inputs;
     public IReadOnlyList<GraphNodePort> OutputPorts => _outputs;
     public IReadOnlyList<NodeParameterDefinition> Parameters => GetRuntimeParameters();
+    public GraphNodeTraits Traits => GraphNodeTraits.TimeDependent;
 
     private static IReadOnlyList<NodeParameterDefinition>? _runtimeParameters;
 

@@ -27,6 +27,7 @@ public sealed class PhysicsWorld
 
     /// <summary>Enable collisions between bodies.</summary>
     public bool EnableCollisions { get; set; } = true;
+    public bool EnableBounds { get; set; } = true;
 
     private readonly List<PhysicsBody> _bodies = new();
     private readonly List<IConstraint> _constraints = new();
@@ -59,7 +60,7 @@ public sealed class PhysicsWorld
             // Integrate
             foreach (var body in _bodies)
             {
-                if (body.IsStatic) continue;
+                if (!body.IsEnabled || body.IsStatic) continue;
 
                 // Save previous position
                 body.PrevX = body.X;
@@ -85,7 +86,8 @@ public sealed class PhysicsWorld
             }
 
             // Boundaries
-            ConstrainBounds();
+            if (EnableBounds)
+                ConstrainBounds();
 
             // Constraints
             for (var ci = 0; ci < _constraints.Count; ci++)
@@ -103,10 +105,12 @@ public sealed class PhysicsWorld
     {
         for (var i = 0; i < _bodies.Count; i++)
         {
+            if (!_bodies[i].IsEnabled) continue;
             for (var j = i + 1; j < _bodies.Count; j++)
             {
                 var a = _bodies[i];
                 var b = _bodies[j];
+                if (!b.IsEnabled) continue;
                 if (a.IsStatic && b.IsStatic) continue;
 
                 if (CollisionDetection.CircleCircle(a, b, out var contact))
@@ -178,6 +182,7 @@ public sealed class PhysicsWorld
 
         foreach (var body in _bodies)
         {
+            if (!body.IsEnabled || body.IsStatic) continue;
             if (WrapEdges)
             {
                 if (body.X < MinX) { body.X += worldW; body.PrevX += worldW; }

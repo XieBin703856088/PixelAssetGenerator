@@ -1,0 +1,25 @@
+{
+  "formatVersion": 2,
+  "processorType": "SpriteMotionMeta",
+  "identity": {
+    "typeName": "SpriteMotionMeta",
+    "displayName": { "zh-Hans": "精灵动作元节点", "en": "Sprite Motion Meta" },
+    "category": "Meta",
+    "description": { "zh-Hans": "在一个节点中完成像素对齐的待机、跳跃、受击、漂浮与附加光效动画。", "en": "Combines pixel-snapped character motion and optional visible effects in one reusable node." },
+    "tags": ["meta", "sprite", "motion", "animation", "rpg"],
+    "author": "BuiltIn", "version": "1.0"
+  },
+  "ports": {
+    "inputs": [
+      { "name": { "zh-Hans": "精灵图像", "en": "Sprite" }, "type": "Image" },
+      { "name": { "zh-Hans": "动作强度", "en": "Strength" }, "type": "Float" }
+    ],
+    "outputs": [{ "name": { "zh-Hans": "动画图像", "en": "Animated Image" }, "type": "Image" }]
+  },
+  "parameters": [],
+  "ai": {
+    "capabilities": ["meta", "sprite-animation", "rpg-motion"],
+    "triggers": { "zh-Hans": "角色待机, 跳跃动画, 受击反馈, 精灵动作", "en": "character idle, jump animation, hit reaction, sprite motion" },
+    "suggestedInputs": ["AiImageGen", "SmartSpriteFramer", "Icon", "Slime"]
+  }
+}

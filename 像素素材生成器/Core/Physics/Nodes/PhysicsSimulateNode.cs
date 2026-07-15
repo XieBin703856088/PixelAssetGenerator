@@ -61,8 +61,6 @@ public sealed class PhysicsSimulateNode : IPersistentStateNode, IExclusiveInputN
         PhysicsBody[] Bodies,
         bool Initialized);
 
-    private static PixelBuffer? _sharedPlaceholder;
-
     /// <summary>Mask input cached from Process(), used for spatial variation in deformation.</summary>
     internal PixelBuffer? LastMaskInput { get; private set; }
 
@@ -71,11 +69,7 @@ public sealed class PhysicsSimulateNode : IPersistentStateNode, IExclusiveInputN
         // Cache mask input (port 1)
         LastMaskInput = inputs.Length > 1 ? inputs[1] : null;
 
-        if (_sharedPlaceholder == null)
-        {
-            _sharedPlaceholder = PixelBuffer.CreateSolid(1, 1, 0f, 0f, 0f, 0f);
-        }
-        return _sharedPlaceholder;
+        return PixelBuffer.CreateSolid(1, 1, 0f, 0f, 0f, 0f);
     }
 
     /// <summary>
@@ -94,6 +88,7 @@ public sealed class PhysicsSimulateNode : IPersistentStateNode, IExclusiveInputN
             Substeps = GraphNodeBase.GetInt(parameters, "substeps", 4),
             WrapEdges = GraphNodeBase.GetBool(parameters, "wrapEdges", false),
             EnableCollisions = GraphNodeBase.GetBool(parameters, "enableCollisions", true),
+            EnableBounds = GraphNodeBase.GetBool(parameters, "collideWalls", true),
         };
 
         var maxBodies = 2000; // enough for most particle systems
@@ -115,6 +110,7 @@ public sealed class PhysicsSimulateNode : IPersistentStateNode, IExclusiveInputN
         {
             bodies[i] = new PhysicsBody(0.5f, 0.5f, tileWidth)
             {
+                IsEnabled = false,
                 Restitution = GraphNodeBase.GetFloat(parameters, "restitution", 0.5f),
                 Friction = GraphNodeBase.GetFloat(parameters, "friction", 0.3f),
             };
@@ -134,6 +130,18 @@ public sealed class PhysicsSimulateNode : IPersistentStateNode, IExclusiveInputN
         IReadOnlyDictionary<string, object> parameters,
         PixelGraphContext context,
         ParticleBuffer particleBuffer)
+        => SimulateFrame(parameters, context, particleBuffer, Array.Empty<(PhysicsConstraintNode Node, IReadOnlyDictionary<string, object> Parameters)>());
+
+    /// <summary>
+    /// Simulates one frame and installs every constraint connected after this
+    /// physics node before the world step. This keeps the visual graph order
+    /// intuitive: emitter -> rigid physics -> constraint -> renderer.
+    /// </summary>
+    public void SimulateFrame(
+        IReadOnlyDictionary<string, object> parameters,
+        PixelGraphContext context,
+        ParticleBuffer particleBuffer,
+        IEnumerable<(PhysicsConstraintNode Node, IReadOnlyDictionary<string, object> Parameters)> constraints)
     {
         if (particleBuffer == null) return;
 
@@ -152,11 +160,18 @@ public sealed class PhysicsSimulateNode : IPersistentStateNode, IExclusiveInputN
         }
 
         // Sync physics world parameters
+        world.GravityX = GraphNodeBase.GetFloat(parameters, "gravityX", 0f);
         world.GravityY = GraphNodeBase.GetFloat(parameters, "gravityY", 0.5f);
         world.Damping = GraphNodeBase.GetFloat(parameters, "damping", 0.99f);
         world.Substeps = GraphNodeBase.GetInt(parameters, "substeps", 4);
         world.EnableCollisions = GraphNodeBase.GetBool(parameters, "enableCollisions", true);
+        world.EnableBounds = GraphNodeBase.GetBool(parameters, "collideWalls", true);
         world.WrapEdges = GraphNodeBase.GetBool(parameters, "wrapEdges", false);
+        if (world.Bodies.Count > 0 && world.Bodies[0].IsStatic)
+        {
+            world.Bodies[0].Restitution = GraphNodeBase.GetFloat(parameters, "restitution", 0.5f);
+            world.Bodies[0].Friction = GraphNodeBase.GetFloat(parameters, "friction", 0.3f);
+        }
 
         // Sync particle bodies from active particles
         var activeCount = particleBuffer.ActiveCount;
@@ -171,12 +186,40 @@ public sealed class PhysicsSimulateNode : IPersistentStateNode, IExclusiveInputN
             ref readonly var p = ref particleSpan[i];
             if (!p.Active)
             {
+                bodies[i].IsEnabled = false;
                 bodies[i].IsStatic = true;
                 bodies[i].X = -10f; // out of bounds
                 continue;
             }
 
             var body = bodies[i];
+
+            // Optional mask acts as a pixel-authored collision field. When a body
+            // enters an occupied texel, move it back to the previous position and
+            // reflect the velocity against the local luminance gradient.
+            if (LastMaskInput != null && SampleMask(LastMaskInput, body.X, body.Y) > 0.25f)
+            {
+                var epsilon = 1f / Math.Max(8, Math.Max(LastMaskInput.Width, LastMaskInput.Height));
+                var normalX = SampleMask(LastMaskInput, body.X - epsilon, body.Y)
+                              - SampleMask(LastMaskInput, body.X + epsilon, body.Y);
+                var normalY = SampleMask(LastMaskInput, body.X, body.Y - epsilon)
+                              - SampleMask(LastMaskInput, body.X, body.Y + epsilon);
+                var length = MathF.Sqrt(normalX * normalX + normalY * normalY);
+                if (length < 0.001f)
+                {
+                    normalX = body.X - body.PrevX;
+                    normalY = body.Y - body.PrevY;
+                    length = MathF.Max(0.001f, MathF.Sqrt(normalX * normalX + normalY * normalY));
+                }
+                normalX /= length; normalY /= length;
+                var velocityAlongNormal = body.VX * normalX + body.VY * normalY;
+                var bounce = 1f + GraphNodeBase.GetFloat(parameters, "restitution", 0.5f);
+                body.VX -= velocityAlongNormal * normalX * bounce;
+                body.VY -= velocityAlongNormal * normalY * bounce;
+                body.X = body.PrevX;
+                body.Y = body.PrevY;
+            }
+            body.IsEnabled = true;
             body.X = p.X;
             body.Y = p.Y;
             body.VX = p.VX;
@@ -193,9 +236,16 @@ public sealed class PhysicsSimulateNode : IPersistentStateNode, IExclusiveInputN
         // Disable excess bodies
         for (var i = bodyCount; i < maxBodies; i++)
         {
+            bodies[i].IsEnabled = false;
             bodies[i].IsStatic = true;
             bodies[i].X = -10f;
         }
+
+        // Constraints need the freshly synchronized bodies, but must be installed
+        // before stepping the world. Previously the constraint node was only a
+        // passthrough and therefore had no effect in an evaluated graph.
+        foreach (var (constraintNode, constraintParameters) in constraints)
+            constraintNode.ApplyConstraint(constraintParameters, world);
 
         // Step physics world
         world.Step(deltaTime);
@@ -239,6 +289,13 @@ public sealed class PhysicsSimulateNode : IPersistentStateNode, IExclusiveInputN
 
         // Re-compact the particle buffer (physics may have moved things)
         CompactParticles(particleSpan, activeCount);
+    }
+
+    private static float SampleMask(PixelBuffer mask, float normalizedX, float normalizedY)
+    {
+        var x = Math.Clamp((int)(normalizedX * mask.Width), 0, mask.Width - 1);
+        var y = Math.Clamp((int)(normalizedY * mask.Height), 0, mask.Height - 1);
+        return mask.GetPixel(x, y).R;
     }
 
     /// <summary>

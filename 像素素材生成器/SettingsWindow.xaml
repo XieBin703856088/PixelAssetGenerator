@@ -3,9 +3,9 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:loc="clr-namespace:PixelAssetGenerator.Services.Localization"
         Title="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[Settings_Title]}"
-        Width="680" Height="580"
+        Width="780" Height="640" MinWidth="720" MinHeight="560"
         WindowStartupLocation="CenterOwner"
-        ResizeMode="NoResize"
+        ResizeMode="CanResize"
         Background="{DynamicResource WindowBackground}"
         Foreground="{DynamicResource PrimaryText}">
 
@@ -16,13 +16,13 @@
                 <Setter Property="Background" Value="{DynamicResource PanelBackground}" />
                 <Setter Property="BorderBrush" Value="{DynamicResource PanelBorder}" />
                 <Setter Property="BorderThickness" Value="1" />
-                <Setter Property="CornerRadius" Value="8" />
-                <Setter Property="Padding" Value="16" />
+                <Setter Property="CornerRadius" Value="12" />
+                <Setter Property="Padding" Value="18" />
                 <Setter Property="Margin" Value="0,0,0,12" />
             </Style>
 
             <Style x:Key="SectionTitle" TargetType="TextBlock">
-                <Setter Property="FontSize" Value="13" />
+                <Setter Property="FontSize" Value="14" />
                 <Setter Property="FontWeight" Value="SemiBold" />
                 <Setter Property="Margin" Value="0,0,0,12" />
             </Style>
@@ -43,16 +43,16 @@
 
             <!-- ── Side nav item style ── -->
             <Style x:Key="NavItem" TargetType="Border">
-                <Setter Property="Height" Value="36" />
+                <Setter Property="Height" Value="40" />
                 <Setter Property="Cursor" Value="Hand" />
-                <Setter Property="CornerRadius" Value="6" />
+                <Setter Property="CornerRadius" Value="7" />
                 <Setter Property="Padding" Value="12,0" />
                 <Setter Property="Margin" Value="6,1" />
             </Style>
 
             <!-- ── Theme Card style ── -->
             <Style x:Key="ThemeCard" TargetType="Border">
-                <Setter Property="CornerRadius" Value="8" />
+                <Setter Property="CornerRadius" Value="10" />
                 <Setter Property="BorderThickness" Value="2" />
                 <Setter Property="Width" Value="140" />
                 <Setter Property="Height" Value="84" />
@@ -92,11 +92,7 @@
         </Grid.RowDefinitions>
 
         <!-- ══════ 顶栏 ══════ -->
-        <Border Grid.Row="0"
-                Background="{DynamicResource PanelBackground}"
-                BorderBrush="{DynamicResource PanelBorder}"
-                BorderThickness="0,0,0,1"
-                Padding="16,10,16,10">
+        <Border Grid.Row="0" Style="{StaticResource DialogHeader}">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
@@ -106,22 +102,22 @@
 
                 <TextBlock Grid.Column="0"
                            Text="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[Settings_Title]}"
-                           FontSize="15" FontWeight="Bold"
+                           Style="{StaticResource WindowTitleText}"
                            VerticalAlignment="Center" />
 
                 <StackPanel Grid.Column="2" Orientation="Horizontal">
                     <Button x:Name="ResetShortcutsButton"
                             Content="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[Settings_ResetShortcuts]}"
-                            Padding="14,5" MinWidth="70" MinHeight="26"
+                            Padding="16,6" MinWidth="112"
                             Margin="0,0,8,0"
                             Click="ResetShortcuts_Click"
                             Visibility="Collapsed" />
                     <Button Content="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[Settings_Cancel]}"
-                            Padding="14,5" MinWidth="70" MinHeight="26"
+                            Padding="16,6" MinWidth="88"
                             Margin="0,0,8,0"
                             Click="Cancel_Click" />
                     <Button Content="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[Settings_OK]}"
-                            Padding="14,5" MinWidth="70" MinHeight="26"
+                            Padding="16,6" MinWidth="88"
                             IsDefault="True"
                             Click="OK_Click"
                             Style="{DynamicResource AccentButton}" />
@@ -132,7 +128,7 @@
         <!-- ══════ 主体：左导航 + 右内容 ══════ -->
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="160" />
+                <ColumnDefinition Width="180" />
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
@@ -168,7 +164,7 @@
 
             <!-- ── 右侧内容区 ── -->
             <ScrollViewer Grid.Column="2"
-                          VerticalScrollBarVisibility="Hidden"
+                          VerticalScrollBarVisibility="Auto"
                           Padding="16,12,16,16"
                           Background="Transparent"
                           BorderThickness="0">
@@ -191,7 +187,7 @@
 
                                 <ComboBox x:Name="LanguageCombo"
                                           Grid.Column="0"
-                                          Height="30"
+                                          MinHeight="36"
                                           MinWidth="220"
                                           HorizontalAlignment="Left"
                                           SelectionChanged="LanguageCombo_SelectionChanged">
@@ -206,7 +202,7 @@
 
                                 <Button Grid.Column="1"
                                         x:Name="OpenLangFolderButton"
-                                        Width="36" Height="30"
+                                        Width="40" Height="36"
                                         Padding="0"
                                         Margin="6,0,0,0"
                                         ToolTip="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[Settings_OpenLangFolder]}"
@@ -286,7 +282,7 @@
 
                                 <Button Grid.Row="0" Grid.Column="2"
                                         x:Name="BrowseNodesButton"
-                                        Height="28" Padding="8,0"
+                                        MinHeight="34" Padding="10,5"
                                         Margin="6,0,0,0"
                                         Content="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[Settings_BrowseNodes]}"
                                         Click="BrowseNodes_Click" />
@@ -297,7 +293,7 @@
 
                                 <Button Grid.Row="2" Grid.Column="2"
                                         x:Name="ResetNodesPathButton"
-                                        Height="24" Padding="6,0"
+                                        MinHeight="32" Padding="10,4"
                                         Margin="0,6,0,0"
                                         FontSize="10"
                                         Content="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[Settings_ResetNodesPath]}"
@@ -334,7 +330,7 @@
 
                                 <Button Grid.Column="2"
                                         x:Name="OpenCacheFolderButton"
-                                        Height="28" Padding="8,0"
+                                        MinHeight="34" Padding="10,5"
                                         Margin="6,0,0,0"
                                         Content="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[Settings_OpenCacheFolder]}"
                                         Click="OpenCacheFolder_Click" />
@@ -355,9 +351,9 @@
                             <Border Style="{StaticResource ShortcutHeader}">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="140" />
+                                        <ColumnDefinition Width="180" />
                                         <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="80" />
+                                        <ColumnDefinition Width="100" />
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Grid.Column="0"
                                                Text="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[Settings_Operation]}"
@@ -378,9 +374,9 @@
                                             <Border Style="{StaticResource ShortcutRow}">
                                                 <Grid>
                                                     <Grid.ColumnDefinitions>
-                                                        <ColumnDefinition Width="140" />
+                                                        <ColumnDefinition Width="180" />
                                                         <ColumnDefinition Width="*" />
-                                                        <ColumnDefinition Width="80" />
+                                                        <ColumnDefinition Width="100" />
                                                     </Grid.ColumnDefinitions>
 
                                                     <TextBlock Grid.Column="0"
@@ -427,8 +423,8 @@
 
                                                     <Button Grid.Column="2"
                                                             Tag="{Binding}"
-                                                            Height="24" FontSize="10"
-                                                            Padding="4,2"
+                                                            MinHeight="32" FontSize="11"
+                                                            Padding="10,4"
                                                             Click="EditShortcut_Click"
                                                             VerticalAlignment="Center">
                                                         <Button.Style>
@@ -457,7 +453,7 @@
 
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,0,4">
                         <Button Content="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[Settings_ResetShortcuts]}"
-                                Height="30" Padding="14,5"
+                                MinHeight="36" Padding="14,6"
                                 Click="ResetShortcuts_Click" />
                     </StackPanel>
 

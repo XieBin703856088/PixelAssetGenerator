@@ -3,61 +3,17 @@
   "processorType": "PhysicsConstraint",
   "identity": {
     "typeName": "PhysicsConstraint",
-    "displayName": {
-      "zh-Hans": "物理约束",
-      "en": "Physics Constraint"
-    },
+    "displayName": { "zh-Hans": "物理约束", "en": "Physics Constraint" },
     "category": "Physics",
-    "description": {
-      "zh-Hans": "在物理刚体之间添加约束（距离/弹簧、铰链、绳索）",
-      "en": "Adds constraints between physics bodies (distance/spring, hinge, rope)"
-    },
-    "tags": ["physics", "constraint"],
+    "description": { "zh-Hans": "为物理刚体添加距离、铰链或绳索约束。", "en": "Adds distance, hinge or rope constraints to physics bodies." },
+    "tags": ["physics", "constraint", "rope", "hinge"],
     "author": "BuiltIn",
     "version": "1.0"
   },
   "ports": {
-    "inputs": [
-      {
-        "name": { "zh-Hans": "粒子", "en": "Particles" },
-        "type": "Particle"
-      }
-    ],
-    "outputs": [
-      {
-        "name": { "zh-Hans": "粒子", "en": "Particles" },
-        "type": "Particle"
-      }
-    ]
+    "inputs": [{ "key": "particles", "name": { "zh-Hans": "粒子", "en": "Particles" }, "type": "Particle", "isRequired": true }],
+    "outputs": [{ "key": "particles", "name": { "zh-Hans": "粒子", "en": "Particles" }, "type": "Particle" }]
   },
-  "parameters": [
-    {
-      "name": { "zh-Hans": "约束类型", "en": "Constraint Type" },
-      "kind": "Choice",
-      "default": "distance",
-      "choices": ["distance", "hinge", "rope"]
-    },
-    { "name": { "zh-Hans": "刚度", "en": "Stiffness" }, "kind": "Number", "default": 1.0, "min": 0.1, "max": 10.0, "step": 0.1 },
-    { "name": { "zh-Hans": "阻尼", "en": "Damping" }, "kind": "Number", "default": 0.5, "min": 0, "max": 1.0, "step": 0.05 },
-    { "name": { "zh-Hans": "静止长度", "en": "Rest Length" }, "kind": "Number", "default": 0.1, "min": 0.01, "max": 1.0, "step": 0.01 },
-    { "name": { "zh-Hans": "最大长度", "en": "Max Length" }, "kind": "Number", "default": 0.3, "min": 0.01, "max": 1.0, "step": 0.01 },
-    { "name": { "zh-Hans": "锚点X", "en": "Anchor X" }, "kind": "Number", "default": 0.5, "min": 0, "max": 1.0, "step": 0.01 },
-    { "name": { "zh-Hans": "锚点Y", "en": "Anchor Y" }, "kind": "Number", "default": 0.5, "min": 0, "max": 1.0, "step": 0.01 },
-    { "name": { "zh-Hans": "最小角度", "en": "Min Angle" }, "kind": "Number", "default": -1.0, "min": -6.28, "max": 6.28, "step": 0.01 },
-    { "name": { "zh-Hans": "最大角度", "en": "Max Angle" }, "kind": "Number", "default": 1.0, "min": -6.28, "max": 6.28, "step": 0.01 },
-    { "name": { "zh-Hans": "刚体索引A", "en": "Body Index A" }, "kind": "Integer", "default": 0, "min": 0, "max": 100, "step": 1 },
-    { "name": { "zh-Hans": "刚体索引B", "en": "Body Index B" }, "kind": "Integer", "default": 1, "min": 0, "max": 100, "step": 1 }
-  ],
-  "ai": {
-    "capabilities": ["physics", "constraint"],
-    "triggers": {
-      "zh-Hans": "物理约束, 距离约束, 弹簧约束, 铰链约束, 绳索约束",
-      "en": "physics constraint, distance constraint, spring constraint, hinge constraint, rope constraint"
-    },
-    "suggestedInputs": ["PhysicsSimulate"],
-    "exampleUsage": {
-      "zh-Hans": "在两个刚体之间添加距离弹簧约束，刚度1.0，阻尼0.5，形成弹性连接",
-      "en": "Add a distance spring constraint between two bodies with stiffness 1.0 and damping 0.5 for an elastic connection"
-    }
-  }
+  "parameters": [],
+  "ai": { "capabilities": ["physics", "constraint"], "triggers": { "zh-Hans": "物理约束, 绳索, 铰链, 距离约束", "en": "physics constraint, rope, hinge, distance" }, "suggestedInputs": ["PhysicsSimulate"] }
 }

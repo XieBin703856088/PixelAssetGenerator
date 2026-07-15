@@ -1,6 +1,6 @@
 {
   "formatVersion": 2,
-  "processorType": null,
+  "processorType": "Slime",
   "identity": {
     "typeName": "Slime",
     "displayName": {
@@ -9,8 +9,8 @@
     },
     "category": "Material",
     "description": {
-      "zh-Hans": "使用SDF类元球渲染生成程序化史莱姆/有机粘液纹理，通过噪波扭曲半径和高光实现湿润效果。输出史莱姆图像和覆盖遮罩。",
-      "en": "Generates procedural slime/organic blob textures using SDF metaball-like rendering with noise-distorted radii and specular highlights for a wet look. Outputs both the slime image and a coverage mask."
+      "zh-Hans": "生成可直接用于RPG的透明史莱姆角色Sprite，包含落地剪影、黏稠下垂、方向高光、气泡和简洁表情。",
+      "en": "Generates a transparent RPG slime character sprite with a grounded silhouette, viscous sag, directional highlights, bubbles, and a simple face."
     },
     "tags": [],
     "author": "BuiltIn",

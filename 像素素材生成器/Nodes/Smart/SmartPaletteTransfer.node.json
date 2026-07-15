@@ -1,0 +1,36 @@
+{
+  "formatVersion": 2,
+  "processorType": "SmartPaletteTransfer",
+  "identity": {
+    "typeName": "SmartPaletteTransfer",
+    "displayName": { "zh-Hans": "智能参考配色", "en": "Smart Palette Transfer" },
+    "category": "Smart",
+    "description": {
+      "zh-Hans": "从参考图提取代表性色板并迁移到当前素材，同时可保留原始明暗层次。",
+      "en": "Extracts a representative palette from a reference and applies it while preserving source luminance."
+    },
+    "tags": ["smart", "reference", "palette", "style-match", "color"],
+    "author": "BuiltIn",
+    "version": "3.0"
+  },
+  "ports": {
+    "inputs": [
+      { "name": { "zh-Hans": "图像", "en": "Image" }, "type": "Image" },
+      { "name": { "zh-Hans": "风格参考", "en": "Style Reference" }, "type": "Image" }
+    ],
+    "outputs": [{ "name": { "zh-Hans": "图像", "en": "Image" }, "type": "Image" }]
+  },
+  "parameters": [],
+  "ai": {
+    "capabilities": ["smart", "palette-transfer", "style-reference"],
+    "triggers": {
+      "zh-Hans": "参考图配色, 匹配色板, 统一素材颜色, 风格参考",
+      "en": "reference palette, match colors, unify asset palette, style reference"
+    },
+    "suggestedInputs": ["SmartSpriteFramer", "SmartPixelPolish"],
+    "exampleUsage": {
+      "zh-Hans": "主素材接图像端口，同系列素材接风格参考端口。",
+      "en": "Connect the subject to Image and a matching asset to Style Reference."
+    }
+  }
+}

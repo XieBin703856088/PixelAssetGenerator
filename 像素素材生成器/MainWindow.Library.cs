@@ -421,100 +421,21 @@ namespace PixelAssetGenerator
         private void LoadTemplateData(ProjectFileService.ProjectData data, double dropX, double dropY)
         {
             if (data.Nodes.Count == 0) return;
+            var createdNodes = _nodeGraphController.PasteClipboardAtMouse(
+                data, NodeCanvasScale,
+                () => ContentToHost(new Point(dropX, dropY)),
+                () => double.MaxValue,
+                () => double.MaxValue);
 
-            RecordUndoSnapshot();
-
-            // Calculate bounding box to center the template at drop position
-            var minX = data.Nodes.Min(n => n.X);
-            var minY = data.Nodes.Min(n => n.Y);
-
-            var createdNodes = new List<NodeViewModel>();
-            var nodeMap = new Dictionary<int, NodeViewModel>();
-
-            for (var i = 0; i < data.Nodes.Count; i++)
+            foreach (var node in createdNodes)
             {
-                var nd = data.Nodes[i];
-                var x = nd.X - minX + dropX;
-                var y = nd.Y - minY + dropY;
-
-                NodeViewModel node;
-                if (nd.Kind == NodeLibraryItemKind.Tile)
-                {
-                    node = new NodeViewModel(nd.Title, x, y, Brushes.DimGray)
-                    {
-                        Kind = nd.Kind,
-                        TileType = nd.TileType,
-                        TileProperties = nd.Properties?.Clone() ?? new TileProperties()
-                    };
-                }
-                else
-                {
-                    var libItem = NodeLibrary.FirstOrDefault(item => item.Name == nd.Title);
-                    node = new NodeViewModel(nd.Title, x, y, libItem?.PreviewBrush)
-                    {
-                        Kind = nd.Kind,
-                        TileType = nd.TileType
-                    };
-
-                    foreach (var pd in nd.Parameters)
-                    {
-                        var pvm = new NodeParameterViewModel(pd.Name, pd.Kind, 0, 1, 0.01, new List<string>())
-                        {
-                            NumberValue = pd.NumberValue,
-                            IntValue = pd.IntValue,
-                            BoolValue = pd.BoolValue,
-                            SelectedChoice = pd.SelectedChoice
-                        };
-                        if (pd.PointListData != null)
-                        {
-                            foreach (var pt in pd.PointListData)
-                                pvm.PointListValue.Add(pt);
-                        }
-                        node.Parameters.Add(pvm);
-                    }
-
-                    if (libItem != null)
-                    {
-                        foreach (var port in libItem.InputPorts)
-                            node.InputPorts.Add(new NodePortViewModel(port, MapGraphPortType(GraphPortType.Image), false));
-                        foreach (var port in libItem.OutputPorts)
-                            node.OutputPorts.Add(new NodePortViewModel(port, MapGraphPortType(GraphPortType.Image), true));
-                    }
-                }
-
-                Nodes.Add(node);
-                createdNodes.Add(node);
-                nodeMap[i] = node;
+                var libraryItem = FindNodeLibraryItem(node.TypeName);
+                if (libraryItem == null) continue;
+                node.PreviewBrush = libraryItem.PreviewBrush;
+                node.Category = libraryItem.Category;
             }
 
-            // Create connections
-            foreach (var cd in data.Connections)
-            {
-                if (nodeMap.TryGetValue(cd.StartNodeIndex, out var startNode) &&
-                    nodeMap.TryGetValue(cd.EndNodeIndex, out var endNode))
-                {
-                    var startPoint = GetPortPosition(startNode, true, cd.StartPortIndex);
-                    var endPoint = GetPortPosition(endNode, false, cd.EndPortIndex);
-                    var conn = new NodeConnectionViewModel
-                    {
-                        StartNode = startNode,
-                        StartPortIndex = cd.StartPortIndex,
-                        StartX = startPoint.X,
-                        StartY = startPoint.Y,
-                        EndNode = endNode,
-                        EndPortIndex = cd.EndPortIndex,
-                        EndX = endPoint.X,
-                        EndY = endPoint.Y,
-                        IsPreview = false
-                    };
-                    NodeConnections.Add(conn);
-                }
-            }
-
-            if (createdNodes.Count > 0)
-                SelectedNode = createdNodes[0];
-
-            RequestPreviewRefresh(false);
+            if (createdNodes.Count > 0) SelectedNode = createdNodes[^1];
         }
 
         private void Nodes_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
@@ -601,6 +522,7 @@ namespace PixelAssetGenerator
             }
 
             UpdateAnimationUI();
+            ScheduleConnectionGeometryRefresh();
 
             // When nodes change, schedule a debounced preview refresh (batch-safe for AI tool calls).
             ScheduleNodePreviewUpdate();
@@ -615,6 +537,8 @@ namespace PixelAssetGenerator
             }
             catch { }
 
+            ScheduleConnectionGeometryRefresh();
+            OnPropertyChanged(nameof(AiImageReferenceStatus));
             ScheduleNodePreviewUpdate();
         }
 
@@ -709,8 +633,10 @@ namespace PixelAssetGenerator
         /// </summary>
         private static Point GetCachedPortPosition(NodeViewModel node, bool isOutput, int portIndex)
         {
-            if (node.CachedPortPositions.TryGetValue((isOutput, portIndex), out var cached))
-                return cached;
+            // Cache local offsets rather than absolute canvas coordinates so wires stay
+            // attached to the exact port center while a node or a selected group moves.
+            if (node.CachedPortPositions.TryGetValue((isOutput, portIndex), out var localOffset))
+                return new Point(node.X + localOffset.X, node.Y + localOffset.Y);
             return GetPortPosition(node, isOutput, portIndex);
         }
 
@@ -723,7 +649,8 @@ namespace PixelAssetGenerator
             try
             {
                 var center = GetPortCenter(portElement);
-                node.CachedPortPositions[(isOutput, portIndex)] = center;
+                node.CachedPortPositions[(isOutput, portIndex)] =
+                    new Point(center.X - node.X, center.Y - node.Y);
             }
             catch { }
         }
@@ -938,6 +865,8 @@ namespace PixelAssetGenerator
                 var node = Nodes.FirstOrDefault(n => n.Parameters.Contains(param));
                 if (node != null)
                 {
+                    MarkAiImageParametersDirty(node, param, e.PropertyName);
+
                     if (node.Kind == NodeLibraryItemKind.Compute)
                     {
                         try
@@ -963,20 +892,37 @@ namespace PixelAssetGenerator
                         UpdateVariationPreviews();
                     }
 
-                    // When a particle/physics node parameter changes, clear cached particle state
-                    // so simulation restarts from fresh with the new parameters.
-                    if (node.TypeName == "ParticleEmitter"
-                        || node.TypeName == "ParticleForce"
-                        || node.TypeName == "ParticleRender"
-                        || node.TypeName == "PhysicsSimulate"
-                        || node.TypeName == "PhysicsField")
+                    // Keep simulation continuous while ordinary sliders move. Only
+                    // structural changes that cannot be applied in-place restart state.
+                    if (RequiresSimulationRestart(node, param))
                     {
-                        _particleEvalService?.ClearState();
+                        _particleEvalService?.ClearState(node.Id);
+                    }
+
+                    if (node.TypeName == "AnimationWorkflowOutput")
+                    {
+                        if (param.Name == "workflowName" && e.PropertyName == nameof(NodeParameterViewModel.TextValue)
+                            && !string.IsNullOrWhiteSpace(param.TextValue))
+                            node.Title = param.TextValue.Trim();
+                        ApplyActiveWorkflowPlaybackSettings();
                     }
                 }
             }
 
             RequestPreviewRefresh(false);
+        }
+
+        private static bool RequiresSimulationRestart(NodeViewModel node, NodeParameterViewModel parameter)
+        {
+            return node.TypeName switch
+            {
+                "ParticleEmitter" => parameter.Name is "preset" or "maxParticles" or "prewarm"
+                    or "prewarmSeconds" or "oneShot",
+                "ParticleEffectMeta" => parameter.Name is "effect" or "seed" or "prewarm",
+                // PhysicsSoftBody performs a targeted topology rebuild internally.
+                // Physics/force/render controls are synchronized every frame.
+                _ => false
+            };
         }
 
         private void TemplateList_PreviewMouseMove(object sender, MouseEventArgs e)
@@ -1843,13 +1789,13 @@ namespace PixelAssetGenerator
             {
                 var localizedName = (libItem != null && i < libItem.InputPorts.Count)
                     ? libItem.InputPorts[i] : protoInputs[i].Name;
-                node.InputPorts.Add(new NodePortViewModel(localizedName, MapGraphPortType(protoInputs[i].Type), false));
+                node.InputPorts.Add(new NodePortViewModel(localizedName, MapGraphPortType(protoInputs[i].Type), false, protoInputs[i].StableKey));
             }
             for (var i = 0; i < protoOutputs.Count; i++)
             {
                 var localizedName = (libItem != null && i < libItem.OutputPorts.Count)
                     ? libItem.OutputPorts[i] : protoOutputs[i].Name;
-                node.OutputPorts.Add(new NodePortViewModel(localizedName, MapGraphPortType(protoOutputs[i].Type), true));
+                node.OutputPorts.Add(new NodePortViewModel(localizedName, MapGraphPortType(protoOutputs[i].Type), true, protoOutputs[i].StableKey));
             }
 
             // Set up parameters from prototype definitions
@@ -1936,13 +1882,13 @@ namespace PixelAssetGenerator
             {
                 var localizedName = (libItem != null && i < libItem.InputPorts.Count)
                     ? libItem.InputPorts[i] : protoInputs[i].Name;
-                node.InputPorts.Add(new NodePortViewModel(localizedName, MapGraphPortType(protoInputs[i].Type), false));
+                node.InputPorts.Add(new NodePortViewModel(localizedName, MapGraphPortType(protoInputs[i].Type), false, protoInputs[i].StableKey));
             }
             for (var i = 0; i < protoOutputs.Count; i++)
             {
                 var localizedName = (libItem != null && i < libItem.OutputPorts.Count)
                     ? libItem.OutputPorts[i] : protoOutputs[i].Name;
-                node.OutputPorts.Add(new NodePortViewModel(localizedName, MapGraphPortType(protoOutputs[i].Type), true));
+                node.OutputPorts.Add(new NodePortViewModel(localizedName, MapGraphPortType(protoOutputs[i].Type), true, protoOutputs[i].StableKey));
             }
 
             // Set up parameters from prototype definitions

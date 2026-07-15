@@ -1,0 +1,22 @@
+{
+  "formatVersion": 2,
+  "processorType": "AnimationWorkflowOutput",
+  "identity": {
+    "typeName": "AnimationWorkflowOutput",
+    "displayName": { "zh-Hans": "动画工作流输出", "en": "Animation Workflow Output" },
+    "category": "Meta",
+    "description": { "zh-Hans": "标记一条独立动画工作流的最终预览输出，并保存名称、时长、帧率和循环建议。", "en": "Marks the preview terminal of an independent animation workflow and stores clip metadata." },
+    "tags": ["meta", "animation", "workflow", "output", "preview"],
+    "author": "BuiltIn", "version": "1.0"
+  },
+  "ports": {
+    "inputs": [{ "name": { "zh-Hans": "动画图像", "en": "Animated Image" }, "type": "Image" }],
+    "outputs": [{ "name": { "zh-Hans": "图像", "en": "Image" }, "type": "Image" }]
+  },
+  "parameters": [],
+  "ai": {
+    "capabilities": ["meta", "animation-workflow", "preview-output"],
+    "triggers": { "zh-Hans": "动画输出, 工作流输出, 锁定动画预览", "en": "animation output, workflow output, preview terminal" },
+    "suggestedInputs": ["SpriteMotionMeta", "SpriteEffectAnimator", "ParticleEffectMeta"]
+  }
+}

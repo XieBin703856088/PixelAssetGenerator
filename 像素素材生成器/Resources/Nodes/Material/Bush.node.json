@@ -1,6 +1,6 @@
 {
   "formatVersion": 2,
-  "processorType": null,
+  "processorType": "Bush",
   "identity": {
     "typeName": "Bush",
     "displayName": {
@@ -9,8 +9,8 @@
     },
     "category": "Material",
     "description": {
-      "zh-Hans": "生成风格化的像素艺术灌木和草丛，由聚集的圆形块组成，支持可配置大小、密度和季节性颜色变化。",
-      "en": "Generates stylized pixel art bushes and shrubs composed of clustered circular blobs with configurable size, density, and seasonal color variation."
+      "zh-Hans": "生成带硬边轮廓、落地剪影和成簇明暗的RPG像素灌木，可配置形状、枝叶密度和叶簇数量。",
+      "en": "Generates RPG pixel shrubs with hard outlines, grounded silhouettes, and clustered shading."
     },
     "tags": [],
     "author": "BuiltIn",
@@ -144,6 +144,17 @@
       "min": -0.5,
       "max": 0.5,
       "step": 0.01
+    },
+    {
+      "name": {
+        "zh-Hans": "轮廓宽度",
+        "en": "Outline Width"
+      },
+      "kind": "Integer",
+      "default": 1,
+      "min": 0,
+      "max": 3,
+      "step": 1
     }
   ],
   "ai": {

@@ -1,11 +1,7 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
+using PixelAssetGenerator.Services.Clients;
 using System.Net.Http;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
-using System.Threading;
-using PixelAssetGenerator.Services.Clients;
 
 namespace PixelAssetGenerator.Services;
 

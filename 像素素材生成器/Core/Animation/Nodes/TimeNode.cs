@@ -7,7 +7,7 @@ namespace PixelAssetGenerator.Core.Animation.Nodes;
 /// Outputs animation time (normalized 0-1), frame index, and playback speed.
 /// Useful for driving other animation nodes or as a time reference.
 /// </summary>
-public sealed class TimeNode : IGraphNode
+public sealed class TimeNode : IGraphNode, IMultiOutputNode
 {
     public string TypeName => "Time";
     public string Category => "Animation";
@@ -32,6 +32,7 @@ public sealed class TimeNode : IGraphNode
     public IReadOnlyList<GraphNodePort> InputPorts => _inputs;
     public IReadOnlyList<GraphNodePort> OutputPorts => _outputs;
     public IReadOnlyList<NodeParameterDefinition> Parameters => _parameters;
+    public GraphNodeTraits Traits => GraphNodeTraits.TimeDependent;
 
     public PixelBuffer Process(PixelBuffer?[] inputs, IReadOnlyDictionary<string, object> parameters, PixelGraphContext context)
     {
@@ -50,5 +51,20 @@ public sealed class TimeNode : IGraphNode
 
         buf.SetPixel(0, 0, t, frame / (float)Math.Max(frameCount - 1, 1), speed, 1);
         return buf;
+    }
+
+    public PixelBuffer[] ProcessMulti(PixelBuffer?[] inputs,
+        IReadOnlyDictionary<string, object> parameters, PixelGraphContext context)
+    {
+        using var packed = Process(inputs, parameters, context);
+        var value = packed.GetPixel(0, 0);
+        return [Scalar(value.R), Scalar(value.G), Scalar(value.B)];
+    }
+
+    private static PixelBuffer Scalar(float value)
+    {
+        var buffer = PixelBufferPool.Borrow(1, 1);
+        buffer.SetPixel(0, 0, value, 0f, 0f, 1f);
+        return buffer;
     }
 }

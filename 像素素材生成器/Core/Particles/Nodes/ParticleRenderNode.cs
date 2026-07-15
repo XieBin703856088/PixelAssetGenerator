@@ -15,8 +15,11 @@ public sealed class ParticleRenderNode : IGraphNode, IPersistentStateNode
 
     private static readonly IReadOnlyList<GraphNodePort> _inputs = new[]
     {
-        new GraphNodePort("Background", GraphPortType.Image),
-        new GraphNodePort("Mask", GraphPortType.Mask)
+        new GraphNodePort("Background", GraphPortType.Image, "background"),
+        new GraphNodePort("Mask", GraphPortType.Mask, "mask"),
+        // Kept optional so projects saved before the particle port existed remain loadable.
+        // ParticleEvaluationService can migrate an unambiguous single-emitter graph.
+        new GraphNodePort("Particles", GraphPortType.Particle, "particles")
     };
 
     private static readonly IReadOnlyList<GraphNodePort> _outputs = new[]
@@ -26,13 +29,15 @@ public sealed class ParticleRenderNode : IGraphNode, IPersistentStateNode
 
     private static readonly IReadOnlyList<NodeParameterDefinition> _parameters = new[]
     {
-        NodeParameterDefinition.Choice("texture", "softCircle",
-            new[] { "circle", "softCircle", "square", "diamond", "star", "glow" },
-            new[] { "圆形", "柔和圆形", "方形", "菱形", "星形", "发光" }, "粒子纹理"),
-        NodeParameterDefinition.Choice("blendMode", "alpha",
-            new[] { "alpha", "additive", "screen" },
-            new[] { "Alpha混合", "叠加", "滤色" }, "混合模式"),
-        NodeParameterDefinition.Boolean("softEdges", true, "柔边"),
+        NodeParameterDefinition.Choice("texture", "auto",
+            new[] { "auto", "pixelCircle", "smoke", "flame", "spark", "streak", "rainDrop", "snowflake", "leaf", "bubble", "rune", "circle", "softCircle", "square", "diamond", "star", "glow" },
+            new[] { "跟随发射器预设", "像素圆", "烟团", "火焰", "火花", "流光", "雨滴", "雪花", "叶片", "气泡", "魔法符文", "圆形", "柔和圆形", "方形", "菱形", "星形", "发光" }, "粒子纹理"),
+        NodeParameterDefinition.Choice("blendMode", "auto",
+            new[] { "auto", "alpha", "additive", "screen" },
+            new[] { "跟随预设", "Alpha混合", "叠加", "滤色" }, "混合模式"),
+        NodeParameterDefinition.Boolean("softEdges", false, "柔边"),
+        NodeParameterDefinition.Boolean("pixelSnap", true, "像素吸附"),
+        NodeParameterDefinition.Integer("alphaSteps", 4, 1, 8, 1, "透明度色阶"),
         NodeParameterDefinition.Number("scale", 1.0, 0.1, 5.0, 0.1, "缩放"),
         NodeParameterDefinition.Number("globalAlpha", 1.0, 0, 1.0, 0.01, "全局透明度"),
     };
@@ -40,6 +45,7 @@ public sealed class ParticleRenderNode : IGraphNode, IPersistentStateNode
     public IReadOnlyList<GraphNodePort> InputPorts => _inputs;
     public IReadOnlyList<GraphNodePort> OutputPorts => _outputs;
     public IReadOnlyList<NodeParameterDefinition> Parameters => _parameters;
+    public GraphNodeTraits Traits => GraphNodeTraits.Stateful | GraphNodeTraits.TimeDependent;
 
     // ── Persistent state ──
 
@@ -75,7 +81,9 @@ public sealed class ParticleRenderNode : IGraphNode, IPersistentStateNode
         {
             TextureType = GetTextureType(parameters),
             BlendMode = GetBlendMode(parameters),
-            SoftEdges = GraphNodeBase.GetBool(parameters, "softEdges", true),
+            SoftEdges = GraphNodeBase.GetBool(parameters, "softEdges", false),
+            PixelSnap = GraphNodeBase.GetBool(parameters, "pixelSnap", true),
+            AlphaSteps = GraphNodeBase.GetInt(parameters, "alphaSteps", 4),
             GlobalAlpha = GraphNodeBase.GetFloat(parameters, "globalAlpha", 1f),
             Scale = GraphNodeBase.GetFloat(parameters, "scale", 1f),
         };
@@ -84,33 +92,63 @@ public sealed class ParticleRenderNode : IGraphNode, IPersistentStateNode
     }
 
     /// <summary>Re-applies parameters to the renderer. Called each frame.</summary>
-    public void ApplyParameters(IReadOnlyDictionary<string, object> parameters)
+    public void ApplyParameters(IReadOnlyDictionary<string, object> parameters, string? emitterPreset = null)
     {
-        if (PersistentState is not ParticleRenderer r) return;
-        r.TextureType = GetTextureType(parameters);
-        r.BlendMode = GetBlendMode(parameters);
-        r.SoftEdges = GraphNodeBase.GetBool(parameters, "softEdges", true);
+        var r = GetOrCreateRenderer(parameters);
+        r.TextureType = GetTextureType(parameters, emitterPreset);
+        r.BlendMode = GetBlendMode(parameters, emitterPreset);
+        r.SoftEdges = GraphNodeBase.GetBool(parameters, "softEdges", false);
+        r.PixelSnap = GraphNodeBase.GetBool(parameters, "pixelSnap", true);
+        r.AlphaSteps = GraphNodeBase.GetInt(parameters, "alphaSteps", 4);
         r.GlobalAlpha = GraphNodeBase.GetFloat(parameters, "globalAlpha", 1f);
         r.Scale = GraphNodeBase.GetFloat(parameters, "scale", 1f);
     }
 
-    private static ParticleTextureType GetTextureType(IReadOnlyDictionary<string, object> p)
+    private static ParticleTextureType GetTextureType(IReadOnlyDictionary<string, object> p, string? emitterPreset = null)
     {
-        var t = GraphNodeBase.GetChoice(p, "texture", "softCircle");
+        var t = GraphNodeBase.GetChoice(p, "texture", "pixelCircle");
+        if (t == "auto")
+        {
+            t = emitterPreset switch
+            {
+                "fire" => "flame",
+                "smoke" or "dust" => "smoke",
+                "rain" => "rainDrop",
+                "snow" => "snowflake",
+                "sparks" or "explosion" => "spark",
+                "magic" => "rune",
+                "bubbles" => "bubble",
+                "leaves" => "leaf",
+                _ => "pixelCircle"
+            };
+        }
         return t switch
         {
+            "pixelCircle" => ParticleTextureType.PixelCircle,
+            "smoke" => ParticleTextureType.SmokePuff,
+            "flame" => ParticleTextureType.Flame,
+            "spark" => ParticleTextureType.Spark,
+            "streak" => ParticleTextureType.Streak,
+            "rainDrop" => ParticleTextureType.RainDrop,
+            "snowflake" => ParticleTextureType.Snowflake,
+            "leaf" => ParticleTextureType.Leaf,
+            "bubble" => ParticleTextureType.Bubble,
+            "rune" => ParticleTextureType.Rune,
             "circle" => ParticleTextureType.Circle,
+            "softCircle" => ParticleTextureType.SoftCircle,
             "square" => ParticleTextureType.Square,
             "diamond" => ParticleTextureType.Diamond,
             "star" => ParticleTextureType.Star,
             "glow" => ParticleTextureType.Glow,
-            _ => ParticleTextureType.SoftCircle,
+            _ => ParticleTextureType.PixelCircle,
         };
     }
 
-    private static ParticleBlendMode GetBlendMode(IReadOnlyDictionary<string, object> p)
+    private static ParticleBlendMode GetBlendMode(IReadOnlyDictionary<string, object> p, string? emitterPreset = null)
     {
         var m = GraphNodeBase.GetChoice(p, "blendMode", "alpha");
+        if (m == "auto")
+            m = emitterPreset is "fire" or "sparks" or "magic" or "explosion" ? "additive" : "alpha";
         return m switch
         {
             "additive" => ParticleBlendMode.Additive,

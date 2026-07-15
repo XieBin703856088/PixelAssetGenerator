@@ -129,7 +129,7 @@ namespace PixelAssetGenerator
 
         public ObservableCollection<NodeParameterViewModel> Parameters { get; } = new();
 
-        // Cached actual port positions for connection endpoint positioning.
+        // Cached actual port-center offsets relative to this node's X/Y position.
         // Key = (isOutput, portIndex). Populated by port element layout callbacks.
         internal Dictionary<(bool IsOutput, int PortIndex), Point> CachedPortPositions { get; } = new();
 
@@ -165,20 +165,25 @@ namespace PixelAssetGenerator
         public NodePortViewModel(string name)
         {
             Name = name;
+            Key = NormalizeKey(name);
             Type = PortValueType.Float;
             IsOutput = false;
             FillBrush = GetBrushForType(Type, IsOutput);
         }
 
-        public NodePortViewModel(string name, PortValueType type, bool isOutput)
+        public NodePortViewModel(string name, PortValueType type, bool isOutput, string? key = null)
         {
             Name = name;
+            Key = string.IsNullOrWhiteSpace(key) ? NormalizeKey(name) : key;
             Type = type;
             IsOutput = isOutput;
             FillBrush = GetBrushForType(Type, IsOutput);
         }
 
         public string Name { get; set; }
+
+        /// <summary>Language-independent identity used by AI and future project persistence.</summary>
+        public string Key { get; }
 
         public PortValueType Type { get; }
 
@@ -249,6 +254,12 @@ namespace PixelAssetGenerator
             var brush = new System.Windows.Media.SolidColorBrush(c);
             brush.Freeze();
             return brush;
+        }
+
+        private static string NormalizeKey(string value)
+        {
+            var chars = value.Where(char.IsLetterOrDigit).Select(char.ToLowerInvariant).ToArray();
+            return chars.Length == 0 ? "port" : new string(chars);
         }
     }
 }

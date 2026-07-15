@@ -1,0 +1,36 @@
+{
+  "formatVersion": 3,
+  "processorType": "AlphaTools",
+  "identity": {
+    "typeName": "AlphaTools",
+    "displayName": { "zh-Hans": "Alpha 工具", "en": "Alpha Tools" },
+    "category": "ImageProcess",
+    "subcategory": "Mask",
+    "description": { "zh-Hans": "应用遮罩、亮度转 Alpha、反转 Alpha，以及预乘或反预乘颜色。", "en": "Apply masks, convert luminance to alpha, invert alpha, and pre/unpremultiply colors." },
+    "tags": ["alpha", "transparency", "mask"], "author": "BuiltIn", "version": "1.0"
+  },
+  "ports": {
+    "inputs": [
+      { "key": "image", "name": { "zh-Hans": "图像", "en": "Image" }, "type": "Image", "required": true },
+      { "key": "mask", "name": { "zh-Hans": "遮罩", "en": "Mask" }, "type": "Mask" }
+    ],
+    "outputs": [{ "key": "image", "name": { "zh-Hans": "图像", "en": "Image" }, "type": "Image" }]
+  },
+  "parameters": [
+    { "name": { "zh-Hans": "模式", "en": "Mode" }, "kind": "Choice", "default": "applyMask", "choices": [
+      { "value": "applyMask", "label": { "zh-Hans": "应用遮罩", "en": "Apply Mask" } },
+      { "value": "luminanceToAlpha", "label": { "zh-Hans": "亮度转 Alpha", "en": "Luminance to Alpha" } },
+      { "value": "invertAlpha", "label": { "zh-Hans": "反转 Alpha", "en": "Invert Alpha" } },
+      { "value": "premultiply", "label": { "zh-Hans": "预乘", "en": "Premultiply" } },
+      { "value": "unpremultiply", "label": { "zh-Hans": "反预乘", "en": "Unpremultiply" } }
+    ]},
+    { "name": { "zh-Hans": "强度", "en": "Amount" }, "kind": "Number", "default": 1.0, "min": 0, "max": 1, "step": 0.01 },
+    { "name": { "zh-Hans": "保留透明像素 RGB", "en": "Preserve Transparent Rgb" }, "kind": "Boolean", "default": true }
+  ],
+  "ai": {
+    "capabilities": ["alpha-edit", "apply-mask", "premultiply", "transparency"],
+    "triggers": { "zh-Hans": "透明度 Alpha 遮罩 预乘 反预乘 亮度转透明", "en": "alpha transparency apply mask premultiply unpremultiply luminance to alpha" },
+    "suggestedInputs": ["Threshold", "Grayscale"],
+    "exampleUsage": { "zh-Hans": "将 Threshold 输出连接到 mask，以快速生成透明区域。", "en": "Connect a Threshold output to mask to create transparency." }
+  }
+}

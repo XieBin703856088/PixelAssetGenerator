@@ -1,11 +1,43 @@
 using System.Collections.Generic;
+using System.Linq;
 
 namespace PixelAssetGenerator.Core;
 
 /// <summary>
 /// Port definition for a graph node.
 /// </summary>
-public sealed record GraphNodePort(string Name, GraphPortType Type);
+public sealed record GraphNodePort(
+    string Name,
+    GraphPortType Type,
+    string? Key = null,
+    bool IsRequired = false,
+    bool AllowsMultipleConnections = false)
+{
+    /// <summary>
+    /// Language-independent identifier used by persistence and AI tools. Existing nodes
+    /// remain compatible: when no explicit key is supplied a normalized name is used.
+    /// </summary>
+    public string StableKey => string.IsNullOrWhiteSpace(Key) ? NormalizeKey(Name) : Key;
+
+    private static string NormalizeKey(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return "port";
+        var chars = value.Where(char.IsLetterOrDigit).Select(char.ToLowerInvariant).ToArray();
+        return chars.Length == 0 ? value.Trim().ToLowerInvariant() : new string(chars);
+    }
+}
+
+/// <summary>Execution semantics used by the incremental evaluator.</summary>
+[Flags]
+public enum GraphNodeTraits
+{
+    None = 0,
+    Deterministic = 1,
+    Pure = 2,
+    TimeDependent = 4,
+    Stateful = 8,
+    Expensive = 16
+}
 
 /// <summary>
 /// Core interface for all graph nodes. Each node is a pure function:
@@ -27,6 +59,13 @@ public interface IGraphNode
 
     /// <summary>Parameter definitions exposed to the UI.</summary>
     IReadOnlyList<NodeParameterDefinition> Parameters { get; }
+
+    /// <summary>
+    /// Declares whether a node can be safely reused by the incremental evaluator.
+    /// Legacy nodes default to a deterministic pure function; animation and stateful
+    /// implementations are detected by the evaluator and never cached across frames.
+    /// </summary>
+    GraphNodeTraits Traits => GraphNodeTraits.Deterministic | GraphNodeTraits.Pure;
 
     /// <summary>
     /// Processes input buffers and produces an output buffer.
@@ -65,6 +104,15 @@ public interface IGpuAcceleratedMultiOutputNode
 /// in the UI if any other input port is already occupied.
 /// </summary>
 public interface IExclusiveInputNode { }
+
+/// <summary>
+/// Optional hook for nodes whose runtime behavior must be isolated per canvas instance.
+/// The snapshot builder supplies the persisted node id immediately after construction.
+/// </summary>
+public interface INodeInstanceAware
+{
+    int NodeInstanceId { get; set; }
+}
 
 /// <summary>
 /// Optional interface for nodes that maintain state across evaluation frames.

@@ -37,6 +37,7 @@ public sealed class AnimationWaveNode : IGraphNode
     public IReadOnlyList<GraphNodePort> InputPorts => _inputs;
     public IReadOnlyList<GraphNodePort> OutputPorts => _outputs;
     public IReadOnlyList<NodeParameterDefinition> Parameters => _parameters;
+    public GraphNodeTraits Traits => GraphNodeTraits.TimeDependent;
 
     public PixelBuffer Process(PixelBuffer?[] inputs, IReadOnlyDictionary<string, object> parameters, PixelGraphContext context)
     {
@@ -50,7 +51,7 @@ public sealed class AnimationWaveNode : IGraphNode
         var dutyCycle = GraphNodeBase.GetFloat(parameters, "dutyCycle", 0.5f);
         var bipolar = GraphNodeBase.GetBool(parameters, "bipolar", false);
 
-        var globalTime = context.GlobalTime;
+        var globalTime = context.GlobalTime > 0f ? context.GlobalTime : context.AnimationTime ?? 0f;
         var phaseRad = phase * MathF.PI / 180f;
         var t = globalTime * frequency + phaseRad / MathF.Tau;
 

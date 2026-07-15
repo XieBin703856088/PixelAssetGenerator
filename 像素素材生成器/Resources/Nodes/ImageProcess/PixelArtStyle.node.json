@@ -1,0 +1,57 @@
+{
+  "formatVersion": 3,
+  "processorType": "PixelArtStyle",
+  "identity": {
+    "typeName": "PixelArtStyle",
+    "displayName": {
+      "zh-Hans": "32×32 像素风格化",
+      "en": "32×32 Pixel Art Style"
+    },
+    "category": "ImageProcess",
+    "subcategory": "PixelArt",
+    "description": {
+      "zh-Hans": "使用自适应调色板、离散明暗和像素簇清理，将连续图像转换为可读的32×32像素画语言。",
+      "en": "Converts continuous imagery into readable 32×32 pixel art using an adaptive palette and wrapped cluster cleanup."
+    },
+    "tags": ["pixel-art", "palette", "cluster", "32x32"],
+    "author": "BuiltIn",
+    "version": "2.0"
+  },
+  "ports": {
+    "inputs": [
+      { "key": "image", "name": { "zh-Hans": "图像", "en": "Image" }, "type": "Image", "required": true }
+    ],
+    "outputs": [
+      { "key": "image", "name": { "zh-Hans": "像素画", "en": "Pixel Art" }, "type": "Image" }
+    ]
+  },
+  "parameters": [
+    { "name": { "zh-Hans": "调色板颜色数", "en": "Palette Size" }, "kind": "Integer", "default": 8, "min": 2, "max": 24, "step": 1 },
+    { "name": { "zh-Hans": "最小像素簇", "en": "Minimum Cluster Size" }, "kind": "Integer", "default": 2, "min": 1, "max": 8, "step": 1 },
+    { "name": { "zh-Hans": "对比度", "en": "Contrast" }, "kind": "Number", "default": 1.12, "min": 0.7, "max": 1.6, "step": 0.01 },
+    { "name": { "zh-Hans": "饱和度", "en": "Saturation" }, "kind": "Number", "default": 1.06, "min": 0.0, "max": 1.6, "step": 0.01 },
+    {
+      "name": { "zh-Hans": "抖色", "en": "Dither" },
+      "kind": "Choice",
+      "default": "none",
+      "choices": [
+        { "value": "none", "label": { "zh-Hans": "关闭", "en": "Off" } },
+        { "value": "bayer", "label": { "zh-Hans": "Bayer 4×4", "en": "Bayer 4×4" } }
+      ]
+    },
+    { "name": { "zh-Hans": "抖色强度", "en": "Dither Strength" }, "kind": "Number", "default": 0.35, "min": 0.0, "max": 1.0, "step": 0.01 },
+    { "name": { "zh-Hans": "保留透明度", "en": "Preserve Alpha" }, "kind": "Boolean", "default": true }
+  ],
+  "ai": {
+    "capabilities": ["pixel-art", "style-normalization", "palette-reduction", "cluster-cleanup"],
+    "triggers": {
+      "zh-Hans": "32像素风格, 像素画, 限制色, 清理杂点, 像素簇",
+      "en": "32px style, pixel art, limited palette, cleanup noise, pixel clusters"
+    },
+    "suggestedInputs": ["Image"],
+    "exampleUsage": {
+      "zh-Hans": "在节点链末尾统一颜色数量和像素簇，让不同来源的素材保持相同画风。",
+      "en": "Place at the end of a graph to normalize palette and cluster language across assets."
+    }
+  }
+}

@@ -160,12 +160,7 @@ public sealed class ConversationHistoryManager
                     else if (m.Role == "assistant" && m.ToolCalls is { Count: > 0 })
                     {
                         // Check if any of this assistant's tool_results would be orphaned.
-                        bool hasToolAfterCut = false;
-                        for (int t = cutIdx; t < _messages.Count && _messages[t].Role == "tool"; t++)
-                        {
-                            hasToolAfterCut = true;
-                            break;
-                        }
+                        var hasToolAfterCut = cutIdx < _messages.Count && _messages[cutIdx].Role == "tool";
                         if (!hasToolAfterCut)
                             break; // safe cut: no orphaned tool_results
                         // Move cutIdx to include this assistant

@@ -278,7 +278,7 @@ public sealed class PixelAgentService
                 _stepRoundCount++;
 
                 Log("STEP", $"执行步骤 {currentStep.Index + 1}: {currentStep.Description.Truncate(80)}");
-                OnPhaseChanged?.Invoke($"步骤 {currentStep.Index + 1}/{_planManager.ActivePlan.Steps.Count}");
+                OnPhaseChanged?.Invoke($"步骤 {currentStep.Index + 1}/{plan.Steps.Count}");
 
                 var stepInjection = _planManager.BuildStepInjection();
                 var msgs = new List<AiMessage>(_historyManager.ToAiMessages());

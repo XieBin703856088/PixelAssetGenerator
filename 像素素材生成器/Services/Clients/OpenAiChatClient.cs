@@ -106,6 +106,12 @@ public sealed class OpenAiChatClient : IStreamingChatClient
             yield break;
         }
 
+        if (response == null)
+        {
+            yield return new AiError("Request failed: no HTTP response was returned.");
+            yield break;
+        }
+
 #if DEBUG
         try
         {

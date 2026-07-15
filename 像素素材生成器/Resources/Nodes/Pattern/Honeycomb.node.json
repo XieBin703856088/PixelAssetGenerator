@@ -1,6 +1,6 @@
 {
   "formatVersion": 2,
-  "processorType": null,
+  "processorType": "Honeycomb",
   "identity": {
     "typeName": "Honeycomb",
     "displayName": {
@@ -9,8 +9,8 @@
     },
     "category": "Pattern",
     "description": {
-      "zh-Hans": "生成规则六边形蜂窝图案，支持单元格壁、内部着色和可选的倒角效果。",
-      "en": "Generates a regular hexagonal honeycomb pattern with cell walls, interior coloring, and optional bevel effect."
+      "zh-Hans": "使用六边形邻接距离生成无抗锯齿的像素蜂窝，具有连续蜂窝壁、双向倒角和逐格离散色阶。",
+      "en": "Generates anti-alias-free pixel honeycomb from hexagonal neighbor distances with continuous walls, directional bevels, and per-cell discrete tones."
     },
     "tags": [],
     "author": "BuiltIn",

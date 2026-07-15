@@ -1,0 +1,22 @@
+{
+  "formatVersion": 2,
+  "processorType": "ParticleEffectMeta",
+  "identity": {
+    "typeName": "ParticleEffectMeta",
+    "displayName": { "zh-Hans": "粒子效果元节点", "en": "Particle Effect Meta" },
+    "category": "Meta",
+    "description": { "zh-Hans": "无需手动搭建发射器、模拟器和渲染器即可生成火焰、烟雾、天气、魔法与环境粒子。", "en": "Creates complete fire, smoke, weather, magic and ambient particle effects without manual wiring." },
+    "tags": ["meta", "particle", "fire", "smoke", "weather", "magic"],
+    "author": "BuiltIn", "version": "1.0"
+  },
+  "ports": {
+    "inputs": [{ "name": { "zh-Hans": "背景", "en": "Background" }, "type": "Image" }],
+    "outputs": [{ "name": { "zh-Hans": "效果图像", "en": "Effect Image" }, "type": "Image" }]
+  },
+  "parameters": [],
+  "ai": {
+    "capabilities": ["meta", "particle-system", "vfx"],
+    "triggers": { "zh-Hans": "一键粒子, 火焰特效, 烟雾特效, 下雨下雪, 魔法粒子", "en": "one node particles, fire vfx, smoke vfx, rain, snow, magic particles" },
+    "suggestedInputs": ["Wall", "Floor", "WaterFlow"]
+  }
+}

@@ -45,51 +45,47 @@ namespace PixelAssetGenerator
             var created = new List<NodeViewModel>();
             foreach (var nd in data.Nodes)
             {
-                var node = new NodeViewModel(nd.Title, 80 + created.Count * 40, 80 + created.Count * 40)
-                {
-                    Kind = nd.Kind,
-                    TileType = nd.TileType,
-                    TypeName = string.IsNullOrEmpty(nd.TypeName) ? nd.Title : nd.TypeName
-                };
+                var typeName = string.IsNullOrWhiteSpace(nd.TypeName) ? nd.Title : nd.TypeName;
+                var libraryItem = FindNodeLibraryItem(typeName)
+                    ?? NodeLibrary.FirstOrDefault(item =>
+                        string.Equals(item.Name, nd.Title, StringComparison.CurrentCulture));
 
-                // assign tile properties
+                var node = libraryItem != null
+                    ? CreateNodeFromLibraryItem(libraryItem, nd.X, nd.Y)
+                    : new NodeViewModel(nd.Title, nd.X, nd.Y)
+                    {
+                        Kind = nd.Kind,
+                        TileType = nd.TileType,
+                        TypeName = typeName
+                    };
+
+                node.Title = nd.Title;
+                node.Kind = nd.Kind;
+                node.TileType = nd.TileType;
+                node.TypeName = typeName;
+                if (libraryItem != null) node.Category = libraryItem.Category;
+
                 if (nd.Properties != null)
                 {
                     node.TileProperties = nd.Properties.Clone();
                 }
 
-                // parameters
-                node.Parameters.Clear();
-                if (node.Kind != NodeLibraryItemKind.Tile)
-                {
-                    foreach (var pd in nd.Parameters)
-                    {
-                        var param = new NodeParameterViewModel(pd.Name, pd.Kind, 0, 1, 0.01, new List<string>());
-                        param.NumberValue = pd.NumberValue;
-                        param.IntValue = pd.IntValue;
-                        param.BoolValue = pd.BoolValue;
-                        param.SelectedChoice = pd.SelectedChoice;
-                        if (pd.PointListData.Count > 0)
-                            param.PointListValue = new System.Collections.ObjectModel.ObservableCollection<System.Windows.Point>(pd.PointListData);
-                        param.PropertyChanged += NodeParameter_PropertyChanged;
-                        node.Parameters.Add(param);
-                    }
-                }
+                ApplyPersistedParameterValues(node, nd.Parameters);
 
                 // Initialize ports so connection type validation works after loading
-                if (node.TileType != null)
+                if (node.InputPorts.Count == 0 && node.OutputPorts.Count == 0 && node.TileType != null)
                 {
                     ConfigureTileNodePorts(node);
                 }
-                else
+                else if (node.InputPorts.Count == 0 && node.OutputPorts.Count == 0)
                 {
                     var proto = GraphNodeRegistry.Create(node.RegistryKey);
                     if (proto != null)
                     {
                         foreach (var port in proto.InputPorts)
-                            node.InputPorts.Add(new NodePortViewModel(port.Name, MapGraphPortType(port.Type), false));
+                            node.InputPorts.Add(new NodePortViewModel(port.Name, MapGraphPortType(port.Type), false, port.StableKey));
                         foreach (var port in proto.OutputPorts)
-                            node.OutputPorts.Add(new NodePortViewModel(port.Name, MapGraphPortType(port.Type), true));
+                            node.OutputPorts.Add(new NodePortViewModel(port.Name, MapGraphPortType(port.Type), true, port.StableKey));
                     }
                 }
 

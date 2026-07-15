@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Windows.Media;
 using PixelAssetGenerator.Core.Particles;
 
 namespace PixelAssetGenerator.Core.Physics.Nodes;
@@ -20,7 +21,7 @@ public sealed class PhysicsSoftBodyNode : IPersistentStateNode
 
     private static readonly IReadOnlyList<GraphNodePort> _outputs = new[]
     {
-        new GraphNodePort("Particles", GraphPortType.Particle),
+        new GraphNodePort("Image", GraphPortType.Image, "image"),
     };
 
     private static readonly IReadOnlyList<NodeParameterDefinition> _parameters = new[]
@@ -42,11 +43,16 @@ public sealed class PhysicsSoftBodyNode : IPersistentStateNode
         NodeParameterDefinition.Boolean("pinBottom", false, "固定底部"),
         NodeParameterDefinition.Boolean("pinLeft", false, "固定左侧"),
         NodeParameterDefinition.Boolean("pinRight", false, "固定右侧"),
+        NodeParameterDefinition.Color("bodyColor", Color.FromRgb(106, 214, 154), "软体颜色"),
+        NodeParameterDefinition.Color("springColor", Color.FromRgb(39, 92, 72), "弹簧颜色"),
+        NodeParameterDefinition.Number("pointSize", 0.022, 0.005, 0.08, 0.001, "质点大小"),
+        NodeParameterDefinition.Boolean("drawSprings", true, "显示弹簧"),
     };
 
     public IReadOnlyList<GraphNodePort> InputPorts => _inputs;
     public IReadOnlyList<GraphNodePort> OutputPorts => _outputs;
     public IReadOnlyList<NodeParameterDefinition> Parameters => _parameters;
+    public GraphNodeTraits Traits => GraphNodeTraits.Stateful | GraphNodeTraits.TimeDependent;
 
     // ── Persistent state ──
 
@@ -70,7 +76,8 @@ public sealed class PhysicsSoftBodyNode : IPersistentStateNode
     /// </summary>
     public sealed class Spring
     {
-        public MassPoint A, B;
+        public required MassPoint A;
+        public required MassPoint B;
         public float RestLength;
         public float Stiffness;
         public float Damping;
@@ -82,15 +89,24 @@ public sealed class PhysicsSoftBodyNode : IPersistentStateNode
     public sealed record SoftBodyState(
         MassPoint[] Points,
         Spring[] Springs,
-        bool Initialized);
-
-    private static PixelBuffer? _sharedPlaceholder;
+        bool Initialized,
+        int GridX,
+        int GridY,
+        float CenterX,
+        float CenterY,
+        float Size,
+        string Shape,
+        float Stiffness,
+        bool PinTop,
+        bool PinBottom,
+        bool PinLeft,
+        bool PinRight);
 
     public PixelBuffer Process(PixelBuffer?[] inputs, IReadOnlyDictionary<string, object> parameters, PixelGraphContext context)
     {
-        if (_sharedPlaceholder == null)
-            _sharedPlaceholder = PixelBuffer.CreateSolid(1, 1, 0f, 0f, 0f, 0f);
-        return _sharedPlaceholder;
+        var state = GetOrCreateState(parameters, context);
+        SimulateFrame(parameters, context);
+        return RenderState(state, parameters, context.GetEffectiveSize());
     }
 
     /// <summary>
@@ -98,16 +114,26 @@ public sealed class PhysicsSoftBodyNode : IPersistentStateNode
     /// </summary>
     public SoftBodyState GetOrCreateState(IReadOnlyDictionary<string, object> parameters, PixelGraphContext context)
     {
-        if (PersistentState is SoftBodyState sbs && sbs.Initialized)
-            return sbs;
-
-        var gridX = GraphNodeBase.GetInt(parameters, "gridX", 5);
-        var gridY = GraphNodeBase.GetInt(parameters, "gridY", 5);
+        var gridX = Math.Clamp(GraphNodeBase.GetInt(parameters, "gridX", 5), 2, 16);
+        var gridY = Math.Clamp(GraphNodeBase.GetInt(parameters, "gridY", 5), 2, 16);
         var centerX = GraphNodeBase.GetFloat(parameters, "centerX", 0.5f);
         var centerY = GraphNodeBase.GetFloat(parameters, "centerY", 0.5f);
         var size = GraphNodeBase.GetFloat(parameters, "size", 0.3f);
         var shape = GraphNodeBase.GetChoice(parameters, "shape", "rectangle");
         var stiffness = GraphNodeBase.GetFloat(parameters, "stiffness", 0.5f);
+        var pinTop = GraphNodeBase.GetBool(parameters, "pinTop", false);
+        var pinBottom = GraphNodeBase.GetBool(parameters, "pinBottom", false);
+        var pinLeft = GraphNodeBase.GetBool(parameters, "pinLeft", false);
+        var pinRight = GraphNodeBase.GetBool(parameters, "pinRight", false);
+
+        if (PersistentState is SoftBodyState sbs && sbs.Initialized
+            && sbs.GridX == gridX && sbs.GridY == gridY
+            && NearlyEqual(sbs.CenterX, centerX) && NearlyEqual(sbs.CenterY, centerY)
+            && NearlyEqual(sbs.Size, size) && NearlyEqual(sbs.Stiffness, stiffness)
+            && string.Equals(sbs.Shape, shape, StringComparison.Ordinal)
+            && sbs.PinTop == pinTop && sbs.PinBottom == pinBottom
+            && sbs.PinLeft == pinLeft && sbs.PinRight == pinRight)
+            return sbs;
 
         var halfW = size * 0.5f;
         var halfH = size * 0.5f;
@@ -124,17 +150,21 @@ public sealed class PhysicsSoftBodyNode : IPersistentStateNode
                 var px = centerX + (nx - 0.5f) * size;
                 var py = centerY + (ny - 0.5f) * size;
 
-                // Circle/blob shape: cull or pull points outside radius
+                // Circle/blob topology must keep every grid slot populated because
+                // the structural spring indices address the complete rectangular grid.
+                // Project only the outer points onto a rounded boundary instead of
+                // leaving null holes that later crash spring construction.
                 if (shape == "circle" || shape == "blob")
                 {
                     var dx = (nx - 0.5f) * 2f;
                     var dy = (ny - 0.5f) * 2f;
                     var dist = MathF.Sqrt(dx * dx + dy * dy);
-                    if (shape == "circle" && dist > 1f) continue; // masked out later
-                    if (dist > 0.01f)
+                    var boundary = shape == "circle"
+                        ? 1f
+                        : 0.82f + GraphNodeBase.HashToUnit(x, y, context.Seed + 9041) * 0.18f;
+                    if (dist > boundary)
                     {
-                        // Pull toward circle boundary for blob shape
-                        var scale = 1f / Math.Max(dist, 0.3f);
+                        var scale = boundary / Math.Max(dist, 0.0001f);
                         px = centerX + dx * halfW * scale;
                         py = centerY + dy * halfH * scale;
                     }
@@ -172,11 +202,6 @@ public sealed class PhysicsSoftBodyNode : IPersistentStateNode
                 AddSpring(points, y * gridX + x + 1, (y + 1) * gridX + x, stiffness * 0.5f, springs);
             }
 
-        var pinTop = GraphNodeBase.GetBool(parameters, "pinTop", false);
-        var pinBottom = GraphNodeBase.GetBool(parameters, "pinBottom", false);
-        var pinLeft = GraphNodeBase.GetBool(parameters, "pinLeft", false);
-        var pinRight = GraphNodeBase.GetBool(parameters, "pinRight", false);
-
         if (pinTop)
             for (var x = 0; x < gridX; x++) points[x].Pinned = true;
         if (pinBottom)
@@ -186,10 +211,15 @@ public sealed class PhysicsSoftBodyNode : IPersistentStateNode
         if (pinRight)
             for (var y = 0; y < gridY; y++) points[y * gridX + gridX - 1].Pinned = true;
 
-        var state = new SoftBodyState(points, springs.ToArray(), true);
+        var state = new SoftBodyState(points, springs.ToArray(), true,
+            gridX, gridY, centerX, centerY, size, shape, stiffness,
+            pinTop, pinBottom, pinLeft, pinRight);
         PersistentState = state;
         return state;
     }
+
+    private static bool NearlyEqual(float left, float right)
+        => MathF.Abs(left - right) <= 0.0001f;
 
     private static void AddSpring(MassPoint[] points, int idxA, int idxB, float stiffness, List<Spring> springs)
     {
@@ -254,7 +284,9 @@ public sealed class PhysicsSoftBodyNode : IPersistentStateNode
                 var relVn = relVx * nx + relVy * ny;
                 var dampingForce = relVn * spring.Damping;
 
-                var totalForce = -(springForce + dampingForce) * subDt;
+                // A stretched spring pulls A toward B and B toward A. The old
+                // negative sign inverted Hooke's law and made cloth explode.
+                var totalForce = (springForce + dampingForce) * subDt;
 
                 if (!spring.A.Pinned)
                 {
@@ -308,6 +340,53 @@ public sealed class PhysicsSoftBodyNode : IPersistentStateNode
                 p.X = Math.Clamp(p.X, 0f, 1f);
                 p.Y = Math.Clamp(p.Y, 0f, 1f);
             }
+        }
+    }
+
+    private static PixelBuffer RenderState(SoftBodyState state,
+        IReadOnlyDictionary<string, object> parameters, int size)
+    {
+        var output = PixelBuffer.CreateSolid(size, size, 0f, 0f, 0f, 0f);
+        var bodyColor = GraphNodeBase.GetColor(parameters, "bodyColor", Color.FromRgb(106, 214, 154));
+        var springColor = GraphNodeBase.GetColor(parameters, "springColor", Color.FromRgb(39, 92, 72));
+        if (GraphNodeBase.GetBool(parameters, "drawSprings", true))
+            foreach (var spring in state.Springs)
+                DrawLine(output,
+                    (int)MathF.Round(spring.A.X * (size - 1)), (int)MathF.Round(spring.A.Y * (size - 1)),
+                    (int)MathF.Round(spring.B.X * (size - 1)), (int)MathF.Round(spring.B.Y * (size - 1)),
+                    springColor);
+
+        var radius = Math.Max(1, (int)MathF.Round(
+            GraphNodeBase.GetFloat(parameters, "pointSize", 0.022f) * size));
+        foreach (var point in state.Points)
+        {
+            if (point == null) continue;
+            var centerX = (int)MathF.Round(point.X * (size - 1));
+            var centerY = (int)MathF.Round(point.Y * (size - 1));
+            for (var y = centerY - radius; y <= centerY + radius; y++)
+            for (var x = centerX - radius; x <= centerX + radius; x++)
+            {
+                if ((uint)x >= (uint)size || (uint)y >= (uint)size) continue;
+                if (Math.Abs(x - centerX) + Math.Abs(y - centerY) > radius + 1) continue;
+                output.SetPixel(x, y, bodyColor.R / 255f, bodyColor.G / 255f, bodyColor.B / 255f, 1f);
+            }
+        }
+        return output;
+    }
+
+    private static void DrawLine(PixelBuffer image, int x0, int y0, int x1, int y1, Color color)
+    {
+        var dx = Math.Abs(x1 - x0); var sx = x0 < x1 ? 1 : -1;
+        var dy = -Math.Abs(y1 - y0); var sy = y0 < y1 ? 1 : -1;
+        var error = dx + dy;
+        while (true)
+        {
+            if ((uint)x0 < (uint)image.Width && (uint)y0 < (uint)image.Height)
+                image.SetPixel(x0, y0, color.R / 255f, color.G / 255f, color.B / 255f, 1f);
+            if (x0 == x1 && y0 == y1) break;
+            var twice = error * 2;
+            if (twice >= dy) { error += dy; x0 += sx; }
+            if (twice <= dx) { error += dx; y0 += sy; }
         }
     }
 }

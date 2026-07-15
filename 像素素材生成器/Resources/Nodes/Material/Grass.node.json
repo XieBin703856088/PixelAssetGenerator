@@ -1,6 +1,6 @@
 {
   "formatVersion": 2,
-  "processorType": null,
+  "processorType": "Grass",
   "identity": {
     "typeName": "Grass",
     "displayName": {
@@ -9,8 +9,8 @@
     },
     "category": "Material",
     "description": {
-      "zh-Hans": "使用定向叶片状图案生成草地/植被地面纹理。结合土壤基础层与覆盖的草叶，支持可变密度、颜色和方向。所有噪波均可平铺。",
-      "en": "Generates grass / vegetation ground textures using directional blade-like patterns. Combines a soil base layer with overlaid grass blades of variable density, color, and direction. All noise is tileable."
+      "zh-Hans": "生成适用于RPG地面的可平铺像素草地，以大块草色分区、成组草叶和少量土壤露出构成，而不是逐像素随机噪点。",
+      "en": "Generates seamless RPG grass tiles built from broad color clusters, authored grass tufts, and sparse soil exposure rather than per-pixel noise."
     },
     "tags": [],
     "author": "BuiltIn",

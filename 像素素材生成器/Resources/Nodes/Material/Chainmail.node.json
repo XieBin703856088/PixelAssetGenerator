@@ -1,6 +1,6 @@
 {
   "formatVersion": 2,
-  "processorType": null,
+  "processorType": "Chainmail",
   "identity": {
     "typeName": "Chainmail",
     "displayName": {
@@ -9,8 +9,8 @@
     },
     "category": "Material",
     "description": {
-      "zh-Hans": "生成锁甲/互锁环图案，带有重叠金属环、高光反射和阴影/深度提示。完全可平铺。",
-      "en": "Generates chainmail / interlocking ring patterns with overlapping metal links, specular highlights, and shadow/ depth cues. Fully tileable."
+      "zh-Hans": "生成可平铺的硬边像素锁甲，以错列椭圆金属环、交替断口、离散高光和下部阴影表现穿插关系。",
+      "en": "Generates seamless hard-edged pixel chainmail with staggered oval links, alternating gaps, discrete highlights, and lower shadows."
     },
     "tags": [],
     "author": "BuiltIn",

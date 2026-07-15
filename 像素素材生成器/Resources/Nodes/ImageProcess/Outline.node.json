@@ -1,6 +1,6 @@
 {
   "formatVersion": 2,
-  "processorType": null,
+  "processorType": "Outline",
   "identity": {
     "typeName": "Outline",
     "displayName": {

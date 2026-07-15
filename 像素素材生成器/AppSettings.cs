@@ -307,40 +307,48 @@ namespace PixelAssetGenerator
                 // Layered light palette — four clearly distinct depth layers:
                 //   WindowBackground (page) → PanelBackground (card/white) → ControlBackground (input) → PrimaryText (near-black)
                 // All text/background pairs verified ≥ WCAG AA 4.5:1 contrast ratio.
-                res["WindowBackground"]     = Brush(0xCC, 0xD6, 0xEC); // blue-steel page, clearly distinct from white panels
+                res["WindowBackground"]     = Brush(0xEE, 0xF2, 0xF7);
                 res["PanelBackground"]      = Brush(0xFF, 0xFF, 0xFF); // pure white — maximises text contrast (~21:1 with PrimaryText)
-                res["PanelBorder"]          = Brush(0xA8, 0xB8, 0xD0); // visible panel separator
-                res["PanelBackgroundAlt"]   = Brush(0xE8, 0xF0, 0xFC); // blue-tinted secondary zone
-                res["PrimaryText"]          = Brush(0x0D, 0x11, 0x1C); // near-black — 21:1 on white, 13:1 on page
-                res["ControlBackground"]    = Brush(0xDC, 0xE8, 0xF6); // distinctly blue inputs, stands out on white panels
-                res["ControlBorder"]        = Brush(0x86, 0x9E, 0xBE); // crisp, visible input borders
-                res["Accent"]               = Brush(0x0D, 0x47, 0xA1); // Material Blue 900 — 8.2:1 on white, 5.9:1 on page
-                res["AccentHover"]          = Brush(0x15, 0x65, 0xC0); // Material Blue 800 — 5.4:1 on white
-                res["AccentPressed"]        = Brush(0x0A, 0x38, 0x80); // darker on press
+                res["PanelBorder"]          = Brush(0xD8, 0xDE, 0xE9);
+                res["PanelBackgroundAlt"]   = Brush(0xF7, 0xF9, 0xFC);
+                res["PrimaryText"]          = Brush(0x17, 0x1B, 0x24);
+                res["ControlBackground"]    = Brush(0xF3, 0xF5, 0xF8);
+                res["ControlBorder"]        = Brush(0xCF, 0xD6, 0xE2);
+                res["Accent"]               = Brush(0x64, 0x4F, 0xD9);
+                res["AccentHover"]          = Brush(0x76, 0x62, 0xEB);
+                res["AccentPressed"]        = Brush(0x50, 0x3D, 0xB7);
                 res["AccentForeground"]     = Brush(0xFF, 0xFF, 0xFF); // white text on dark-blue accent bg
-                res["MutedText"]            = Brush(0x3A, 0x50, 0x70); // dark blue-gray — 6.3:1 on white, 5.0:1 on page
-                res["NodeBackground"]       = Brush(0xEC, 0xF3, 0xFF); // light blue node body
-                res["NodeBorder"]           = Brush(0x88, 0xA4, 0xC4); // visible node outline
-                res["NodeHeaderBackground"] = Brush(0xCC, 0xDA, 0xF0); // header clearly distinct from node body
+                res["MutedText"]            = Brush(0x67, 0x72, 0x82);
+                res["NodeBackground"]       = Brush(0xFF, 0xFF, 0xFF);
+                res["NodeBorder"]           = Brush(0xC7, 0xD0, 0xDF);
+                res["NodeHeaderBackground"] = Brush(0xEE, 0xF1, 0xF7);
+                res["SurfaceHighlight"]     = Brush(0xEA, 0xED, 0xF4);
+                res["SuccessBrush"]         = Brush(0x16, 0xA3, 0x4A);
+                res["WarningBrush"]         = Brush(0xD9, 0x77, 0x06);
+                res["DangerBrush"]          = Brush(0xE1, 0x1D, 0x48);
                 res["RecordingHighlight"]   = Brush(0xCC, 0x30, 0x00); // deep red-orange — 4.9:1 on white, clearly visible
             }
             else // Dark (default) — AI blue palette
             {
-                res["WindowBackground"]     = Brush(0x0B, 0x0E, 0x14); // deepest blue-black
-                res["PanelBackground"]      = Brush(0x0E, 0x12, 0x20); // deep blue panel
-                res["PanelBorder"]          = Brush(0x1E, 0x28, 0x40); // blue-toned border
-                res["PanelBackgroundAlt"]   = Brush(0x0A, 0x0F, 0x1C); // alternate depth layer
-                res["PrimaryText"]          = Brush(0xC8, 0xD8, 0xF0); // cool blue-white text
-                res["ControlBackground"]    = Brush(0x14, 0x1C, 0x30); // blue-dark input bg
-                res["ControlBorder"]        = Brush(0x1E, 0x28, 0x40); // matches panel border
-                res["Accent"]               = Brush(0x4A, 0x80, 0xC8); // AI blue accent
-                res["AccentHover"]          = Brush(0x5A, 0x90, 0xD8); // lighter on hover
-                res["AccentPressed"]        = Brush(0x3A, 0x6A, 0xB0); // darker on press
-                res["AccentForeground"]     = Brush(0xC8, 0xD8, 0xF0); // light text on accent bg
-                res["MutedText"]            = Brush(0x6B, 0x7A, 0x9F); // muted blue-gray
-                res["NodeBackground"]       = Brush(0x0E, 0x18, 0x28); // node body
-                res["NodeBorder"]           = Brush(0x1E, 0x2E, 0x50); // node outline
-                res["NodeHeaderBackground"] = Brush(0x14, 0x20, 0x40); // node header
+                res["WindowBackground"]     = Brush(0x09, 0x0C, 0x12);
+                res["PanelBackground"]      = Brush(0x11, 0x16, 0x20);
+                res["PanelBorder"]          = Brush(0x25, 0x2C, 0x3A);
+                res["PanelBackgroundAlt"]   = Brush(0x0D, 0x11, 0x19);
+                res["PrimaryText"]          = Brush(0xF1, 0xF5, 0xF9);
+                res["ControlBackground"]    = Brush(0x18, 0x1E, 0x2A);
+                res["ControlBorder"]        = Brush(0x30, 0x39, 0x4A);
+                res["Accent"]               = Brush(0x7C, 0x6C, 0xF2);
+                res["AccentHover"]          = Brush(0x91, 0x84, 0xFF);
+                res["AccentPressed"]        = Brush(0x63, 0x56, 0xCE);
+                res["AccentForeground"]     = Brush(0xFF, 0xFF, 0xFF);
+                res["MutedText"]            = Brush(0x8C, 0x97, 0xA8);
+                res["NodeBackground"]       = Brush(0x15, 0x1B, 0x27);
+                res["NodeBorder"]           = Brush(0x35, 0x40, 0x5A);
+                res["NodeHeaderBackground"] = Brush(0x20, 0x28, 0x3A);
+                res["SurfaceHighlight"]     = Brush(0x20, 0x27, 0x35);
+                res["SuccessBrush"]         = Brush(0x4A, 0xDE, 0x80);
+                res["WarningBrush"]         = Brush(0xFB, 0xBF, 0x24);
+                res["DangerBrush"]          = Brush(0xFB, 0x71, 0x85);
                 res["RecordingHighlight"]   = Brush(0xFF, 0xCC, 0x44); // amber — visible on dark bg
             }
         }
@@ -353,5 +361,4 @@ namespace PixelAssetGenerator
         }
     }
 }
-
 

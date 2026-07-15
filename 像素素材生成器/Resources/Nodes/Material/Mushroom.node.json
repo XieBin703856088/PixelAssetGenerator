@@ -1,6 +1,6 @@
 {
   "formatVersion": 2,
-  "processorType": null,
+  "processorType": "Mushroom",
   "identity": {
     "typeName": "Mushroom",
     "displayName": {
@@ -9,8 +9,8 @@
     },
     "category": "Material",
     "description": {
-      "zh-Hans": "生成风格化像素艺术蘑菇，可配置伞帽类型、茎部参数和配色方案，适用于奇幻/地牢场景。",
-      "en": "Generates stylized pixel art mushrooms with configurable cap type, stalk parameters, and color schemes suitable for fantasy/dungeon scenes."
+      "zh-Hans": "生成带硬边轮廓、菌盖遮挡、菌褶暗部和离散斑点的RPG像素蘑菇，适用于奇幻与地牢场景。",
+      "en": "Generates RPG pixel mushrooms with hard outlines, layered caps, dark undersides, and discrete spots."
     },
     "tags": [],
     "author": "BuiltIn",
@@ -137,6 +137,17 @@
       },
       "kind": "Boolean",
       "default": true
+    },
+    {
+      "name": {
+        "zh-Hans": "轮廓宽度",
+        "en": "Outline Width"
+      },
+      "kind": "Integer",
+      "default": 1,
+      "min": 0,
+      "max": 3,
+      "step": 1
     }
   ],
   "ai": {

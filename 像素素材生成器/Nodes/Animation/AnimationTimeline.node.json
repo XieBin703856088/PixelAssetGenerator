@@ -1,0 +1,39 @@
+{
+  "formatVersion": 2,
+  "processorType": "AnimationTimeline",
+  "identity": {
+    "typeName": "AnimationTimeline",
+    "displayName": { "zh-Hans": "动画时间轴", "en": "Animation Timeline" },
+    "category": "Animation",
+    "description": {
+      "zh-Hans": "为整张节点图提供统一的时间、秒数、帧进度、节拍触发和播放方向信号。",
+      "en": "Provides canonical time, seconds, frame progress, pulse and direction signals for the graph."
+    },
+    "tags": ["animation", "timeline", "time", "pulse"],
+    "author": "BuiltIn",
+    "version": "3.0"
+  },
+  "ports": {
+    "inputs": [],
+    "outputs": [
+      { "name": { "zh-Hans": "时间", "en": "Time" }, "type": "Float" },
+      { "name": { "zh-Hans": "秒", "en": "Seconds" }, "type": "Float" },
+      { "name": { "zh-Hans": "帧进度", "en": "Frame Progress" }, "type": "Float" },
+      { "name": { "zh-Hans": "节拍", "en": "Pulse" }, "type": "Float" },
+      { "name": { "zh-Hans": "方向", "en": "Direction" }, "type": "Float" }
+    ]
+  },
+  "parameters": [],
+  "ai": {
+    "capabilities": ["animation", "timeline", "trigger"],
+    "triggers": {
+      "zh-Hans": "动画时间轴, 帧信号, 节拍触发, 动画时间",
+      "en": "animation timeline, frame signal, animation pulse, time"
+    },
+    "suggestedInputs": [],
+    "exampleUsage": {
+      "zh-Hans": "把时间连接到波形或动画参数，把节拍连接到需要按帧触发的效果。",
+      "en": "Connect Time to waves or animated parameters and Pulse to frame-triggered effects."
+    }
+  }
+}

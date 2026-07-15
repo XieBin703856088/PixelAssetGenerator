@@ -72,6 +72,12 @@ namespace PixelAssetGenerator.Core.Gpu
                 catch { d3dContext = null; }
             }
 
+            if (device == null || d3dContext == null)
+            {
+                System.Diagnostics.Trace.TraceWarning("GPU evaluator: D3D11 device or immediate context is unavailable.");
+                return new Dictionary<int, ID3D11Texture2D?>();
+            }
+
             foreach (var grp in groups)
             {
                 // process nodes in this level sequentially.

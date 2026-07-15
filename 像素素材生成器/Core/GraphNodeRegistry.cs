@@ -101,9 +101,10 @@ public static class GraphNodeRegistry
                 else if (resource.Script != null && !string.IsNullOrWhiteSpace(resource.Script.Code))
                 {
                     // Script node — compiled at runtime via Roslyn
-                    var instance = new ResourceNodeInstance(resource, file);
-                    NodeFactories[typeName] = () => instance;
-                    Prototypes.Add(instance);
+                    // Runtime wrappers are isolated per canvas node; compiled delegates
+                    // remain shared by ResourceNodeInstance's content-addressed cache.
+                    NodeFactories[typeName] = () => new ResourceNodeInstance(resource, file);
+                    Prototypes.Add(new ResourceNodeInstance(resource, file));
                     System.Diagnostics.Debug.WriteLine($"[GraphNodeRegistry] Loaded script node '{typeName}' (cat={resource.Identity.Category})");
                 }
                 else

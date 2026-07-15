@@ -1,6 +1,6 @@
 {
   "formatVersion": 2,
-  "processorType": null,
+  "processorType": "Tree",
   "identity": {
     "typeName": "Tree",
     "displayName": {
@@ -9,8 +9,8 @@
     },
     "category": "Material",
     "description": {
-      "zh-Hans": "生成像素艺术树木，可配置类型、树干和树冠参数。支持圆形、圆锥形、层叠形、棕榈形和仙人掌形，通过有机噪波扰动呈现自然效果。输出图像和覆盖遮罩。",
-      "en": "Generates pixel-art trees with configurable type, trunk, and canopy parameters. Supports round, conical, layered, palm, and cactus shapes with organic noise perturbation for a natural look. Outputs both the image and a coverage mask."
+      "zh-Hans": "生成面向32×32和64×64 RPG素材的硬边像素树木。使用分层树冠、树干遮挡、方向光色块和可控描边，支持阔叶树、针叶树、层叠树、棕榈树和枯树。",
+      "en": "Generates hard-edged 32×32 and 64×64 RPG tree sprites with layered canopies, trunk occlusion, clustered directional lighting, and controllable outlines."
     },
     "tags": [],
     "author": "BuiltIn",
@@ -48,6 +48,21 @@
     },
     {
       "name": {
+        "zh-Hans": "树型",
+        "en": "Tree Type"
+      },
+      "kind": "Choice",
+      "default": "broadleaf",
+      "choices": [
+        { "value": "broadleaf", "label": { "zh-Hans": "阔叶树", "en": "Broadleaf" } },
+        { "value": "pine", "label": { "zh-Hans": "针叶树", "en": "Pine" } },
+        { "value": "layered", "label": { "zh-Hans": "层叠树", "en": "Layered" } },
+        { "value": "palm", "label": { "zh-Hans": "棕榈树", "en": "Palm" } },
+        { "value": "dead", "label": { "zh-Hans": "枯树", "en": "Dead Tree" } }
+      ]
+    },
+    {
+      "name": {
         "zh-Hans": "树干高度",
         "en": "Trunk Height"
       },
@@ -67,6 +82,17 @@
       "min": 0.2,
       "max": 1.0,
       "step": 0.05
+    },
+    {
+      "name": {
+        "zh-Hans": "树冠层数",
+        "en": "Canopy Layers"
+      },
+      "kind": "Integer",
+      "default": 3,
+      "min": 2,
+      "max": 6,
+      "step": 1
     },
     {
       "name": {
@@ -105,14 +131,38 @@
     },
     {
       "name": {
-        "zh-Hans": "像素大小",
-        "en": "Pixel Size"
+        "zh-Hans": "像素簇大小",
+        "en": "Pixel Cluster Size"
       },
       "kind": "Integer",
       "default": 2,
       "min": 1,
       "max": 8,
       "step": 1
+    },
+    {
+      "name": {
+        "zh-Hans": "轮廓宽度",
+        "en": "Outline Width"
+      },
+      "kind": "Integer",
+      "default": 1,
+      "min": 0,
+      "max": 3,
+      "step": 1
+    },
+    {
+      "name": {
+        "zh-Hans": "光照方向",
+        "en": "Light Direction"
+      },
+      "kind": "Choice",
+      "default": "topLeft",
+      "choices": [
+        { "value": "topLeft", "label": { "zh-Hans": "左上", "en": "Top Left" } },
+        { "value": "topRight", "label": { "zh-Hans": "右上", "en": "Top Right" } },
+        { "value": "front", "label": { "zh-Hans": "正面", "en": "Front" } }
+      ]
     }
   ],
   "ai": {

@@ -1,0 +1,33 @@
+{
+  "formatVersion": 2,
+  "processorType": "ParticleBehavior",
+  "identity": {
+    "typeName": "ParticleBehavior",
+    "displayName": { "zh-Hans": "粒子生命周期行为", "en": "Particle Behavior" },
+    "category": "Particle",
+    "description": {
+      "zh-Hans": "为上游粒子添加大小脉动、闪烁、曲折运动、环绕、阻力或色相循环。",
+      "en": "Adds pulse, flicker, zigzag, orbit, drag or hue cycling to upstream particles."
+    },
+    "tags": ["particle", "behavior", "lifetime", "animation"],
+    "author": "BuiltIn",
+    "version": "3.0"
+  },
+  "ports": {
+    "inputs": [{ "name": { "zh-Hans": "粒子", "en": "Particles" }, "type": "Particle" }],
+    "outputs": [{ "name": { "zh-Hans": "粒子", "en": "Particles" }, "type": "Particle" }]
+  },
+  "parameters": [],
+  "ai": {
+    "capabilities": ["particle", "lifetime", "behavior"],
+    "triggers": {
+      "zh-Hans": "粒子闪烁, 粒子脉动, 粒子变色, 粒子曲线运动, 粒子阻力",
+      "en": "particle flicker, pulse, color cycle, curved motion, drag"
+    },
+    "suggestedInputs": ["ParticleEmitter", "ParticleForce"],
+    "exampleUsage": {
+      "zh-Hans": "连接在发射器或力场之后、粒子渲染之前。",
+      "en": "Place it after an emitter or force and before Particle Render."
+    }
+  }
+}

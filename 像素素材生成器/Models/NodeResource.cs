@@ -11,8 +11,10 @@ namespace PixelAssetGenerator.Models;
 /// </summary>
 public sealed class NodeResource
 {
+    public const int CurrentFormatVersion = 3;
+
     [JsonPropertyName("formatVersion")]
-    public int FormatVersion { get; set; } = 2;
+    public int FormatVersion { get; set; } = CurrentFormatVersion;
 
     /// <summary>
     /// C# processor class TypeName (e.g. "SolidColor"). Null/empty = pure script node.
@@ -43,7 +45,7 @@ public sealed class NodeResource
 
         return new NodeResource
         {
-            FormatVersion = 2,
+            FormatVersion = CurrentFormatVersion,
             ProcessorType = null,
             Identity = new NodeResourceIdentity
             {
@@ -177,6 +179,13 @@ public sealed class NodeResourcePorts
 
 public sealed class NodeResourcePortDef
 {
+    /// <summary>
+    /// Stable, language-independent port identifier. Format v3 writers should always set
+    /// this value; v1/v2 resources fall back to a normalized localized name.
+    /// </summary>
+    [JsonPropertyName("key")]
+    public string? Key { get; set; }
+
     /// <summary>Port name — can be a plain string (legacy) or a locale dictionary.</summary>
     [JsonPropertyName("name")]
     public NodeLocText Name { get; set; } = new();
@@ -184,12 +193,18 @@ public sealed class NodeResourcePortDef
     [JsonPropertyName("type")]
     public string Type { get; set; } = "Image";
 
+    [JsonPropertyName("required")]
+    public bool IsRequired { get; set; }
+
+    [JsonPropertyName("multiple")]
+    public bool AllowsMultipleConnections { get; set; }
+
     /// <summary>Returns the port display name in the given locale.</summary>
     public string GetName(string locale) => Name.Get(locale);
 
     /// <summary>Helper to create a port def from a plain string (backward compat).</summary>
     public static NodeResourcePortDef FromString(string name, string type = "Image")
-        => new() { Name = new NodeLocText { { "zh-Hans", name }, { "en", name } }, Type = type };
+        => new() { Key = name, Name = new NodeLocText { { "zh-Hans", name }, { "en", name } }, Type = type };
 }
 
 public sealed class NodeResourceParameter

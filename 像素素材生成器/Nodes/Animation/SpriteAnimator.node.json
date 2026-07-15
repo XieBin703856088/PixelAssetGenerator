@@ -1,0 +1,38 @@
+{
+  "formatVersion": 2,
+  "processorType": "SpriteAnimator",
+  "identity": {
+    "typeName": "SpriteAnimator",
+    "displayName": { "zh-Hans": "精灵表动画", "en": "Sprite Animator" },
+    "category": "Animation",
+    "description": {
+      "zh-Hans": "从横向或网格精灵表中按时间轴提取当前帧，支持循环、往返、单次和反向播放。",
+      "en": "Extracts the current frame from a strip or grid sprite sheet with loop, ping-pong, once and reverse playback."
+    },
+    "tags": ["animation", "sprite", "sprite-sheet", "frame"],
+    "author": "BuiltIn",
+    "version": "3.0"
+  },
+  "ports": {
+    "inputs": [
+      { "name": { "zh-Hans": "精灵表", "en": "Sprite Sheet" }, "type": "Image" },
+      { "name": { "zh-Hans": "帧", "en": "Frame" }, "type": "Float" }
+    ],
+    "outputs": [
+      { "name": { "zh-Hans": "图像", "en": "Image" }, "type": "Image" }
+    ]
+  },
+  "parameters": [],
+  "ai": {
+    "capabilities": ["animation", "sprite-sheet", "frame-extraction"],
+    "triggers": {
+      "zh-Hans": "精灵表动画, 帧动画, sprite sheet, 逐帧播放",
+      "en": "sprite sheet animation, frame animation, sprite playback"
+    },
+    "suggestedInputs": ["AnimationTimeline"],
+    "exampleUsage": {
+      "zh-Hans": "输入精灵表，设置列数与行数；需要手动控制时把帧进度接入帧端口。",
+      "en": "Connect a sheet and set rows/columns; connect Frame Progress for manual control."
+    }
+  }
+}

@@ -16,7 +16,7 @@ namespace PixelAssetGenerator.Services;
 /// </summary>
 public sealed class GraphEvaluationService
 {
-    private readonly NodeGraphEvaluator _graphEvaluator = new();
+    public NodeGraphEvaluator Evaluator { get; } = new();
 
     /// <summary>
     /// Fired when a graph evaluation error occurs (e.g. cycle detected).
@@ -26,7 +26,7 @@ public sealed class GraphEvaluationService
 
     public GraphEvaluationService()
     {
-        _graphEvaluator.OnEvaluationError = msg => EvaluationError?.Invoke(msg);
+        Evaluator.OnEvaluationError = msg => EvaluationError?.Invoke(msg);
     }
 
     /// <summary>
@@ -35,6 +35,11 @@ public sealed class GraphEvaluationService
     /// set instead of a graph node type name.
     /// </summary>
     public Func<NodeViewModel, int, PixelBuffer?>? TileNodeRenderer { get; set; }
+
+    public GraphRuntimeSnapshot BuildSnapshot(
+        IReadOnlyList<NodeViewModel> nodes,
+        IReadOnlyList<NodeConnectionViewModel> connections,
+        int size) => GraphRuntimeSnapshotBuilder.Build(nodes, connections, size, TileNodeRenderer);
 
     /// <summary>
     /// Checks if a node is a new graph-based node (from Core.GraphNodeRegistry).
@@ -56,10 +61,8 @@ public sealed class GraphEvaluationService
         CancellationToken ct = default,
         float? animationTimeOverride = null)
     {
-        var (instances, instanceMap) = BuildInstances(nodes, connections, size);
-        if (instances.Count == 0) return null;
-
-        var graphConnections = BuildGraphConnections(connections, instanceMap);
+        using var snapshot = BuildSnapshot(nodes, connections, size);
+        if (snapshot.Instances.Count == 0) return null;
 
         var seed = targetNode?.TileProperties?.Seed
             ?? targetNode?.Parameters.FirstOrDefault(p => p.Name == "seed")?.IntValue
@@ -67,7 +70,7 @@ public sealed class GraphEvaluationService
             ?? selectedNode?.Parameters.FirstOrDefault(p => p.Name == "seed")?.IntValue
             ?? 42;
 
-        var semanticOverrides = CollectSemanticOverrides(nodes);
+        var semanticOverrides = GraphRuntimeSnapshotBuilder.CollectSemanticOverrides(nodes);
         var context = new PixelGraphContext
         {
             TileSize = size,
@@ -77,12 +80,13 @@ public sealed class GraphEvaluationService
         };
 
         int? targetId = null;
-        if (targetNode != null && instanceMap.ContainsKey(targetNode.Id))
+        if (targetNode != null && snapshot.InstanceMap.ContainsKey(targetNode.Id))
             targetId = targetNode.Id;
-        else if (selectedNode != null && instanceMap.ContainsKey(selectedNode.Id))
+        else if (selectedNode != null && snapshot.InstanceMap.ContainsKey(selectedNode.Id))
             targetId = selectedNode.Id;
 
-        var result = _graphEvaluator.Evaluate(instances, graphConnections, context, targetId, ct);
+        using var result = Evaluator.Evaluate(
+            snapshot.Instances, snapshot.Connections, context, targetId, ct);
         return result?.ToBitmapSource();
     }
 
@@ -95,15 +99,13 @@ public sealed class GraphEvaluationService
         int previewSize,
         CancellationToken ct = default)
     {
-        var (instances, instanceMap) = BuildInstances(nodesSnapshot, connectionsSnapshot, previewSize);
-        if (instances.Count == 0) return null;
+        using var snapshot = BuildSnapshot(nodesSnapshot, connectionsSnapshot, previewSize);
+        if (snapshot.Instances.Count == 0) return null;
 
-        var graphConnections = BuildGraphConnections(connectionsSnapshot, instanceMap);
-
-        var semanticOverrides = CollectSemanticOverrides(nodesSnapshot);
+        var semanticOverrides = GraphRuntimeSnapshotBuilder.CollectSemanticOverrides(nodesSnapshot);
         var context = new PixelGraphContext { TileSize = previewSize, Seed = 42, SemanticOverrides = semanticOverrides };
 
-        return _graphEvaluator.EvaluateAll(instances, graphConnections, context, ct);
+        return Evaluator.EvaluateAll(snapshot.Instances, snapshot.Connections, context, ct);
     }
 
     /// <summary>
@@ -113,9 +115,10 @@ public sealed class GraphEvaluationService
     {
         var graphNode = GraphNodeRegistry.Create(node.RegistryKey);
         if (graphNode is null) return null;
+        using var nodeLifetime = graphNode as IDisposable;
 
         var instance = new GraphNodeInstance(node.Id, graphNode);
-        CopyParameters(node, instance);
+        GraphRuntimeSnapshotBuilder.CopyParameters(node, instance);
 
         var context = new PixelGraphContext
         {
@@ -123,7 +126,7 @@ public sealed class GraphEvaluationService
             Seed = node.Parameters.FirstOrDefault(p => p.Name == "seed")?.IntValue ?? 42
         };
 
-        var buffer = graphNode.Process(new PixelBuffer?[Math.Max(1, graphNode.InputPorts.Count)], instance.ParameterValues, context);
+        using var buffer = graphNode.Process(new PixelBuffer?[Math.Max(1, graphNode.InputPorts.Count)], instance.ParameterValues, context);
         var bmp = buffer.ToBitmapSource();
         return CreatePreviewBrushFromBitmap(bmp, previewSize);
     }
@@ -203,125 +206,4 @@ public sealed class GraphEvaluationService
         return fallbackBrush;
     }
 
-    /// <summary>
-    /// Builds a GraphNodeInstance list from NodeViewModels, resolving tile nodes
-    /// via the TileNodeRenderer delegate.
-    /// </summary>
-    private (List<GraphNodeInstance> Instances, Dictionary<int, GraphNodeInstance> Map) BuildInstances(
-        List<NodeViewModel> nodes,
-        List<NodeConnectionViewModel> connections,
-        int size)
-    {
-        var instanceMap = new Dictionary<int, GraphNodeInstance>();
-        var instances = new List<GraphNodeInstance>();
-
-        foreach (var node in nodes)
-        {
-            IGraphNode? graphNode = GraphNodeRegistry.Create(node.RegistryKey);
-            if (graphNode is null && node.TileType != null && TileNodeRenderer != null)
-            {
-                var tileBuffer = TileNodeRenderer(node, size);
-                if (tileBuffer != null)
-                    graphNode = new PixelBufferSourceNode(tileBuffer);
-            }
-            if (graphNode is null)
-                continue;
-
-            var instance = new GraphNodeInstance(node.Id, graphNode);
-            CopyParameters(node, instance);
-            instanceMap[node.Id] = instance;
-            instances.Add(instance);
-        }
-
-        return (instances, instanceMap);
-    }
-
-    private static List<GraphConnection> BuildGraphConnections(
-        List<NodeConnectionViewModel> connections,
-        Dictionary<int, GraphNodeInstance> instanceMap)
-    {
-        var graphConnections = new List<GraphConnection>();
-        foreach (var conn in connections.Where(c => !c.IsPreview && c.StartNode != null && c.EndNode != null))
-        {
-            if (instanceMap.ContainsKey(conn.StartNode!.Id) && instanceMap.ContainsKey(conn.EndNode!.Id))
-            {
-                graphConnections.Add(new GraphConnection(
-                    conn.StartNode!.Id, conn.StartPortIndex,
-                    conn.EndNode!.Id, conn.EndPortIndex));
-            }
-        }
-        return graphConnections;
-    }
-
-    private static void CopyParameters(NodeViewModel node, GraphNodeInstance instance)
-    {
-        foreach (var param in node.Parameters)
-        {
-            var value = param.Kind switch
-            {
-                NodeParameterKind.Seed => (object)param.IntValue,
-                NodeParameterKind.Integer => (object)param.IntValue,
-                NodeParameterKind.Boolean => param.BoolValue,
-                NodeParameterKind.Choice => param.SelectedChoice ?? string.Empty,
-                NodeParameterKind.PointList => (object)(IReadOnlyList<Point>)param.PointListValue.ToArray(),
-                NodeParameterKind.Color => (object)param.ColorValue,
-                NodeParameterKind.Text => param.TextValue ?? string.Empty,
-                _ => (object)param.NumberValue
-            };
-            instance.ParameterValues[param.Name] = value;
-        }
-    }
-
-    /// <summary>
-    /// Collects semantic parameter overrides from SemanticControlNode instances in the graph.
-    /// Only includes overrides when the override toggle is enabled.
-    /// </summary>
-    private static IReadOnlyDictionary<string, float>? CollectSemanticOverrides(List<NodeViewModel> nodes)
-    {
-        Dictionary<string, float>? overrides = null;
-
-        foreach (var node in nodes)
-        {
-            if (node.Title != "SemanticControl")
-                continue;
-
-            var enabled = node.Parameters.FirstOrDefault(p => p.Name == "enableOverride")?.BoolValue ?? false;
-            if (!enabled)
-                continue;
-
-            overrides ??= new Dictionary<string, float>();
-
-            foreach (var param in node.Parameters)
-            {
-                if (param.Name == "enableOverride")
-                    continue;
-
-                // Number parameters are in 0-1 range, use directly
-                if (param.Kind == NodeParameterKind.Number)
-                {
-                    overrides[param.Name] = (float)param.NumberValue;
-                }
-            }
-        }
-
-        return overrides;
-    }
-
-    /// <summary>
-    /// Adapts a pre-rendered PixelBuffer as a zero-input graph node so that tile nodes
-    /// can participate in the graph evaluation pipeline.
-    /// </summary>
-    private sealed class PixelBufferSourceNode : IGraphNode
-    {
-        private readonly PixelBuffer _buffer;
-        private static readonly IReadOnlyList<GraphNodePort> _outputPorts = new[] { new GraphNodePort("Bitmap", GraphPortType.Image) };
-
-        public PixelBufferSourceNode(PixelBuffer buffer) => _buffer = buffer;
-        public string TypeName => "__TileSource__";
-        public string Category => "Source";
-        public IReadOnlyList<GraphNodePort> InputPorts => Array.Empty<GraphNodePort>();
-        public IReadOnlyList<GraphNodePort> OutputPorts => _outputPorts;
-        public IReadOnlyList<NodeParameterDefinition> Parameters => Array.Empty<NodeParameterDefinition>();
-        public PixelBuffer Process(PixelBuffer?[] inputs, IReadOnlyDictionary<string, object> parameters, PixelGraphContext context) => _buffer;
-    }
 }

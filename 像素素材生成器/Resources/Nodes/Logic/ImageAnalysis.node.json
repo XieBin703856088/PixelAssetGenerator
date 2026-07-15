@@ -1,6 +1,6 @@
 {
   "formatVersion": 2,
-  "processorType": null,
+  "processorType": "ImageAnalysis",
   "identity": {
     "typeName": "ImageAnalysis",
     "displayName": {

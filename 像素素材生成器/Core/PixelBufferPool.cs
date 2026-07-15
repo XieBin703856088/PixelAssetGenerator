@@ -19,6 +19,7 @@ public static class PixelBufferPool
     {
         if (Pool.TryGetValue((width, height), out var bag) && bag.TryTake(out var buffer))
         {
+            buffer.ResetForReuse();
             return buffer;
         }
         return new PixelBuffer(width, height);

@@ -1,0 +1,29 @@
+{
+  "formatVersion": 3,
+  "processorType": "ColorReplace",
+  "identity": {
+    "typeName": "ColorReplace",
+    "displayName": { "zh-Hans": "颜色替换", "en": "Color Replace" },
+    "category": "ImageProcess", "subcategory": "Color",
+    "description": { "zh-Hans": "按颜色容差替换像素，可柔化边缘并保留原始亮度。", "en": "Replace pixels by color tolerance with soft edges and optional luminance preservation." },
+    "tags": ["color", "replace", "recolor"], "author": "BuiltIn", "version": "1.0"
+  },
+  "ports": {
+    "inputs": [{ "key": "image", "name": { "zh-Hans": "图像", "en": "Image" }, "type": "Image", "required": true }],
+    "outputs": [{ "key": "image", "name": { "zh-Hans": "图像", "en": "Image" }, "type": "Image" }]
+  },
+  "parameters": [
+    { "name": { "zh-Hans": "源颜色", "en": "Source Color" }, "kind": "Color", "default": "#FF00FFFF" },
+    { "name": { "zh-Hans": "目标颜色", "en": "Target Color" }, "kind": "Color", "default": "#00FFFFFF" },
+    { "name": { "zh-Hans": "容差", "en": "Tolerance" }, "kind": "Number", "default": 0.15, "min": 0, "max": 1, "step": 0.01 },
+    { "name": { "zh-Hans": "柔化", "en": "Softness" }, "kind": "Number", "default": 0.1, "min": 0, "max": 1, "step": 0.01 },
+    { "name": { "zh-Hans": "强度", "en": "Amount" }, "kind": "Number", "default": 1, "min": 0, "max": 1, "step": 0.01 },
+    { "name": { "zh-Hans": "保留亮度", "en": "Preserve Luminance" }, "kind": "Boolean", "default": false }
+  ],
+  "ai": {
+    "capabilities": ["color-replace", "recolor", "palette-edit"],
+    "triggers": { "zh-Hans": "替换颜色 改色 换色 局部着色", "en": "replace color recolor swap color selective color" },
+    "suggestedInputs": ["ColorQuantize", "PaletteMap"],
+    "exampleUsage": { "zh-Hans": "替换角色服装颜色，同时保留像素明暗层次。", "en": "Replace a character clothing color while preserving shading." }
+  }
+}

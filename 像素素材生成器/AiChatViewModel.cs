@@ -503,14 +503,14 @@ public sealed class AiChatViewModel : INotifyPropertyChanged
         set { _isProcessing = value; OnPropertyChanged(); }
     }
 
-    private string _statusText;
+    private string? _statusText;
     public string StatusText
     {
         get => _statusText ?? _loc.GetString("AI_Ready");
         set { _statusText = value; OnPropertyChanged(); }
     }
 
-    private string _liveStatusText;
+    private string? _liveStatusText;
     public string LiveStatusText
     {
         get => _liveStatusText ?? _loc.GetString("AI_Standby");

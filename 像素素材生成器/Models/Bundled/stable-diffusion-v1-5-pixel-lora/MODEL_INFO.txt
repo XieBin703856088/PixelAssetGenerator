@@ -1,0 +1,21 @@
+PixelAssetGenerator offline image generation bundle
+
+Semantic base
+- Model: Stable Diffusion v1.5 pruned EMA-only Q8_0 GGUF
+- Source: https://huggingface.co/second-state/stable-diffusion-v1-5-GGUF
+- File: stable-diffusion-v1-5-pruned-emaonly-Q8_0.gguf
+- Size: 1,763,578,176 bytes
+- SHA-256: d0555243938c62faeefb4ac93f6c7a053ad373a4290c5256bce229aeb193bf94
+- License: CreativeML Open RAIL-M
+
+Pixel style adapter
+- Model: VaroDZAKY/Varo_pixel_Art
+- Source: https://huggingface.co/VaroDZAKY/Varo_pixel_Art
+- File: Varo_pixel_Art.safetensors
+- Size: 12,795,512 bytes
+- SHA-256: 3c50888c1b0e9a6905052abdc5ca997a2ad7f5936c91582f4ebb96c18a537350
+- License: Apache-2.0
+
+Both files are bundled for offline runtime use. The application never downloads
+model weights and refuses to mark the bundle ready unless file sizes and SHA-256
+stamp files match the descriptors compiled into the application.

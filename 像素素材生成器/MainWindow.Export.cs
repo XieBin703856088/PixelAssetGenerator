@@ -372,6 +372,8 @@ namespace PixelAssetGenerator
 
         private void ParameterChanged(object sender, SelectionChangedEventArgs e)
         {
+            OnPropertyChanged(nameof(AiImageOutputSizeText));
+
             // When global parameters change (e.g. tile size), ensure previews update
             RequestPreviewRefresh(false);
 

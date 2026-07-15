@@ -1,6 +1,6 @@
 {
   "formatVersion": 2,
-  "processorType": null,
+  "processorType": "Cobblestone",
   "identity": {
     "typeName": "Cobblestone",
     "displayName": {
@@ -9,8 +9,8 @@
     },
     "category": "Material",
     "description": {
-      "zh-Hans": "使用抖动网格Voronoi单元生成鹅卵石/石板铺装图案，具有逐石颜色变化、3D边缘着色、砂浆缝隙和边缘粗糙度控制。",
-      "en": "Generates a cobblestone/flagstone paving pattern using jittered grid Voronoi cells with per-stone color variation, 3D edge shading, mortar gaps, and edge roughness control."
+      "zh-Hans": "生成适用于RPG地面的可平铺鹅卵石，以独立石块、左上高光边、右下暗边和稀疏裂纹组织有限色阶。",
+      "en": "Generates seamless RPG cobblestone tiles with distinct stones, top-left rim lights, bottom-right shadows, sparse cracks, and a limited palette."
     },
     "tags": [],
     "author": "BuiltIn",
@@ -96,7 +96,7 @@
         "en": "Roundness"
       },
       "kind": "Number",
-      "default": 0.3,
+      "default": 0.65,
       "min": 0.0,
       "max": 1.0,
       "step": 0.01

@@ -403,7 +403,7 @@
     <data name="NodeName_SemanticControl" xml:space="preserve"><value>语义控制</value></data>
     <data name="NodeName_Variation" xml:space="preserve"><value>变体</value></data>
     <data name="NodeName_AutoTile" xml:space="preserve"><value>自动瓦片</value></data>
-    <data name="NodeName_AiImageGen" xml:space="preserve"><value>AI图像生成</value></data>
+    <data name="NodeName_AiImageGen" xml:space="preserve"><value>AI 像素素材生成</value></data>
     <data name="NodeName_Brush" xml:space="preserve"><value>画笔</value></data>
     <data name="NodeName_Line" xml:space="preserve"><value>线条</value></data>
     <data name="NodeName_Rectangle" xml:space="preserve"><value>矩形</value></data>
@@ -441,9 +441,6 @@
     <data name="MW_FailedToRename" xml:space="preserve"><value>重命名失败：</value></data>
     <data name="MW_SelectFileToUpload" xml:space="preserve"><value>选择要上传的文件</value></data>
     <data name="MW_NewConversation" xml:space="preserve"><value>新对话</value></data>
-    <data name="Settings_CacheSection" xml:space="preserve"><value>脚本缓存</value></data>
-    <data name="Settings_CachePath" xml:space="preserve"><value>缓存目录</value></data>
-    <data name="Settings_OpenCacheFolder" xml:space="preserve"><value>打开…</value></data>
     <data name="AI_ServiceConfig" xml:space="preserve"><value>服务配置</value></data>
     <data name="AI_SkillManagement" xml:space="preserve"><value>技能管理</value></data>
     <data name="Cat_Logic" xml:space="preserve"><value>逻辑运算</value></data>

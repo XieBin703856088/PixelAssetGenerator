@@ -15,6 +15,8 @@ public sealed class PhysicsBody
     public float Mass = 1f;
     public float InvMass => Mass <= 0 ? 0 : 1f / Mass;
     public bool IsStatic;
+    /// <summary>Disabled bodies stay allocated for reuse but do not participate in simulation.</summary>
+    public bool IsEnabled = true;
 
     // ── Shape ──
     public BodyShape Shape = BodyShape.Circle;

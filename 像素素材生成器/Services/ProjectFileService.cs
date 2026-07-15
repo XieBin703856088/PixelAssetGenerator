@@ -46,6 +46,8 @@ public static class ProjectFileService
         public bool BoolValue { get; set; }
         public string? SelectedChoice { get; set; }
         public string? TextValue { get; set; }
+        /// <summary>ARGB color value. Null means an older project did not persist this field.</summary>
+        public uint? ColorArgb { get; set; }
         public List<Point> PointListData { get; set; } = new();
     }
 
@@ -65,7 +67,7 @@ public static class ProjectFileService
         using var writer = new BinaryWriter(stream, Encoding.UTF8, false);
 
         writer.Write(ProjectMagic.ToCharArray());
-        writer.Write((ushort)6); // project version
+        writer.Write((ushort)7); // project version (v7 persists color parameters)
         writer.Write(data.TileSize);
 
         writer.Write(data.Nodes.Count);
@@ -111,6 +113,7 @@ public static class ProjectFileService
                 writer.Write(p.BoolValue);
                 WriteString(writer, p.SelectedChoice ?? string.Empty);
                 WriteString(writer, p.TextValue ?? string.Empty);
+                writer.Write(p.ColorArgb ?? 0xFFFFFFFFu);
                 writer.Write(p.PointListData.Count);
                 foreach (var pt in p.PointListData)
                 {
@@ -159,9 +162,11 @@ public static class ProjectFileService
             var typeName = version >= 6 ? ReadString(reader) : string.Empty;
             var kind = (NodeLibraryItemKind)reader.ReadByte();
             var hasTile = reader.ReadBoolean();
+            // The writer always stores a tile byte, using zero as the placeholder for non-tile nodes.
+            var storedTileType = (TileType)reader.ReadByte();
             TileType? tileType = null;
             if (hasTile)
-                tileType = (TileType)reader.ReadByte();
+                tileType = storedTileType;
             var x = reader.ReadDouble();
             var y = reader.ReadDouble();
 
@@ -203,6 +208,7 @@ public static class ProjectFileService
                 {
                     textValue = ReadString(reader);
                 }
+                uint? colorArgb = version >= 7 ? reader.ReadUInt32() : null;
                 var pointListData = new List<Point>();
                 if (reader.BaseStream.Position < reader.BaseStream.Length)
                 {
@@ -228,6 +234,7 @@ public static class ProjectFileService
                     BoolValue = boolValue,
                     SelectedChoice = choice,
                     TextValue = textValue,
+                    ColorArgb = colorArgb,
                     PointListData = pointListData
                 });
             }

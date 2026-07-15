@@ -1,6 +1,6 @@
 {
   "formatVersion": 2,
-  "processorType": null,
+  "processorType": "Marble",
   "identity": {
     "typeName": "Marble",
     "displayName": {
@@ -9,8 +9,8 @@
     },
     "category": "Noise",
     "description": {
-      "zh-Hans": "使用正弦波配合分形噪波扰动，生成大理石/脉纹纹理。",
-      "en": "Generates marble/veined texture using sine wave with fractal noise perturbation."
+      "zh-Hans": "生成离散色阶的RPG像素大理石材质，具有连续主脉、间断支脉、矿物边缘和成片石材明暗。",
+      "en": "Generates limited-palette RPG marble with continuous main veins, gated branches, mineral edges, and clustered stone shading."
     },
     "tags": [],
     "author": "BuiltIn",

@@ -3,6 +3,10 @@
   <PropertyGroup>
     <RootNamespace>PixelAssetGenerator</RootNamespace>
     <AssemblyName>PixelAssetGenerator</AssemblyName>
+    <Version>0.7.0</Version>
+    <AssemblyVersion>0.7.0.0</AssemblyVersion>
+    <FileVersion>0.7.0.0</FileVersion>
+    <InformationalVersion>0.7.0</InformationalVersion>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net9.0-windows7.0</TargetFramework>
     <Nullable>enable</Nullable>
@@ -39,6 +43,13 @@
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.8" />
     <PackageReference Include="SharpNoise" Version="0.12.1.1" />
+    <PackageReference Include="StableDiffusion.NET" Version="7.0.0" />
+    <PackageReference Include="StableDiffusion.NET.Backend.Cuda12.Windows" Version="7.0.0" />
+    <PackageReference Include="StableDiffusion.NET.Backend.Vulkan" Version="7.0.0" />
+    <PackageReference Include="StableDiffusion.NET.Backend.Cpu" Version="7.0.0" />
+    <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.27.1" />
+    <PackageReference Include="Tokenizers.DotNet" Version="1.4.1" />
+    <PackageReference Include="Tokenizers.DotNet.runtime.win-x64" Version="1.4.1" />
     <!-- Vortice packages are optional. When EnableVortice is true the package will be referenced
          and NuGet restore will attempt to download it. Leave disabled for offline builds. -->
   </ItemGroup>
@@ -109,6 +120,14 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="像素素材生成器.ico" />
+  </ItemGroup>
+
+  <!-- Offline AI models are versioned with Git LFS and shipped with every full build. -->
+  <ItemGroup Condition="'$(SkipBundledModels)' != 'true'">
+    <Content Include="Models\Bundled\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
   </ItemGroup>
 
   <!-- Shader entry points to precompile during build when HlslCompiler is provided. -->

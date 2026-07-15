@@ -9,7 +9,7 @@ namespace PixelAssetGenerator.Core.Animation.Nodes;
 /// drifting motion suitable for natural-looking animation of parameters,
 /// camera movement, particle properties, etc.
 /// </summary>
-public sealed class AnimationNoiseNode : IGraphNode
+public sealed class AnimationNoiseNode : IGraphNode, IMultiOutputNode
 {
     public string TypeName => "NoiseAnimation";
     public string Category => "Animation";
@@ -40,6 +40,7 @@ public sealed class AnimationNoiseNode : IGraphNode
     public IReadOnlyList<GraphNodePort> InputPorts => _inputs;
     public IReadOnlyList<GraphNodePort> OutputPorts => _outputs;
     public IReadOnlyList<NodeParameterDefinition> Parameters => _parameters;
+    public GraphNodeTraits Traits => GraphNodeTraits.TimeDependent;
 
     public PixelBuffer Process(PixelBuffer?[] inputs, IReadOnlyDictionary<string, object> parameters, PixelGraphContext context)
     {
@@ -55,7 +56,7 @@ public sealed class AnimationNoiseNode : IGraphNode
         var seed = GraphNodeBase.GetInt(parameters, "seed", 42);
         var bipolar = GraphNodeBase.GetBool(parameters, "bipolar", true);
 
-        var globalTime = context.GlobalTime;
+        var globalTime = context.GlobalTime > 0f ? context.GlobalTime : context.AnimationTime ?? 0f;
         var tx = globalTime * frequency;
 
         // Two independent noise values for Value and Value2 outputs
@@ -70,6 +71,21 @@ public sealed class AnimationNoiseNode : IGraphNode
 
         buf.SetPixel(0, 0, (float)Math.Clamp(val1, -100f, 100f), (float)Math.Clamp(val2, -100f, 100f), 0, 1);
         return buf;
+    }
+
+    public PixelBuffer[] ProcessMulti(PixelBuffer?[] inputs,
+        IReadOnlyDictionary<string, object> parameters, PixelGraphContext context)
+    {
+        using var packed = Process(inputs, parameters, context);
+        var value = packed.GetPixel(0, 0);
+        return [Scalar(value.R), Scalar(value.G)];
+    }
+
+    private static PixelBuffer Scalar(float value)
+    {
+        var buffer = PixelBufferPool.Borrow(1, 1);
+        buffer.SetPixel(0, 0, value, 0f, 0f, 1f);
+        return buffer;
     }
 
     private static float EvaluateNoise(string noiseType, float t, int seed, int octaves, float persistence, float lacunarity)

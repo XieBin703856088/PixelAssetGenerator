@@ -3,63 +3,17 @@
   "processorType": "PhysicsField",
   "identity": {
     "typeName": "PhysicsField",
-    "displayName": {
-      "zh-Hans": "物理场",
-      "en": "Physics Field"
-    },
+    "displayName": { "zh-Hans": "物理力场", "en": "Physics Field" },
     "category": "Physics",
-    "description": {
-      "zh-Hans": "创建物理力场（引力阱、漩涡、风力等）",
-      "en": "Creates physical force fields (gravity well, vortex, wind, etc.)"
-    },
-    "tags": ["physics", "force-field"],
+    "description": { "zh-Hans": "创建引力阱、漩涡、风力、吸引或排斥力场。", "en": "Creates gravity-well, vortex, wind, attractor or repeller fields." },
+    "tags": ["physics", "force", "vortex", "attractor"],
     "author": "BuiltIn",
     "version": "1.0"
   },
   "ports": {
-    "inputs": [
-      {
-        "name": { "zh-Hans": "粒子", "en": "Particles" },
-        "type": "Particle"
-      }
-    ],
-    "outputs": [
-      {
-        "name": { "zh-Hans": "粒子", "en": "Particles" },
-        "type": "Particle"
-      }
-    ]
+    "inputs": [{ "key": "particles", "name": { "zh-Hans": "粒子", "en": "Particles" }, "type": "Particle", "isRequired": true }],
+    "outputs": [{ "key": "particles", "name": { "zh-Hans": "粒子", "en": "Particles" }, "type": "Particle" }]
   },
-  "parameters": [
-    {
-      "name": { "zh-Hans": "场类型", "en": "Field Type" },
-      "kind": "Choice",
-      "default": "gravityWell",
-      "choices": ["gravityWell", "vortex", "wind", "attractor", "repeller"]
-    },
-    { "name": { "zh-Hans": "强度", "en": "Strength" }, "kind": "Number", "default": 1.0, "min": -5.0, "max": 5.0, "step": 0.1 },
-    { "name": { "zh-Hans": "位置X", "en": "Position X" }, "kind": "Number", "default": 0.5, "min": 0, "max": 1, "step": 0.01 },
-    { "name": { "zh-Hans": "位置Y", "en": "Position Y" }, "kind": "Number", "default": 0.5, "min": 0, "max": 1, "step": 0.01 },
-    { "name": { "zh-Hans": "作用半径", "en": "Radius" }, "kind": "Number", "default": 0.3, "min": 0, "max": 1, "step": 0.01 },
-    {
-      "name": { "zh-Hans": "衰减方式", "en": "Falloff" },
-      "kind": "Choice",
-      "default": "inverseSquare",
-      "choices": ["constant", "linear", "inverseSquare"]
-    },
-    { "name": { "zh-Hans": "振荡", "en": "Oscillate" }, "kind": "Boolean", "default": false },
-    { "name": { "zh-Hans": "振荡频率", "en": "Frequency" }, "kind": "Number", "default": 1.0, "min": 0.1, "max": 10, "step": 0.1 }
-  ],
-  "ai": {
-    "capabilities": ["physics", "force-field"],
-    "triggers": {
-      "zh-Hans": "物理场, 引力阱, 漩涡场, 风力场, 力场模拟",
-      "en": "physics field, gravity well, vortex field, wind field, force field simulation"
-    },
-    "suggestedInputs": ["PhysicsSimulate"],
-    "exampleUsage": {
-      "zh-Hans": "在场景中心创建一个引力阱，强度1.0，吸引周围粒子向中心聚集",
-      "en": "Create a gravity well at the scene center with strength 1.0, attracting surrounding particles toward the center"
-    }
-  }
+  "parameters": [],
+  "ai": { "capabilities": ["physics", "force-field", "particle"], "triggers": { "zh-Hans": "物理力场, 引力阱, 漩涡, 吸引, 排斥", "en": "physics field, gravity well, vortex, attract, repel" }, "suggestedInputs": ["ParticleEmitter"] }
 }

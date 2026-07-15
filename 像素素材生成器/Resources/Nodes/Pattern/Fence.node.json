@@ -1,6 +1,6 @@
 {
   "formatVersion": 2,
-  "processorType": null,
+  "processorType": "Fence",
   "identity": {
     "typeName": "Fence",
     "displayName": {
@@ -9,8 +9,8 @@
     },
     "category": "Pattern",
     "description": {
-      "zh-Hans": "生成木栅栏/栏杆/木桩图案，具有重复的垂直板条、可选的水平横栏、木纹细节、逐板颜色变化、风化效果以及钉子/螺丝细节。所有噪波均可平铺。",
-      "en": "Generates wooden fence / railing / palisade patterns with repeating vertical slats, optional horizontal rails, wood grain detail, per-plank color variation, weathering, and nail/screw details. All noise is tileable."
+      "zh-Hans": "生成透明背景的RPG像素木栅栏精灵，包含硬边板条、尖顶/圆顶/V形轮廓、后置横栏、木纹、磨损缺口和金属钉。",
+      "en": "Generates a transparent RPG pixel fence sprite with hard-edge slats, pointed/rounded/V-shaped tops, rear rails, wood grain, worn chips, and metal nails."
     },
     "tags": [],
     "author": "BuiltIn",

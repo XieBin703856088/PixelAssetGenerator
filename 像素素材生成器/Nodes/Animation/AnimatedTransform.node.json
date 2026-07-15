@@ -1,0 +1,34 @@
+{
+  "formatVersion": 2,
+  "processorType": "AnimatedTransform",
+  "identity": {
+    "typeName": "AnimatedTransform",
+    "displayName": { "zh-Hans": "动画变换", "en": "Animated Transform" },
+    "category": "Animation",
+    "description": {
+      "zh-Hans": "使用动画节点的浮点输出驱动图像位置、旋转和缩放，采用最近邻采样保持像素硬边。",
+      "en": "Drives image position, rotation, and scale from animation Float outputs using nearest-neighbor pixel sampling."
+    },
+    "tags": ["animation", "transform", "pixel"],
+    "author": "BuiltIn",
+    "version": "1.0"
+  },
+  "ports": {
+    "inputs": [
+      { "key": "image", "name": { "zh-Hans": "图像", "en": "Image" }, "type": "Image", "isRequired": true },
+      { "key": "positionX", "name": { "zh-Hans": "位置X", "en": "Position X" }, "type": "Float" },
+      { "key": "positionY", "name": { "zh-Hans": "位置Y", "en": "Position Y" }, "type": "Float" },
+      { "key": "rotation", "name": { "zh-Hans": "旋转", "en": "Rotation" }, "type": "Float" },
+      { "key": "scale", "name": { "zh-Hans": "缩放", "en": "Scale" }, "type": "Float" }
+    ],
+    "outputs": [
+      { "key": "image", "name": { "zh-Hans": "图像", "en": "Image" }, "type": "Image" }
+    ]
+  },
+  "parameters": [],
+  "ai": {
+    "capabilities": ["animation", "transform", "pixel-art"],
+    "triggers": { "zh-Hans": "动画移动, 动画旋转, 动画缩放, 路径动画", "en": "animated move, animated rotation, animated scale, path animation" },
+    "suggestedInputs": ["AnimationPath", "Wave", "AnimatedParameter"]
+  }
+}

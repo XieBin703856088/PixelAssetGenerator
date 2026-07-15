@@ -13,14 +13,14 @@
         SnapsToDevicePixels="True"
         TextOptions.TextFormattingMode="Display"
         Loaded="Window_Loaded"
-        FontFamily="Segoe UI">
+        FontFamily="Segoe UI Variable, Microsoft YaHei UI, Segoe UI">
 
     <Grid>
         <!-- Main panel -->
         <Border Width="480" Height="360"
-                CornerRadius="8"
-                Background="#0B0E14"
-                BorderBrush="#1A2440"
+                CornerRadius="14"
+                Background="#11101B"
+                BorderBrush="#312B4C"
                 BorderThickness="2">
             <Border.Effect>
                 <DropShadowEffect Color="#000000" Opacity="0.7" BlurRadius="32" ShadowDepth="0" />
@@ -45,12 +45,12 @@
                                 <DrawingGroup>
                                     <GeometryDrawing Geometry="M 0,0 L 32,0">
                                         <GeometryDrawing.Pen>
-                                            <Pen Brush="#1A3A5A" Thickness="1" />
+                                            <Pen Brush="#2C2545" Thickness="1" />
                                         </GeometryDrawing.Pen>
                                     </GeometryDrawing>
                                     <GeometryDrawing Geometry="M 0,0 L 0,32">
                                         <GeometryDrawing.Pen>
-                                            <Pen Brush="#1A3A5A" Thickness="1" />
+                                            <Pen Brush="#2C2545" Thickness="1" />
                                         </GeometryDrawing.Pen>
                                     </GeometryDrawing>
                                 </DrawingGroup>
@@ -76,9 +76,9 @@
                             <DrawingBrush.Drawing>
                                 <DrawingGroup>
                                     <GeometryDrawing Geometry="M 16,16 L 18,16 L 18,18 L 16,18 Z"
-                                                     Brush="#3A7AD8" />
+                                                     Brush="#8B5CF6" />
                                     <GeometryDrawing Geometry="M 48,48 L 50,48 L 50,50 L 48,50 Z"
-                                                     Brush="#2A5A9A" />
+                                                     Brush="#5B3EA8" />
                                 </DrawingGroup>
                             </DrawingBrush.Drawing>
                         </DrawingBrush>
@@ -127,15 +127,15 @@
                             </Canvas.RenderTransform>
                             <!-- Isometric pixel cube: top face -->
                             <Polygon Points="32,2 58,16 32,30 6,16"
-                                     Fill="#4A80C8" Stroke="#6AA0E8" StrokeThickness="1"
+                             Fill="#9B72F2" Stroke="#B99AF8" StrokeThickness="1"
                                      StrokeLineJoin="Round" />
                             <!-- left face -->
                             <Polygon Points="6,16 6,44 32,58 32,30"
-                                     Fill="#3A6AB0" Stroke="#5A90D8" StrokeThickness="1"
+                             Fill="#7650C6" Stroke="#9B72F2" StrokeThickness="1"
                                      StrokeLineJoin="Round" />
                             <!-- right face -->
                             <Polygon Points="32,30 32,58 58,44 58,16"
-                                     Fill="#2A5A9A" Stroke="#4A80C8" StrokeThickness="1"
+                             Fill="#51358F" Stroke="#7650C6" StrokeThickness="1"
                                      StrokeLineJoin="Round" />
                             <!-- highlight pixel dots -->
                             <Rectangle Canvas.Left="18" Canvas.Top="22" Width="2" Height="2" Fill="#8AC0FF" Opacity="0.8" />
@@ -150,12 +150,12 @@
                         <TextBlock x:Name="TitleBlock" Grid.Row="1"
                                    HorizontalAlignment="Center"
                                    FontSize="22" FontWeight="Bold"
-                                   Foreground="#C8D8F0"
+                                   Foreground="#F4F1FF"
                                    TextOptions.TextFormattingMode="Display"
                                    Text="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[Splash_Title]}" />
                         <TextBlock Grid.Row="2"
                                    Text="{Binding Source={x:Static loc:LocalizationService.Instance}, Path=[Splash_Subtitle]}"
-                                   Foreground="#4A6A9A"
+                                   Foreground="#9F8BC7"
                                    FontSize="10" FontWeight="Medium"
                                    HorizontalAlignment="Center"
                                    Margin="0,4,0,0" />
@@ -166,8 +166,8 @@
 
                     <!-- ═══════ Loading section ═══════ -->
                     <Border Grid.Row="2"
-                            Background="#0A0E18"
-                            BorderBrush="#1A2440"
+                            Background="#0D0C15"
+                            BorderBrush="#312B4C"
                             BorderThickness="1"
                             CornerRadius="2"
                             Padding="0,0,0,0"
@@ -175,7 +175,7 @@
                         <Grid Margin="0,0,0,0">
                             <Border x:Name="PixelBarBg"
                                     Height="14"
-                                    Background="#0E1424"
+                                    Background="#1B1828"
                                     CornerRadius="2"
                                     Margin="0" />
                             <!-- Progress fill - stepped/pixelated look -->
@@ -185,9 +185,9 @@
                                     HorizontalAlignment="Left">
                                 <Border.Background>
                                     <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                        <GradientStop Offset="0.0" Color="#3A7AD8" />
-                                        <GradientStop Offset="0.5" Color="#4A8AE8" />
-                                        <GradientStop Offset="1.0" Color="#5A9AF8" />
+                                        <GradientStop Offset="0.0" Color="#7650C6" />
+                                        <GradientStop Offset="0.5" Color="#8B5CF6" />
+                                        <GradientStop Offset="1.0" Color="#A982FF" />
                                     </LinearGradientBrush>
                                 </Border.Background>
                             </Border>

@@ -1,0 +1,33 @@
+{
+  "formatVersion": 2,
+  "processorType": "SmartSpriteFramer",
+  "identity": {
+    "typeName": "SmartSpriteFramer",
+    "displayName": { "zh-Hans": "智能主体取景", "en": "Smart Sprite Framer" },
+    "category": "Smart",
+    "description": {
+      "zh-Hans": "自动识别透明主体或角落背景色，裁掉空白并将素材居中、落地或顶部对齐。",
+      "en": "Detects transparent subjects or corner backgrounds, removes empty space and aligns the sprite consistently."
+    },
+    "tags": ["smart", "sprite", "crop", "center", "layout"],
+    "author": "BuiltIn",
+    "version": "3.0"
+  },
+  "ports": {
+    "inputs": [{ "name": { "zh-Hans": "图像", "en": "Image" }, "type": "Image" }],
+    "outputs": [{ "name": { "zh-Hans": "图像", "en": "Image" }, "type": "Image" }]
+  },
+  "parameters": [],
+  "ai": {
+    "capabilities": ["smart", "sprite-layout", "auto-crop"],
+    "triggers": {
+      "zh-Hans": "自动裁剪, 主体居中, 角色落地, 去除空白, 智能取景",
+      "en": "auto crop, center sprite, ground alignment, remove empty space"
+    },
+    "suggestedInputs": ["AiImageGen", "SmartPixelPolish"],
+    "exampleUsage": {
+      "zh-Hans": "AI 生成或导入素材后先取景，再连接像素整理节点。",
+      "en": "Use after imported or generated art, then connect Smart Pixel Polish."
+    }
+  }
+}

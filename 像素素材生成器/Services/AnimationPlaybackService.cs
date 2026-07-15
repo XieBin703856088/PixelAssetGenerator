@@ -72,6 +72,8 @@ public sealed class AnimationPlaybackService : INotifyPropertyChanged, IDisposab
             _frameCount = Math.Clamp(value, 1, 256);
             _currentFrame = Math.Min(_currentFrame, _frameCount - 1);
             OnPropertyChanged();
+            OnPropertyChanged(nameof(CurrentTimeSeconds));
+            OnPropertyChanged(nameof(NormalizedTime));
             NotifyFrame();
         }
     }
@@ -85,6 +87,7 @@ public sealed class AnimationPlaybackService : INotifyPropertyChanged, IDisposab
             _frameRate = Math.Clamp(value, 1, 60);
             UpdateInterval();
             OnPropertyChanged();
+            OnPropertyChanged(nameof(CurrentTimeSeconds));
         }
     }
 
@@ -97,11 +100,21 @@ public sealed class AnimationPlaybackService : INotifyPropertyChanged, IDisposab
             if (_currentFrame == clamped) return;
             _currentFrame = clamped;
             OnPropertyChanged();
+            OnPropertyChanged(nameof(CurrentTimeSeconds));
+            OnPropertyChanged(nameof(NormalizedTime));
             NotifyFrame();
         }
     }
 
-    public float NormalizedTime => _frameCount > 1 ? _currentFrame / (float)(_frameCount - 1) : 0f;
+    /// <summary>
+    /// Loop playback deliberately excludes 1.0 so the first and last frames do not
+    /// duplicate the same seamless animation sample.
+    /// </summary>
+    public float NormalizedTime => _frameCount > 1
+        ? _currentFrame / (float)(_playMode == AnimationPlayMode.Loop ? _frameCount : _frameCount - 1)
+        : 0f;
+
+    public float CurrentTimeSeconds => (float)(_currentFrame / _frameRate);
 
     public AnimationPlayMode PlayMode
     {
@@ -111,6 +124,8 @@ public sealed class AnimationPlaybackService : INotifyPropertyChanged, IDisposab
             if (_playMode == value) return;
             _playMode = value;
             OnPropertyChanged();
+            OnPropertyChanged(nameof(NormalizedTime));
+            NotifyFrame();
         }
     }
 
@@ -138,6 +153,7 @@ public sealed class AnimationPlaybackService : INotifyPropertyChanged, IDisposab
         _direction = 1;
         OnPropertyChanged(nameof(CurrentFrame));
         OnPropertyChanged(nameof(NormalizedTime));
+        OnPropertyChanged(nameof(CurrentTimeSeconds));
         NotifyFrame();
     }
 
@@ -158,12 +174,40 @@ public sealed class AnimationPlaybackService : INotifyPropertyChanged, IDisposab
     public void GoToFirst() => CurrentFrame = 0;
     public void GoToLast() => CurrentFrame = _frameCount - 1;
 
+    /// <summary>
+    /// Moves the playhead to an exact frame.  Scrubbing pauses playback by default
+    /// so a dragged timeline does not fight the render timer.
+    /// </summary>
+    public void SeekFrame(int frame, bool pausePlayback = true)
+    {
+        if (pausePlayback)
+            Pause();
+        CurrentFrame = frame;
+    }
+
+    /// <summary>Moves the playhead using a normalized [0,1] timeline position.</summary>
+    public void SeekNormalized(float normalizedTime, bool pausePlayback = true)
+    {
+        var t = Math.Clamp(normalizedTime, 0f, 1f);
+        var frame = _frameCount <= 1 ? 0 : (int)MathF.Round(t * (_frameCount - 1));
+        SeekFrame(frame, pausePlayback);
+    }
+
     // ─── Internals ───
 
     private void UpdateInterval() => _timer.Interval = TimeSpan.FromSeconds(1.0 / _frameRate);
 
     private void Timer_Tick(object? sender, EventArgs e)
     {
+        if (_frameCount <= 1)
+        {
+            _currentFrame = 0;
+            if (_playMode == AnimationPlayMode.SingleShot)
+                IsPlaying = false;
+            NotifyFrame();
+            return;
+        }
+
         switch (_playMode)
         {
             case AnimationPlayMode.Loop:
@@ -188,6 +232,7 @@ public sealed class AnimationPlaybackService : INotifyPropertyChanged, IDisposab
 
         OnPropertyChanged(nameof(CurrentFrame));
         OnPropertyChanged(nameof(NormalizedTime));
+        OnPropertyChanged(nameof(CurrentTimeSeconds));
         NotifyFrame();
     }
 

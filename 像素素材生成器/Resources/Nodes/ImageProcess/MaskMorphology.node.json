@@ -1,0 +1,32 @@
+{
+  "formatVersion": 3,
+  "processorType": "MaskMorphology",
+  "identity": {
+    "typeName": "MaskMorphology",
+    "displayName": { "zh-Hans": "遮罩扩缩", "en": "Mask Morphology" },
+    "category": "ImageProcess", "subcategory": "Mask",
+    "description": { "zh-Hans": "对遮罩执行膨胀、腐蚀、开运算和闭运算，用于扩边、去噪和补洞。", "en": "Dilate, erode, open or close masks for expansion, cleanup and hole filling." },
+    "tags": ["mask", "dilate", "erode"], "author": "BuiltIn", "version": "1.0"
+  },
+  "ports": {
+    "inputs": [{ "key": "mask", "name": { "zh-Hans": "遮罩", "en": "Mask" }, "type": "Mask", "required": true }],
+    "outputs": [{ "key": "mask", "name": { "zh-Hans": "遮罩", "en": "Mask" }, "type": "Mask" }]
+  },
+  "parameters": [
+    { "name": { "zh-Hans": "操作", "en": "Operation" }, "kind": "Choice", "default": "dilate", "choices": [
+      { "value": "dilate", "label": { "zh-Hans": "膨胀", "en": "Dilate" } },
+      { "value": "erode", "label": { "zh-Hans": "腐蚀", "en": "Erode" } },
+      { "value": "open", "label": { "zh-Hans": "开运算", "en": "Open" } },
+      { "value": "close", "label": { "zh-Hans": "闭运算", "en": "Close" } }
+    ]},
+    { "name": { "zh-Hans": "半径", "en": "Radius" }, "kind": "Integer", "default": 1, "min": 1, "max": 16, "step": 1 },
+    { "name": { "zh-Hans": "迭代", "en": "Iterations" }, "kind": "Integer", "default": 1, "min": 1, "max": 8, "step": 1 },
+    { "name": { "zh-Hans": "形状", "en": "Shape" }, "kind": "Choice", "default": "diamond", "choices": ["diamond", "square"] }
+  ],
+  "ai": {
+    "capabilities": ["mask-dilate", "mask-erode", "mask-cleanup", "outline-helper"],
+    "triggers": { "zh-Hans": "遮罩膨胀 腐蚀 扩边 缩边 去噪 补洞", "en": "mask dilate erode expand shrink cleanup close holes" },
+    "suggestedInputs": ["Threshold", "Channel"],
+    "exampleUsage": { "zh-Hans": "先膨胀遮罩再与原遮罩相减，可生成稳定的外描边区域。", "en": "Dilate a mask and subtract the original to create an outline region." }
+  }
+}

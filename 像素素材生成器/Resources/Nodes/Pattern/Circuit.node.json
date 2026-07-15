@@ -1,6 +1,6 @@
 {
   "formatVersion": 2,
-  "processorType": null,
+  "processorType": "Circuit",
   "identity": {
     "typeName": "Circuit",
     "displayName": {
@@ -9,8 +9,8 @@
     },
     "category": "Pattern",
     "description": {
-      "zh-Hans": "使用随机游走迹线生成电路板/PCB风格图案，具有正交路径、圆角和焊盘标记。由于其顺序路径路由特性，仅支持CPU执行。",
-      "en": "Generates circuit-board / PCB-style patterns using random-walk traces with orthogonal paths, corner rounding, and solder pad landmarks. CPU-only due to sequential path-routing nature."
+      "zh-Hans": "生成可读的像素电路板图案，使用规则网格上的直角走线、像素倒角、金属高光、端点焊盘和低对比度板面细节。",
+      "en": "Generates readable pixel circuit boards with grid-routed orthogonal traces, chamfered corners, metallic highlights, endpoint pads, and subtle board clusters."
     },
     "tags": [],
     "author": "BuiltIn",

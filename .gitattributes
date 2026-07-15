@@ -1,0 +1,4 @@
+像素素材生成器/Models/Bundled/**/*.ckpt filter=lfs diff=lfs merge=lfs -text
+像素素材生成器/Models/Bundled/**/*.onnx filter=lfs diff=lfs merge=lfs -text
+像素素材生成器/Models/Bundled/**/*.gguf filter=lfs diff=lfs merge=lfs -text
+像素素材生成器/Models/Bundled/**/*.safetensors filter=lfs diff=lfs merge=lfs -text

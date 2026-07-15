@@ -1,6 +1,6 @@
 {
   "formatVersion": 2,
-  "processorType": null,
+  "processorType": "Wall",
   "identity": {
     "typeName": "Wall",
     "displayName": {
@@ -9,8 +9,8 @@
     },
     "category": "Material",
     "description": {
-      "zh-Hans": "渲染矩形墙壁截面，支持多种材质图案（石头、灰泥、木板、土坯）。完全可平铺。",
-      "en": "Renders a rectangular wall section with various material patterns (stone, plaster, wood planks, adobe). Fully tileable."
+      "zh-Hans": "生成带背景输入的RPG墙壁区域，石墙、灰泥、木墙和土坯分别使用独立结构算法与硬边有限色阶。",
+      "en": "Generates RPG wall regions with a background input and dedicated crisp algorithms for masonry, plaster, wood planks, and adobe."
     },
     "tags": [],
     "author": "BuiltIn",

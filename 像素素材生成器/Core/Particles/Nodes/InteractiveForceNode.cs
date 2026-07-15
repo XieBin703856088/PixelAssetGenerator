@@ -46,13 +46,14 @@ public sealed class InteractiveForceNode : IGraphNode
     public IReadOnlyList<GraphNodePort> OutputPorts => _outputs;
     public IReadOnlyList<NodeParameterDefinition> Parameters => _parameters;
 
-    private static PixelBuffer? _sharedPlaceholder;
+    internal PixelBuffer? LastPositionXInput { get; private set; }
+    internal PixelBuffer? LastPositionYInput { get; private set; }
 
     public PixelBuffer Process(PixelBuffer?[] inputs, IReadOnlyDictionary<string, object> parameters, PixelGraphContext context)
     {
-        if (_sharedPlaceholder == null)
-            _sharedPlaceholder = PixelBuffer.CreateSolid(1, 1, 0f, 0f, 0f, 0f);
-        return _sharedPlaceholder;
+        LastPositionXInput = inputs.Length > 1 ? inputs[1] : null;
+        LastPositionYInput = inputs.Length > 2 ? inputs[2] : null;
+        return PixelBuffer.CreateSolid(1, 1, 0f, 0f, 0f, 0f);
     }
 
     /// <summary>

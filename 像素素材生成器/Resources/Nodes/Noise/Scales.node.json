@@ -1,6 +1,6 @@
 {
   "formatVersion": 2,
-  "processorType": null,
+  "processorType": "Scales",
   "identity": {
     "typeName": "Scales",
     "displayName": {
@@ -9,8 +9,8 @@
     },
     "category": "Noise",
     "description": {
-      "zh-Hans": "使用偏移六边形网格的椭圆弧线生成鱼/蛇鳞片图案。每片鳞片具有边缘高光和阴影，呈现交叠的3D立体效果。",
-      "en": "Generates a fish/snake scale pattern using offset hexagonal grid of elliptical arcs. Each scale features edge highlight and shadow for a overlapping 3D look."
+      "zh-Hans": "生成交错排列的硬边鱼鳞/龙鳞材质，每片鳞片具有盾形轮廓、顶部高光、侧边反光和底部叠压阴影。",
+      "en": "Generates staggered hard-edge fish or dragon scales with shield silhouettes, top highlights, side glints, and overlapping lower shadows."
     },
     "tags": [],
     "author": "BuiltIn",

@@ -1,0 +1,38 @@
+{
+  "formatVersion": 2,
+  "processorType": "MotionPreset",
+  "identity": {
+    "typeName": "MotionPreset",
+    "displayName": { "zh-Hans": "动作预设", "en": "Motion Preset" },
+    "category": "Animation",
+    "description": {
+      "zh-Hans": "快速生成待机呼吸、漂浮、震动、跳跃、受击、环绕和摆动等像素游戏动作。",
+      "en": "Generates reusable pixel-game motions such as idle, float, shake, hop, hit, orbit and pendulum."
+    },
+    "tags": ["animation", "motion", "rpg", "preset"],
+    "author": "BuiltIn",
+    "version": "3.0"
+  },
+  "ports": {
+    "inputs": [],
+    "outputs": [
+      { "name": { "zh-Hans": "位置 X", "en": "Position X" }, "type": "Float" },
+      { "name": { "zh-Hans": "位置 Y", "en": "Position Y" }, "type": "Float" },
+      { "name": { "zh-Hans": "旋转", "en": "Rotation" }, "type": "Float" },
+      { "name": { "zh-Hans": "缩放", "en": "Scale" }, "type": "Float" }
+    ]
+  },
+  "parameters": [],
+  "ai": {
+    "capabilities": ["animation", "motion", "rpg"],
+    "triggers": {
+      "zh-Hans": "待机动画, 呼吸动画, 受击动画, 漂浮, 跳跃, 震动",
+      "en": "idle animation, breathing, hit reaction, float, hop, shake"
+    },
+    "suggestedInputs": ["AnimationTimeline", "AnimatedTransform"],
+    "exampleUsage": {
+      "zh-Hans": "将四个输出直接连接到动画变换节点的对应输入。",
+      "en": "Connect the four outputs directly to the matching Animated Transform inputs."
+    }
+  }
+}
